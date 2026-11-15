@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar · Central da Lorena</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236c4cf1'/><text x='16' y='22' font-size='17' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>L</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="tela-login">
+
+  <main class="login-caixa">
+    <div class="login-logo">L</div>
+    <h1>Central da Lorena</h1>
+    <p class="login-sub" id="login-sub">Entre para ver sua agenda, rotina e listas.</p>
+
+    <!-- Aparece quando o Supabase ainda não foi configurado -->
+    <div class="alerta" id="sem-config" hidden>
+      <span id="sem-config-txt">O login ainda não foi configurado (falta preencher o <b>js/config.js</b>). Enquanto isso, dá para usar no modo local.</span>
+    </div>
+
+    <div class="abas-login" id="abas">
+      <button class="chip ativo" data-modo="entrar">Entrar</button>
+      <button class="chip" data-modo="criar">Criar conta</button>
+    </div>
+
+    <form id="form-login" class="login-form">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" autocomplete="email" required>
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" autocomplete="current-password" minlength="6" required>
+      <button class="btn" type="submit" id="btn-login">Entrar</button>
+    </form>
+
+    <button class="link-btn" id="esqueci">Esqueci minha senha</button>
+    <a class="link-btn" href="index.html" id="modo-local" hidden>Usar no modo local →</a>
+
+    <p class="login-msg" id="msg" role="status"></p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

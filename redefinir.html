@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nova senha · Central da Lorena</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236c4cf1'/><text x='16' y='22' font-size='17' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>L</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="tela-login">
+
+  <main class="login-caixa">
+    <div class="login-logo">L</div>
+    <h1>Criar nova senha</h1>
+    <p class="login-sub">Digite a nova senha duas vezes.</p>
+
+    <form id="form-redefinir" class="login-form">
+      <label for="nova-senha">Nova senha</label>
+      <input type="password" id="nova-senha" autocomplete="new-password" minlength="6" required>
+      <label for="repetir-senha">Repita a senha</label>
+      <input type="password" id="repetir-senha" autocomplete="new-password" minlength="6" required>
+      <button class="btn" type="submit">Salvar nova senha</button>
+    </form>
+
+    <a class="link-btn" href="login.html">← Voltar para o login</a>
+    <p class="login-msg" id="msg" role="status"></p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>
