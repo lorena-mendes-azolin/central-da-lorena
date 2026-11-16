@@ -1,8 +1,3 @@
-// =========================================================
-// login.js — telas de login e de nova senha
-// (usado por login.html e redefinir.html)
-// =========================================================
-
 const configurado = Boolean(SUPABASE_URL && SUPABASE_KEY && window.supabase);
 const sb = configurado ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 const msg = document.getElementById('msg');
@@ -12,7 +7,6 @@ function mostrar(texto, erro = false) {
   msg.style.color = erro ? 'var(--vermelho)' : 'var(--verde)';
 }
 
-// Traduz os erros mais comuns do Supabase
 function traduzir(erro) {
   const m = (erro?.message || '').toLowerCase();
   if (m.includes('invalid login')) return 'E-mail ou senha incorretos.';
@@ -23,21 +17,20 @@ function traduzir(erro) {
   return 'Algo deu errado: ' + (erro?.message || 'tente de novo.');
 }
 
-// ---------- Tela de login ----------
 const formLogin = document.getElementById('form-login');
 if (formLogin) {
   let modo = 'entrar';
 
   if (!configurado) {
     document.getElementById('sem-config').hidden = false;
-    // as chaves estão preenchidas, mas a biblioteca do Supabase não carregou
+
     if (SUPABASE_URL && SUPABASE_KEY && !window.supabase) {
       document.getElementById('sem-config-txt').innerHTML =
         'Não consegui carregar o Supabase. Confira se está com internet e recarregue com <b>Ctrl+F5</b>.';
     }
     document.getElementById('modo-local').hidden = false;
   } else {
-    // já está logada? vai direto para o site
+
     sb.auth.getSession().then(({ data }) => { if (data.session) location.href = 'index.html'; });
   }
 
@@ -85,7 +78,6 @@ if (formLogin) {
   });
 }
 
-// ---------- Tela de nova senha ----------
 const formRedefinir = document.getElementById('form-redefinir');
 if (formRedefinir) {
   formRedefinir.addEventListener('submit', async (e) => {

@@ -1,8 +1,3 @@
-// =========================================================
-// app.js — liga tudo: menu, troca de páginas, cliques e relógio
-// =========================================================
-
-// Qual página mostrar, pelo endereço (#dashboard, #agenda, #lista-xyz…)
 function paginaAtual() {
   const nome = location.hash.slice(1) || 'dashboard';
   if (nome.startsWith('lista-')) {
@@ -12,7 +7,6 @@ function paginaAtual() {
   return PAGINAS[nome] ? { nome, ...PAGINAS[nome] } : { nome: 'dashboard', ...PAGINAS.dashboard };
 }
 
-// Desenha a página atual de novo (chamado sempre que algo muda)
 function desenhar() {
   const pag = paginaAtual();
   $('#conteudo').innerHTML = pag.desenhar();
@@ -23,9 +17,40 @@ function desenhar() {
   atualizarSino();
   $('#escolha-icone').hidden = true;
   if (!$('#painel-avisos').hidden) preencherAvisos();
+  ajustarTrilhos(true);
+  fecharMenuSelect();
+  melhorarSelects();
 }
 
-// Menu lateral: marca a página aberta e mostra as listas
+function aplicarTema() {
+  document.body.dataset.tema = estado.config.tema || 'violeta';
+}
+
+function ajustarTrilhos(centralizar) {
+  $$('.carrossel').forEach((t) => {
+    const f = t.querySelector('.faixa');
+    if (centralizar) {
+      const ativo = f.querySelector('.ativo');
+      if (ativo) f.scrollLeft = ativo.offsetLeft - f.clientWidth / 2 + ativo.offsetWidth / 2;
+    }
+    t.classList.toggle('tem-esq', f.scrollLeft > 2);
+    t.classList.toggle('tem-dir', f.scrollLeft + f.clientWidth < f.scrollWidth - 2);
+  });
+}
+document.addEventListener('scroll', (e) => { if (e.target.classList?.contains('faixa')) ajustarTrilhos(); }, true);
+window.addEventListener('resize', () => ajustarTrilhos());
+
+document.addEventListener('wheel', (e) => {
+  const f = e.target.closest('.carrossel .faixa');
+  if (!f || f.scrollWidth <= f.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+  e.preventDefault();
+  f.scrollBy({ left: e.deltaY, behavior: 'instant' });
+}, { passive: false });
+ACOES.carrossel = (el) => {
+  const f = el.closest('.carrossel').querySelector('.faixa');
+  f.scrollBy({ left: Number(el.dataset.d) * f.clientWidth * 0.7, behavior: 'smooth' });
+};
+
 function desenharMenu() {
   const pag = paginaAtual();
   const atual = pag.nomeMenu || pag.nome;
@@ -37,7 +62,6 @@ function desenharMenu() {
   }).join('');
   $$('.lateral a[data-pagina]').forEach((a) => a.classList.toggle('ativo', a.dataset.pagina === atual));
 
-  // bolinha na Agenda com o que é para hoje ou está atrasado
   const hoje = hojeISO();
   const n = estado.tarefas.filter((t) => !t.feito && t.data && t.data <= hoje).length;
   const b = $('#bolinha-agenda');
@@ -51,7 +75,6 @@ function atualizarCaminho() {
   if (!pomo.rodando) document.title = `${pag.titulo} · Central da Lorena`;
 }
 
-// ---------- Menu: fixo (aberto) ou desafixado (minimizado, só ícones) ----------
 const telaPequena = () => window.matchMedia('(max-width: 860px)').matches;
 
 function aplicarMenu() {
@@ -68,7 +91,6 @@ ACOES['menu-fixar'] = () => {
   salvar();
 };
 
-// Botão ☰ do topo: no celular abre o menu por cima; no computador fixa/desafixa
 ACOES['abrir-menu'] = () => {
   if (telaPequena()) document.body.classList.toggle('menu-aberto');
   else ACOES['menu-fixar']();
@@ -76,7 +98,6 @@ ACOES['abrir-menu'] = () => {
 ACOES['fechar-menu'] = () => fecharMenu();
 function fecharMenu() { document.body.classList.remove('menu-aberto'); }
 
-// ---------- Cliques, mudanças e formulários (um "ouvinte" para tudo) ----------
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-acao]');
   if (!e.target.closest('#escolha-icone') && !e.target.closest('[data-acao="icone-abrir"]')) $('#escolha-icone').hidden = true;
@@ -86,7 +107,7 @@ document.addEventListener('click', (e) => {
     ACOES[el.dataset.acao](el, e);
   }
   if (e.target.closest('.lateral a[data-pagina]')) fecharMenu();
-  // dica dos gráficos some ao clicar
+
   $('#dica-grafico').hidden = true;
 });
 
@@ -104,13 +125,16 @@ document.addEventListener('submit', (e) => {
   const form = e.target.closest('[data-form]');
   if (!form || !FORMS[form.dataset.form]) return;
   e.preventDefault();
+
+  const precisa = form.querySelector('[data-precisa]');
+  if (precisa && !precisa.value.trim()) { precisa.focus(); return; }
   const dados = Object.fromEntries(new FormData(form));
   for (const k in dados) if (typeof dados[k] === 'string') dados[k] = dados[k].trim();
   FORMS[form.dataset.form](dados, form);
 });
 
 document.addEventListener('keydown', (e) => {
-  // Enter num título editável sai do campo
+
   if (e.key === 'Enter' && e.target.matches('.titulo-edit, .desc-edit, td .inline, .item-lista .inline')) e.target.blur();
   if (e.key === 'Escape') { $('#escolha-icone').hidden = true; $('#painel-avisos').hidden = true; fecharMenu(); }
 });
@@ -120,7 +144,6 @@ window.addEventListener('hashchange', () => {
   desenhar();
 });
 
-// ---------- Backup ----------
 ACOES.backup = () => {
   const blob = new Blob([JSON.stringify(estado, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -147,7 +170,6 @@ $('#arquivo-backup').addEventListener('change', async (e) => {
   e.target.value = '';
 });
 
-// ---------- Relógio do topo + tarefas que rodam sozinhas ----------
 let diaAberto = hojeISO();
 let minutoAberto = new Date().getMinutes();
 function aCadaSegundo() {
@@ -156,22 +178,22 @@ function aCadaSegundo() {
     a.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' +
     a.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   passoPomodoro();
-  // a cada minuto, move a linha do "agora" na agenda
+
   if (a.getMinutes() !== minutoAberto) {
     minutoAberto = a.getMinutes();
     const linha = $('.agora-linha');
     if (linha) linha.style.top = ((a.getHours() - HORA_INICIO) + a.getMinutes() / 60) * ALTURA_HORA + 'px';
   }
-  // virou o dia com o site aberto: redesenha (rotina e água recomeçam)
+
   if (hojeISO() !== diaAberto) { diaAberto = hojeISO(); desenhar(); resumoDoDia(); }
 }
 
-// ---------- Começa tudo ----------
 async function iniciar() {
-  const logada = await iniciarNuvem(); // confere login (se o Supabase estiver configurado)
+  const logada = await iniciarNuvem();
   if (!logada) return;
   limparAntigos();
   aplicarMenu();
+  aplicarTema();
   $('#perfil-nome').textContent = estado.config.nome;
   $('#perfil-foto').textContent = estado.config.nome[0].toUpperCase();
   if (usuario) {
@@ -191,3 +213,7 @@ async function iniciar() {
   resumoDoDia();
 }
 iniciar();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}

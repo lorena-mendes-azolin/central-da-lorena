@@ -1,23 +1,18 @@
-// =========================================================
-// agenda.js — calendário (dia / semana / mês) e tarefas
-// =========================================================
-
-const HORA_INICIO = 6;    // primeira hora da grade
-const HORA_FIM = 24;      // última hora (exclusiva)
-const ALTURA_HORA = 48;   // pixels por hora (igual ao .celula no CSS)
+const HORA_INICIO = 6;
+const HORA_FIM = 24;
+const ALTURA_HORA = 48;
 
 const agendaTela = {
-  ref: hojeISO(),          // dia de referência do que está na tela
-  filtro: 'semana',        // filtro da lista da direita
-  editando: null,          // tarefa aberta na janela
-  arrastando: null,        // tarefa sendo arrastada
+  ref: hojeISO(),
+  filtro: 'semana',
+  editando: null,
+  arrastando: null,
 };
 
 function visaoAgenda() {
   return estado.config.visaoAgenda || 'mes';
 }
 
-// ---------- Uma tarefa em lista (usado aqui, no Dashboard e no sininho) ----------
 function htmlTarefa(t) {
   const hoje = hojeISO();
   const atrasado = !t.feito && t.data && t.data < hoje;
@@ -27,17 +22,19 @@ function htmlTarefa(t) {
   else partes.push('sem data');
   if (t.hora) partes.push(`${ic('clock')} ${t.hora}`);
   if (t.lembrete >= 0 && !t.feito) partes.push(`${ic('bell')} ${LEMBRETES.find((l) => l.min === t.lembrete)?.nome.toLowerCase()}`);
+  if (t.repetir) partes.push(`${ic('repeat')} ${REPETICOES[t.repetir].toLowerCase()}`);
+  const prio = PRIORIDADES[t.prioridade];
   return `<div class="item ${t.feito ? 'feito' : ''} ${atrasado ? 'atrasado' : ''}">
     <span class="barra-cor" style="background:${cor}"></span>
     <button class="check ${t.feito ? 'on' : ''}" data-acao="tarefa-toggle" data-id="${t.id}" aria-label="Concluir">${t.feito ? ic('check') : ''}</button>
-    <span class="txt">${esc(t.titulo)}
+    <span class="txt">${prio ? `<span class="prio" style="color:${prio.cor}" title="Prioridade ${prio.nome.toLowerCase()}">${ic('flag', 'p')}</span>` : ''}${esc(t.titulo)}
       <span class="sub">${atrasado ? 'atrasada · ' : ''}${partes.join(' · ')}</span></span>
+    ${atrasado ? `<button class="btn-mini" data-acao="tarefa-hoje" data-id="${t.id}" title="Passar para hoje">${ic('right', 'p')} Hoje</button>` : ''}
     <button class="acao-item" data-acao="tarefa-abrir" data-id="${t.id}" title="Editar">${ic('edit', 'p')}</button>
     <button class="acao-item apagar" data-acao="tarefa-del" data-id="${t.id}" title="Apagar">${ic('trash', 'p')}</button>
   </div>`;
 }
 
-// ---------- Página ----------
 PAGINAS.agenda = {
   titulo: 'Agenda',
   desenhar() {
@@ -46,12 +43,14 @@ PAGINAS.agenda = {
     const filtros = {
       hoje: ['Hoje', (t) => !t.feito && t.data === hoje],
       semana: ['Próximos 7 dias', (t) => !t.feito && t.data >= hoje && t.data <= somarDias(hoje, 7)],
+      proxima: ['Semana que vem', (t) => !t.feito && t.data >= somarDias(segundaDaSemana(hoje), 7) && t.data <= somarDias(segundaDaSemana(hoje), 13)],
       atrasadas: ['Atrasadas', (t) => !t.feito && t.data && t.data < hoje],
       semdata: ['Sem data', (t) => !t.feito && !t.data],
       feitas: ['Feitas', (t) => t.feito],
     };
     const lista = estado.tarefas.filter(filtros[f][1])
       .sort((a, b) => (a.data || '9999').localeCompare(b.data || '9999') || porHora(a, b));
+    const nAtrasadas = estado.tarefas.filter(filtros.atrasadas[1]).length;
     const v = visaoAgenda();
 
     return `
@@ -66,7 +65,7 @@ PAGINAS.agenda = {
         <div class="agenda-barra">
           <h2>${tituloPeriodo()}</h2>
           <div class="segmento">
-            ${[['dia', 'Dia'], ['semana', 'Semana'], ['mes', 'Mês']].map(([id, nome]) =>
+            ${[['dia', 'Dia'], ['semana', 'Semana'], ['mes', 'Mês'], ['proxima', 'Semana que vem']].map(([id, nome]) =>
               `<button class="${v === id ? 'ativo' : ''}" data-acao="ag-visao" data-v="${id}">${nome}</button>`).join('')}
           </div>
           <button class="btn-mini" data-acao="ag-hoje">Hoje</button>
@@ -75,7 +74,7 @@ PAGINAS.agenda = {
             <button class="btn-icone" data-acao="ag-mover" data-n="1" aria-label="Próximo">${ic('right')}</button>
           </div>
         </div>
-        ${v === 'mes' ? htmlMes() : htmlHoras(v === 'semana' ? 7 : 1)}
+        ${v === 'mes' ? htmlMes() : v === 'proxima' ? htmlProximaSemana() : htmlHoras(v === 'semana' ? 7 : 1)}
       </section>
 
       <section class="card lista-agenda">
@@ -84,6 +83,7 @@ PAGINAS.agenda = {
           ${Object.entries(filtros).map(([id, [nome, fn]]) =>
             `<button class="chip ${f === id ? 'ativo' : ''}" data-acao="agenda-filtro" data-f="${id}">${nome} <b>${estado.tarefas.filter(fn).length}</b></button>`).join('')}
         </div>
+        ${nAtrasadas ? `<button class="btn sec largo" data-acao="atrasadas-hoje" style="margin-bottom:10px">${ic('right', 'p')} Passar ${nAtrasadas === 1 ? 'a atrasada' : `as ${nAtrasadas} atrasadas`} para hoje</button>` : ''}
         <div class="itens-agenda">${lista.length ? lista.map(htmlTarefa).join('') : '<p class="vazio">Nada por aqui.</p>'}</div>
       </section>
     </div>`;
@@ -95,6 +95,11 @@ function tituloPeriodo() {
   const v = visaoAgenda();
   const d = paraData(agendaTela.ref);
   if (v === 'mes') return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  if (v === 'proxima') {
+    const ini = somarDias(segundaDaSemana(hojeISO()), 7);
+    const dm = (iso) => `${iso.slice(8)}/${iso.slice(5, 7)}`;
+    return `Semana que vem · ${dm(ini)} a ${dm(somarDias(ini, 6))}`;
+  }
   if (v === 'dia') return d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   const ini = inicioSemana(agendaTela.ref);
   const fim = somarDias(ini, 6);
@@ -102,22 +107,47 @@ function tituloPeriodo() {
   return `${fmt(ini, { day: 'numeric', month: 'short' })} – ${fmt(fim, { day: 'numeric', month: 'short', year: 'numeric' })}`.replace(/\./g, '');
 }
 
-// Segunda-feira da semana de uma data
 function inicioSemana(iso) {
   return somarDias(iso, -((paraData(iso).getDay() + 6) % 7));
 }
 
+function proximaData(t, de = t.data) {
+  const d = paraData(de);
+  if (t.repetir === 'diario') return somarDias(de, 1);
+  if (t.repetir === 'semanal') return somarDias(de, 7);
+  if (t.repetir === 'uteis') {
+    let n = somarDias(de, 1);
+    while ([0, 6].includes(paraData(n).getDay())) n = somarDias(n, 1);
+    return n;
+  }
+  if (t.repetir === 'mensal' || t.repetir === 'anual') {
+    const dia = t.diaFixo || d.getDate();
+    const alvo = new Date(d.getFullYear() + (t.repetir === 'anual' ? 1 : 0), d.getMonth() + (t.repetir === 'mensal' ? 1 : 0), 1);
+    const ultimo = new Date(alvo.getFullYear(), alvo.getMonth() + 1, 0).getDate();
+    alvo.setDate(Math.min(dia, ultimo));
+    return hojeISO(alvo);
+  }
+  return '';
+}
+
 function tarefasDoDia(iso) {
-  return estado.tarefas.filter((t) => t.data === iso).sort(porHora);
+  const reais = estado.tarefas.filter((t) => t.data === iso);
+  const repeticoes = [];
+  estado.tarefas.forEach((t) => {
+    if (!t.repetir || !t.data || t.data >= iso || t.proxId) return;
+    let d = t.data;
+    for (let i = 0; i < 800 && d < iso; i++) d = proximaData(t, d);
+    if (d === iso) repeticoes.push({ ...t, data: iso, feito: false, repeticao: true });
+  });
+  return [...reais, ...repeticoes].sort(porHora);
 }
 
 function htmlMiniTarefa(t) {
   const cor = AREAS[t.area] || AREAS.Pessoal;
-  return `<div class="mini-tarefa ${t.feito ? 'feito' : ''}" style="border-color:${cor}" draggable="true"
+  return `<div class="mini-tarefa ${t.feito ? 'feito' : ''} ${t.repeticao ? 'repeticao' : ''} ${t.prioridade === 'alta' ? 'urgente' : ''}" style="border-color:${cor}" draggable="${!t.repeticao}"
     data-arrastar-tarefa="${t.id}" data-acao="tarefa-abrir" data-id="${t.id}" title="${esc(t.titulo)}">${t.hora ? t.hora + ' ' : ''}${esc(t.titulo)}</div>`;
 }
 
-// ---------- Visão do mês ----------
 function htmlMes() {
   const primeiro = agendaTela.ref.slice(0, 8) + '01';
   const inicio = inicioSemana(primeiro);
@@ -138,7 +168,21 @@ function htmlMes() {
   return `<div class="mes">${html}</div>`;
 }
 
-// ---------- Visão de semana / dia (grade de horários) ----------
+function htmlProximaSemana() {
+  const ini = somarDias(segundaDaSemana(hojeISO()), 7);
+  return `<div class="quadro-semana">
+    ${Array.from({ length: 7 }, (_, i) => {
+      const d = somarDias(ini, i);
+      const itens = tarefasDoDia(d);
+      return `<div class="qs-dia" data-soltar-dia="${d}">
+        <div class="qs-cab"><span>${DIAS_SEMANA[paraData(d).getDay()]}</span><b>${Number(d.slice(8))}</b>
+          <button class="add-dia" data-acao="tarefa-nova" data-dia="${d}" title="Nova tarefa">${ic('plus')}</button></div>
+        ${itens.map(htmlMiniTarefa).join('') || '<span class="qs-vazio">livre</span>'}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
 function htmlHoras(qtdDias) {
   const inicio = qtdDias === 7 ? inicioSemana(agendaTela.ref) : agendaTela.ref;
   const dias = Array.from({ length: qtdDias }, (_, i) => somarDias(inicio, i));
@@ -175,12 +219,11 @@ function htmlEvento(t) {
   const altura = Math.max(24, ((t.duracao || 60) / 60) * ALTURA_HORA - 3);
   const cor = AREAS[t.area] || AREAS.Pessoal;
   const fim = new Date(2000, 0, 1, h, m + (t.duracao || 60));
-  return `<div class="evento ${t.feito ? 'feito' : ''}" style="top:${topo}px;height:${altura}px;background:${cor}2e;border-color:${cor}"
-    draggable="true" data-arrastar-tarefa="${t.id}" data-acao="tarefa-abrir" data-id="${t.id}">
+  return `<div class="evento ${t.feito ? 'feito' : ''} ${t.repeticao ? 'repeticao' : ''}" style="top:${topo}px;height:${altura}px;background:${cor}2e;border-color:${cor}"
+    draggable="${!t.repeticao}" data-arrastar-tarefa="${t.id}" data-acao="tarefa-abrir" data-id="${t.id}">
     ${esc(t.titulo)}<small>${t.hora} – ${String(fim.getHours()).padStart(2, '0')}:${String(fim.getMinutes()).padStart(2, '0')}</small></div>`;
 }
 
-// Ao abrir semana/dia, rola até a hora atual (ou 7h)
 function rolarParaHora() {
   const corpo = $('#horas-corpo');
   if (!corpo) return;
@@ -188,7 +231,6 @@ function rolarParaHora() {
   corpo.scrollTop = (h - HORA_INICIO) * ALTURA_HORA;
 }
 
-// ---------- Janela de criar / editar ----------
 function abrirJanela(t) {
   agendaTela.editando = t?.id || null;
   const v = t || { titulo: '', data: agendaTela.ref, hora: '', duracao: 60, tipo: 'tarefa', area: 'Pessoal', lembrete: 15, notas: '' };
@@ -196,7 +238,7 @@ function abrirJanela(t) {
   j.innerHTML = `<form data-form="tarefa-salvar" method="dialog">
     <h2>${t ? 'Editar tarefa' : 'Nova tarefa'}
       <button type="button" class="btn-icone" data-acao="fechar-janela" aria-label="Fechar">${ic('x')}</button></h2>
-    <label class="campo">O que é?<input type="text" name="titulo" id="j-titulo" value="${esc(v.titulo)}" maxlength="120" required></label>
+    <label class="campo">O que é?<input type="text" name="titulo" id="j-titulo" value="${esc(v.titulo)}" maxlength="120" data-precisa></label>
     <div class="tipo-escolha">
       <label><input type="radio" name="tipo" value="tarefa" ${v.tipo === 'tarefa' ? 'checked' : ''}><span>${ic('check', 'p')} Tarefa</span></label>
       <label><input type="radio" name="tipo" value="compromisso" ${v.tipo === 'compromisso' ? 'checked' : ''}><span>${ic('calendar', 'p')} Compromisso</span></label>
@@ -211,9 +253,15 @@ function abrirJanela(t) {
       <label class="campo">Área
         <select name="area" id="j-area">${Object.keys(AREAS).map((a) => `<option ${v.area === a ? 'selected' : ''}>${a}</option>`).join('')}</select></label>
     </div>
+    <div class="linha2">
+      <label class="campo">Prioridade
+        <select name="prioridade">${[['', 'Normal'], ['alta', 'Alta'], ['media', 'Média'], ['baixa', 'Baixa']].map(([id, n]) => `<option value="${id}" ${(v.prioridade || '') === id ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+      <label class="campo">Repetir
+        <select name="repetir">${Object.entries(REPETICOES).map(([id, n]) => `<option value="${id}" ${(v.repetir || '') === id ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+    </div>
     <label class="campo">Avisar
       <select name="lembrete" id="j-lembrete">${LEMBRETES.map((l) => `<option value="${l.min}" ${v.lembrete === l.min ? 'selected' : ''}>${l.nome}</option>`).join('')}</select></label>
-    <label class="campo">Anotações<textarea name="notas" id="j-notas" placeholder="Detalhes, links, endereço…">${esc(v.notas || '')}</textarea></label>
+    <label class="campo">Anotações<textarea name="notas" id="j-notas" placeholder="Anotações">${esc(v.notas || '')}</textarea></label>
     <div class="rodape-janela">
       ${t ? `<button type="button" class="btn perigo" data-acao="tarefa-del" data-id="${t.id}">${ic('trash', 'p')} Excluir</button>` : ''}
       <button type="button" class="btn sec" data-acao="fechar-janela">Cancelar</button>
@@ -222,6 +270,7 @@ function abrirJanela(t) {
     <p class="dica" style="margin:0">Sem hora marcada, o aviso usa 8h do dia como referência.</p>
   </form>`;
   j.showModal();
+  melhorarSelects(j);
   setTimeout(() => $('#j-titulo').focus(), 30);
 }
 
@@ -231,13 +280,13 @@ function fecharJanela() {
   agendaTela.editando = null;
 }
 
-// ---------- Ações ----------
 ACOES['tarefa-nova'] = (el) => {
   const base = { titulo: '', data: el.dataset.dia || agendaTela.ref, hora: el.dataset.hora || '', duracao: 60, tipo: 'tarefa', area: 'Pessoal', lembrete: el.dataset.hora ? 15 : 0, notas: '' };
   abrirJanela(null);
   $('#j-data').value = base.data;
   $('#j-hora').value = base.hora;
   $('#j-lembrete').value = base.lembrete;
+  $$('#janela-tarefa select').forEach(rotuloSelect);
 };
 
 ACOES['tarefa-abrir'] = (el) => {
@@ -251,11 +300,14 @@ FORMS['tarefa-salvar'] = (d) => {
   const dados = {
     titulo: d.titulo, data: d.data || '', hora: d.hora || '', duracao: Number(d.duracao) || 60,
     tipo: d.tipo || 'tarefa', area: d.area, lembrete: Number(d.lembrete), notas: d.notas || '',
+    prioridade: d.prioridade || '', repetir: d.repetir || '',
+    diaFixo: d.data ? Number(d.data.slice(8)) : 0,
   };
+  if (dados.repetir && !dados.data) dados.data = hojeISO();
   const ed = estado.tarefas.find((t) => t.id === agendaTela.editando);
   if (ed) {
     Object.assign(ed, dados);
-    Object.keys(estado.avisados).forEach((k) => { if (k.startsWith(ed.id + '|')) delete estado.avisados[k]; }); // aviso pode tocar de novo
+    Object.keys(estado.avisados).forEach((k) => { if (k.startsWith(ed.id + '|')) delete estado.avisados[k]; });
     avisar('Tarefa atualizada.');
   } else {
     estado.tarefas.push({ id: novoId(), ...dados, feito: false });
@@ -271,14 +323,47 @@ ACOES['tarefa-toggle'] = (el) => {
   const t = estado.tarefas.find((x) => x.id === el.dataset.id);
   if (!t) return;
   t.feito = !t.feito;
-  t.feitoEm = t.feito ? hojeISO() : ''; // usado nos gráficos
+  t.feitoEm = t.feito ? hojeISO() : '';
+
+  let nova = null;
+  if (t.feito && t.repetir && !t.proxId) {
+    nova = { ...t, id: novoId(), data: proximaData(t), feito: false, feitoEm: '', proxId: '' };
+    t.proxId = nova.id;
+    estado.tarefas.push(nova);
+  } else if (!t.feito && t.proxId) {
+    const p = estado.tarefas.find((x) => x.id === t.proxId);
+    if (p && !p.feito) estado.tarefas = estado.tarefas.filter((x) => x !== p);
+    t.proxId = '';
+  }
   salvar(); desenhar();
-  if (t.feito) { tocarSom(true); avisar('Tarefa concluída!', () => { t.feito = false; t.feitoEm = ''; salvar(); desenhar(); }); }
+  if (t.feito) {
+    tocarSom(true);
+    avisar(nova ? `Concluída! A próxima ficou para ${dataCurta(nova.data)}.` : 'Tarefa concluída!', () => ACOES['tarefa-toggle'](el));
+  }
 };
 
 ACOES['tarefa-del'] = (el) => {
   fecharJanela();
   removerComDesfazer(estado.tarefas, el.dataset.id, 'Tarefa');
+};
+
+ACOES['tarefa-hoje'] = (el) => {
+  const t = estado.tarefas.find((x) => x.id === el.dataset.id);
+  t.data = hojeISO();
+  salvar(); desenhar();
+  avisar('Passada para hoje.');
+};
+
+ACOES['atrasadas-hoje'] = () => {
+  const hoje = hojeISO();
+  const mudadas = estado.tarefas.filter((t) => !t.feito && t.data && t.data < hoje);
+  const antes = mudadas.map((t) => t.data);
+  mudadas.forEach((t) => { t.data = hoje; });
+  salvar(); desenhar();
+  avisar(`${mudadas.length} ${mudadas.length === 1 ? 'tarefa passada' : 'tarefas passadas'} para hoje.`, () => {
+    mudadas.forEach((t, i) => { t.data = antes[i]; });
+    salvar(); desenhar();
+  });
 };
 
 ACOES['agenda-filtro'] = (el) => { agendaTela.filtro = el.dataset.f; desenhar(); };
@@ -295,7 +380,8 @@ ACOES['ag-abrir-dia'] = (el) => {
 
 ACOES['ag-mover'] = (el) => {
   const n = Number(el.dataset.n);
-  const v = visaoAgenda();
+  let v = visaoAgenda();
+  if (v === 'proxima') { v = estado.config.visaoAgenda = 'semana'; agendaTela.ref = somarDias(segundaDaSemana(hojeISO()), 7); }
   if (v === 'mes') {
     const d = paraData(agendaTela.ref);
     d.setDate(1);
@@ -307,7 +393,6 @@ ACOES['ag-mover'] = (el) => {
   desenhar();
 };
 
-// ---------- Arrastar tarefas no calendário ----------
 document.addEventListener('dragstart', (e) => {
   const el = e.target.closest('[data-arrastar-tarefa]');
   if (!el) return;
@@ -333,7 +418,7 @@ document.addEventListener('drop', (e) => {
   const t = estado.tarefas.find((x) => x.id === agendaTela.arrastando);
   if (t) {
     t.data = alvo.dataset.soltarDia;
-    if ('soltarHora' in alvo.dataset) t.hora = alvo.dataset.soltarHora; // na grade de horas também muda a hora
+    if ('soltarHora' in alvo.dataset) t.hora = alvo.dataset.soltarHora;
     Object.keys(estado.avisados).forEach((k) => { if (k.startsWith(t.id + '|')) delete estado.avisados[k]; });
     salvar(); desenhar();
     avisar(`Movida para ${dataCurta(t.data)}${t.hora ? ' às ' + t.hora : ''}.`);

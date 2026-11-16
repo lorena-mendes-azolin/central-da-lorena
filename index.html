@@ -9,12 +9,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#17162b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Central">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 </head>
 <body>
 
-  <!-- ===== Ícones (desenhos em SVG usados no site todo) =====
-       No HTML: <svg class="ic"><use href="#i-nome"/></svg>
-       No JavaScript: ic('nome') -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
       <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></symbol>
@@ -26,6 +30,14 @@
       <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
       <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4M4 4h12l-2 4 2 4H4"/></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><rect x="3" y="7" width="14" height="14" rx="2.5"/><path d="M7 3h11.5A2.5 2.5 0 0 1 21 5.5V17"/></symbol>
+      <symbol id="i-scale" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 9a6 6 0 0 1 8 0l-2.5 3h-3Z"/></symbol>
+      <symbol id="i-bed" viewBox="0 0 24 24"><path d="M3 18V6M3 13h18v5M21 13a3 3 0 0 0-3-3h-8v3M7 11.5a1.5 1.5 0 1 0 0-.01"/></symbol>
+      <symbol id="i-money" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></symbol>
+      <symbol id="i-review" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
+      <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 1 10-10c0 2.5-2 4-4.5 4H15a2 2 0 0 0-1.5 3.3A1.6 1.6 0 0 1 12 22Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="16.5" cy="10.5" r="1"/></symbol>
       <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
       <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
       <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M16 15l-3-3 3-3"/></symbol>
@@ -63,7 +75,7 @@
       <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8V4z"/></symbol>
       <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 4h3v16H7zM14 4h3v16h-3z"/></symbol>
       <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
-      <!-- Ícones que dá para escolher nas listas -->
+
       <symbol id="i-cap" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></symbol>
       <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M6.5 17A2.5 2.5 0 0 0 4 19.5 2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
       <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
@@ -82,7 +94,7 @@
       <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20M16 15h2"/></symbol>
       <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
       <symbol id="i-paw" viewBox="0 0 24 24"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.05Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></symbol>
-      <!-- Rostinhos do humor -->
+
       <symbol id="i-face1" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8.5 9.5h.01M15.5 9.5h.01"/><path d="M7.5 13.5a4.5 4.5 0 0 0 9 0z"/></symbol>
       <symbol id="i-face2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 9.5h.01M15 9.5h.01"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></symbol>
       <symbol id="i-face3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 9.5h.01M15 9.5h.01M8.5 15h7"/></symbol>
@@ -91,7 +103,6 @@
     </defs>
   </svg>
 
-  <!-- ===== Menu lateral ===== -->
   <aside class="lateral" id="lateral">
     <div class="perfil">
       <span class="perfil-foto" id="perfil-foto">L</span>
@@ -103,17 +114,20 @@
       <a href="#dashboard" data-pagina="dashboard" title="Dashboard"><svg class="ic"><use href="#i-grid"/></svg><span>Dashboard</span></a>
       <a href="#agenda" data-pagina="agenda" title="Agenda"><svg class="ic"><use href="#i-calendar"/></svg><span>Agenda</span><b class="bolinha" id="bolinha-agenda" hidden></b></a>
       <a href="#rotina" data-pagina="rotina" title="Rotina diária"><svg class="ic"><use href="#i-repeat"/></svg><span>Rotina diária</span></a>
+      <a href="#bemestar" data-pagina="bemestar" title="Bem-estar"><svg class="ic"><use href="#i-heart"/></svg><span>Bem-estar</span></a>
+      <a href="#flashcards" data-pagina="flashcards" title="Flashcards"><svg class="ic"><use href="#i-layers"/></svg><span>Flashcards</span></a>
+      <a href="#financas" data-pagina="financas" title="Finanças"><svg class="ic"><use href="#i-money"/></svg><span>Finanças</span></a>
       <a href="#graficos" data-pagina="graficos" title="Gráficos"><svg class="ic"><use href="#i-chart"/></svg><span>Gráficos</span></a>
+      <a href="#revisao" data-pagina="revisao" title="Revisão da semana"><svg class="ic"><use href="#i-review"/></svg><span>Revisão da semana</span></a>
     </nav>
 
     <div class="nav-titulo">
       <span>Listas</span>
       <button class="nav-add" data-acao="lista-nova" title="Criar nova lista"><svg class="ic"><use href="#i-plus"/></svg></button>
     </div>
-    <!-- As listas criadas aparecem aqui (o JavaScript preenche) -->
+
     <nav class="nav" id="nav-listas"></nav>
 
-    <!-- Fica no fim do menu: configurações, fixar e sair -->
     <div class="lateral-fim">
       <nav class="nav">
         <a href="#configuracoes" data-pagina="configuracoes" title="Configurações"><svg class="ic"><use href="#i-sliders"/></svg><span>Configurações</span></a>
@@ -123,10 +137,8 @@
     </div>
   </aside>
 
-  <!-- Fundo escuro quando o menu abre por cima -->
   <div class="sombra" id="sombra" data-acao="fechar-menu"></div>
 
-  <!-- ===== Área principal ===== -->
   <div class="principal">
     <header class="barra-topo">
       <button class="btn-icone" data-acao="abrir-menu" id="btn-menu" aria-label="Menu"><svg class="ic"><use href="#i-menu"/></svg></button>
@@ -136,11 +148,9 @@
       <div class="painel-avisos" id="painel-avisos" hidden></div>
     </header>
 
-    <!-- O JavaScript desenha aqui a página escolhida -->
     <main class="pagina" id="conteudo"></main>
   </div>
 
-  <!-- Janela para criar / editar tarefa -->
   <dialog class="janela" id="janela-tarefa"></dialog>
 
   <input type="file" id="arquivo-backup" accept=".json" hidden>
@@ -148,11 +158,11 @@
   <div class="toast" id="toast" role="status"></div>
   <div class="dica-grafico" id="dica-grafico" hidden></div>
 
-  <!-- Supabase (login e dados na nuvem) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- A ordem importa: cada arquivo usa coisas dos anteriores -->
+
   <script src="js/config.js"></script>
   <script src="js/utils.js"></script>
+  <script src="js/seletor.js"></script>
   <script src="js/dados.js"></script>
   <script src="js/nuvem.js"></script>
   <script src="js/dashboard.js"></script>
@@ -165,6 +175,10 @@
   <script src="js/metas.js"></script>
   <script src="js/colecoes.js"></script>
   <script src="js/compras.js"></script>
+  <script src="js/bemestar.js"></script>
+  <script src="js/flashcards.js"></script>
+  <script src="js/financas.js"></script>
+  <script src="js/revisao.js"></script>
   <script src="js/notificacoes.js"></script>
   <script src="js/configuracoes.js"></script>
   <script src="js/app.js"></script>

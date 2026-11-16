@@ -1,9 +1,3 @@
-// =========================================================
-// colecoes.js — "Lista de listas": lugares, filmes, séries,
-// livros, receitas… Cada item pode ficar como "quero" ou
-// "já fiz", virar favorito e ter notas, links e imagens.
-// =========================================================
-
 const colecaoTela = { cat: {}, filtro: 'todos', abertos: new Set(), criandoCat: false };
 
 function htmlColecoes(l) {
@@ -14,14 +8,18 @@ function htmlColecoes(l) {
 
   return `
   ${htmlCabLista(l)}
-  <div class="chips categorias">
-    ${l.categorias.map((c) => `<button class="chip ${cat && c.id === cat.id ? 'ativo' : ''}" data-acao="col-cat" data-lista="${l.id}" data-id="${c.id}">
-      ${ic(c.icone, 'p')} ${esc(c.nome)} <b>${c.itens.filter((i) => !i.feito).length}</b></button>`).join('')}
+  <div class="carrossel">
+    <button class="seta esq" data-acao="carrossel" data-d="-1" aria-label="Voltar">${ic('left', 'p')}</button>
+    <div class="faixa">
+      ${l.categorias.map((c) => `<button class="chip ${cat && c.id === cat.id ? 'ativo' : ''}" data-acao="col-cat" data-lista="${l.id}" data-id="${c.id}">
+        ${ic(c.icone, 'p')} ${esc(c.nome)} <b>${c.itens.filter((i) => !i.feito).length}</b></button>`).join('')}
+    </div>
+    <button class="seta dir" data-acao="carrossel" data-d="1" aria-label="Avançar">${ic('right', 'p')}</button>
     <button class="chip" data-acao="col-nova-cat">${ic('plus', 'p')} Categoria</button>
   </div>
 
   ${colecaoTela.criandoCat ? `<form class="card form-linha" data-form="col-cat-nova" data-lista="${l.id}" style="margin-bottom:14px">
-    <input type="text" name="nome" id="cat-nome" placeholder="Nome (ex.: Animes, Restaurantes, Jogos…)" maxlength="30" required style="flex:2 1 200px">
+    <input type="text" name="nome" id="cat-nome" placeholder="Nome da categoria" maxlength="30" style="flex:2 1 200px">
     <select name="modelo" aria-label="Tipo">
       ${Object.entries(MODELOS_CATEGORIA).map(([id, m]) => `<option value="${id}">${m.falta} / ${m.feito}</option>`).join('')}
     </select>
@@ -40,7 +38,7 @@ function htmlColecoes(l) {
 
     <form class="add-item" data-form="col-item" data-ref="${l.id}/${cat.id}" style="padding:4px 0 10px">
       <span style="color:var(--fraco);display:grid;place-items:center">${ic('plus')}</span>
-      <input type="text" name="titulo" id="col-novo" placeholder="Adicionar em ${esc(cat.nome)} (Enter)" maxlength="120" required>
+      <input type="text" name="titulo" id="col-novo" placeholder="Adicionar em ${esc(cat.nome)} (Enter)" maxlength="120" data-precisa>
     </form>
 
     ${itens.map((i) => {
@@ -59,7 +57,7 @@ function htmlColecoes(l) {
           <button class="acao-item apagar" data-acao="col-del" data-ref="${l.id}/${cat.id}" data-id="${i.id}" title="Apagar">${ic('trash', 'p')}</button>
         </div>
         ${aberto ? `<div class="ic-extra">
-          <textarea placeholder="Notas (onde fica, quem indicou, o que achou…)" data-digitar="campo" data-ref="${ref}" data-campo="notas">${esc(i.notas || '')}</textarea>
+          <textarea placeholder="Notas" data-digitar="campo" data-ref="${ref}" data-campo="notas">${esc(i.notas || '')}</textarea>
           ${htmlAnexos(i, ref)}
         </div>` : ''}
       </div>`;
@@ -67,14 +65,13 @@ function htmlColecoes(l) {
   </section>` : '<p class="vazio">Crie uma categoria para começar.</p>'}`;
 }
 
-// ---------- Ações ----------
 ACOES['col-cat'] = (el) => { colecaoTela.cat[el.dataset.lista] = el.dataset.id; colecaoTela.filtro = 'todos'; desenhar(); };
 ACOES['col-filtro'] = (el) => { colecaoTela.filtro = el.dataset.f; desenhar(); };
 ACOES['col-nova-cat'] = () => { colecaoTela.criandoCat = !colecaoTela.criandoCat; desenhar(); $('#cat-nome')?.focus(); };
 
 FORMS['col-cat-nova'] = (d, form) => {
   const l = acharLista(form.dataset.lista);
-  const c = categoria(d.modelo, d.nome);
+  const c = categoria(d.modelo, d.nome || 'Nova categoria');
   l.categorias.push(c);
   colecaoTela.cat[l.id] = c.id;
   colecaoTela.criandoCat = false;

@@ -1,17 +1,11 @@
-// =========================================================
-// nuvem.js — login e dados no Supabase
-// Se o config.js estiver vazio, nada daqui roda (modo local).
-// =========================================================
-
 const NUVEM_ATIVA = Boolean(SUPABASE_URL && SUPABASE_KEY && window.supabase);
 const sb = NUVEM_ATIVA ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-let usuario = null;          // quem está logado
-let ultimaVersaoNuvem = '';  // data da última versão que veio/foi pra nuvem
+let usuario = null;
+let ultimaVersaoNuvem = '';
 let salvandoNuvem = false;
-let pendenteNuvem = false;   // tem mudança esperando para subir
+let pendenteNuvem = false;
 
-// Chamado ao abrir o site: confere o login e baixa os dados
 async function iniciarNuvem() {
   if (!NUVEM_ATIVA) return true;
   const { data } = await sb.auth.getSession();
@@ -22,10 +16,8 @@ async function iniciarNuvem() {
   }
   await baixarDados();
 
-  // sessão expirou ou saiu em outra aba
   sb.auth.onAuthStateChange((evento) => { if (evento === 'SIGNED_OUT') location.href = 'login.html'; });
 
-  // voltou para a aba: confere se mudou algo em outro aparelho
   window.addEventListener('focus', () => { if (!salvandoNuvem && !pendenteNuvem) baixarDados(true); });
   return true;
 }
@@ -36,7 +28,7 @@ async function baixarDados(soSeMudou = false) {
   if (error) { avisar('Não consegui buscar seus dados na nuvem 😕'); return; }
 
   if (!data) {
-    // primeira vez: sobe o que já existe neste navegador
+
     await enviarDados();
     return;
   }
@@ -47,13 +39,12 @@ async function baixarDados(soSeMudou = false) {
   if (soSeMudou) desenhar();
 }
 
-// Envia para a nuvem (o salvar() do dados.js chama isto)
 let timerNuvem;
 function salvarNuvem() {
   if (!NUVEM_ATIVA || !usuario) return;
   clearTimeout(timerNuvem);
   pendenteNuvem = true;
-  timerNuvem = setTimeout(enviarDados, 1200); // junta várias mudanças em um envio só
+  timerNuvem = setTimeout(enviarDados, 1200);
 }
 
 async function enviarDados() {

@@ -1,14 +1,12 @@
-// =========================================================
-// metas.js — listas de METAS
-// Cada meta tem uma página só dela: descrição completa (com
-// links e imagens), prazo e etapas. O progresso vem das etapas.
-// =========================================================
+const guardadoMeta = (m) => (m.depositos || []).reduce((s, d) => s + d.valor, 0);
+const alvoMeta = (m) => valorNumero(m.valorAlvo);
 
 function progressoMeta(m) {
-  return m.etapas.length ? Math.round((m.etapas.filter((e) => e.feito).length / m.etapas.length) * 100) : 0;
+  if (m.etapas.length) return Math.round((m.etapas.filter((e) => e.feito).length / m.etapas.length) * 100);
+  if (alvoMeta(m)) return Math.min(100, Math.round((guardadoMeta(m) / alvoMeta(m)) * 100));
+  return 0;
 }
 
-// ---------- Página da lista (todas as metas) ----------
 function htmlMetas(l) {
   return `
   ${htmlCabLista(l)}
@@ -22,18 +20,18 @@ function htmlMetas(l) {
         <div class="cm-prog"><span>${pct}%</span><span class="prog"><i style="width:${pct}%"></i></span></div>
         <div class="cm-prox">${m.prazo ? `${ic('calendar', 'p')} até ${dataCurta(m.prazo)} · ${quandoFalta(m.prazo).toLowerCase()}` : `<span style="color:var(--fraco)">Sem prazo</span>`}
           · ${m.etapas.length} ${m.etapas.length === 1 ? 'etapa' : 'etapas'}</div>
+        ${alvoMeta(m) ? `<div class="cm-extra"><span>${ic('money', 'p')} ${dinheiro(guardadoMeta(m))} de ${dinheiro(alvoMeta(m))}</span></div>` : ''}
       </a>`;
     }).join('')}
     <form class="card cartao-novo" data-form="meta-nova" data-lista="${l.id}">
       <span class="selo c-verde">${ic('target')}</span>
-      <input type="text" name="titulo" placeholder="Nova meta (ex.: Comprar minha casa)" maxlength="80" required aria-label="Meta">
+      <input type="text" name="titulo" placeholder="Nome da meta (opcional)" maxlength="80" aria-label="Meta">
       <button class="btn" type="submit">Criar meta</button>
     </form>
   </div>
   ${!l.metas.length ? '<p class="dica">Crie uma meta e clique nela para descrever como você quer que seja, colocar imagens, prazo e as etapas para chegar lá.</p>' : ''}`;
 }
 
-// ---------- Página de dentro de uma meta ----------
 function paginaMeta(l, idMeta) {
   const m = l.metas.find((x) => x.id === idMeta);
   if (!m) return null;
@@ -61,11 +59,13 @@ function htmlMeta(l, m) {
   <div class="meta-layout">
     <section class="card">
       <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('note')}</span> Como eu quero que seja</h2>
-      ${htmlEditor(ref, 'descricao', m.descricao, 'Descreva a sua meta com detalhes: como vai ser, por que ela importa, quanto custa…')}
+      ${htmlEditor(ref, 'descricao', m.descricao, 'Descreva a sua meta…')}
       <h3 class="sub-titulo">${ic('image', 'p')} Links e imagens</h3>
       ${htmlAnexos(m, ref)}
     </section>
 
+    <div style="display:grid;gap:16px;align-content:start">
+    ${htmlDinheiroMeta(m, ref)}
     <section class="card">
       <h2 class="card-titulo"><span class="selo mini c-verde">${ic('check')}</span> Etapas <small>${m.etapas.filter((e) => e.feito).length}/${m.etapas.length}</small></h2>
       ${m.etapas.map((e) => `<div class="item ${e.feito ? 'feito' : ''}">
@@ -74,20 +74,65 @@ function htmlMeta(l, m) {
         <button class="acao-item apagar" data-acao="etapa-del" data-ref="${ref}" data-id="${e.id}" title="Apagar etapa">${ic('trash', 'p')}</button>
       </div>`).join('') || '<p class="vazio">Divida a meta em passos menores.</p>'}
       <form class="form-linha" data-form="etapa-nova" data-ref="${ref}" style="margin-top:10px">
-        <input type="text" name="titulo" id="etapa-titulo" placeholder="Nova etapa" maxlength="100" required>
+        <input type="text" name="titulo" id="etapa-titulo" placeholder="Nova etapa" maxlength="100" data-precisa>
         <button class="btn" type="submit">${ic('plus', 'p')}</button>
       </form>
     </section>
+    </div>
   </div>`;
 }
 
-// ---------- Ações ----------
+function htmlDinheiroMeta(m, ref) {
+  const alvo = alvoMeta(m);
+  const guardado = guardadoMeta(m);
+  const pct = alvo ? Math.min(100, (guardado / alvo) * 100) : 0;
+  return `<section class="card">
+    <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('money')}</span> Dinheiro guardado</h2>
+    <label class="campo">Quanto precisa juntar (opcional)
+      <input type="text" inputmode="decimal" value="${esc(m.valorAlvo || '')}" placeholder="R$" data-mudar="campo" data-ref="${ref}" data-campo="valorAlvo" data-redesenhar="1"></label>
+    ${alvo ? `<div class="dinheiro-meta">
+      <b>${dinheiro(guardado)}</b><span>de ${dinheiro(alvo)} · faltam ${dinheiro(Math.max(0, alvo - guardado))}</span>
+      <div class="prog"><i style="width:${pct}%;background:var(--amarelo)"></i></div>
+    </div>
+    <form class="form-linha" data-form="meta-deposito" data-ref="${ref}" style="margin-top:10px">
+      <input type="text" name="valor" inputmode="decimal" placeholder="R$" data-precisa style="flex:1 1 100px" aria-label="Valor">
+      <button class="btn" type="submit" name="op" value="mais">${ic('plus', 'p')} Guardar</button>
+      <button class="btn sec" type="submit" name="op" value="menos" data-acao="meta-tirar">Tirar</button>
+    </form>
+    ${(m.depositos || []).length ? `<details class="historico"><summary>Histórico (${m.depositos.length})</summary>
+      ${[...m.depositos].reverse().map((d) => `<div class="item"><span class="txt">${dataCurta(d.data)}</span>
+        <b class="${d.valor >= 0 ? 'valor-entrada' : ''}">${d.valor >= 0 ? '+' : '−'} ${dinheiro(Math.abs(d.valor))}</b>
+        <button class="acao-item apagar" data-acao="deposito-del" data-ref="${ref}" data-id="${d.id}" title="Apagar">${ic('trash', 'p')}</button></div>`).join('')}
+    </details>` : ''}` : '<p class="dica">Coloque o valor para acompanhar quanto já juntou, como "Comprar minha casa – R$ X de R$ Y".</p>'}
+  </section>`;
+}
+
+let tirarDinheiro = false;
+ACOES['meta-tirar'] = (el) => {
+  const campo = el.closest('form').querySelector('[name=valor]');
+  if (!campo.value.trim()) return campo.focus();
+  tirarDinheiro = true;
+  el.closest('form').requestSubmit();
+};
+FORMS['meta-deposito'] = (d, form) => {
+  const m = acharRef(form.dataset.ref);
+  const v = valorNumero(d.valor);
+  if (!v) { tirarDinheiro = false; return; }
+  m.depositos = m.depositos || [];
+  m.depositos.push({ id: novoId(), data: hojeISO(), valor: tirarDinheiro ? -v : v });
+  avisar(tirarDinheiro ? `${dinheiro(v)} retirados.` : `${dinheiro(v)} guardados!`);
+  if (!tirarDinheiro && alvoMeta(m) && guardadoMeta(m) >= alvoMeta(m)) { tocarSom(true); avisar('Você juntou todo o valor da meta!'); }
+  tirarDinheiro = false;
+  salvar(); desenhar();
+};
+ACOES['deposito-del'] = (el) => removerComDesfazer(acharRef(el.dataset.ref).depositos, el.dataset.id, 'Registro');
+
 FORMS['meta-nova'] = (d, form) => {
   const l = acharLista(form.dataset.lista);
-  const m = { id: novoId(), titulo: d.titulo, descricao: '', prazo: '', etapas: [], anexos: [], criado: hojeISO() };
+  const m = { id: novoId(), titulo: d.titulo || 'Nova meta', descricao: '', prazo: '', etapas: [], anexos: [], criado: hojeISO() };
   l.metas.push(m);
-  salvar();
-  location.hash = `lista-${l.id}--${m.id}`;
+  salvar(); desenhar();
+  avisar('Meta criada. Clique nela quando quiser descrever, pôr prazo e etapas.');
 };
 
 ACOES['meta-del'] = (el) => {

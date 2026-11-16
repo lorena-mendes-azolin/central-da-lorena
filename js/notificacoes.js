@@ -1,13 +1,5 @@
-// =========================================================
-// notificacoes.js — avisos das tarefas
-// Funciona enquanto o site estiver aberto numa aba (pode ficar
-// minimizada). Para a notificação do Windows aparecer, abra o
-// site pelo Live Server do VS Code e clique em "Ativar".
-// =========================================================
-
 const PODE_NOTIFICAR = 'Notification' in window && location.protocol !== 'file:';
 
-// Faixa pedindo permissão (some depois de ativar)
 function htmlPedirNotificacao() {
   if (location.protocol === 'file:') {
     return `<div class="alerta">${ic('bell')}<span>Os avisos aparecem aqui dentro do site. Para receber também a notificação do Windows, abra pelo <b>Live Server</b> do VS Code.</span></div>`;
@@ -23,16 +15,14 @@ ACOES['permitir-notif'] = async () => {
   if (r === 'granted') notificar('Notificações ativadas', 'Você vai receber os avisos das tarefas no horário escolhido.');
 };
 
-// Mostra o aviso: notificação do sistema + avisinho no site + som
 function notificar(titulo, corpo) {
   if (PODE_NOTIFICAR && Notification.permission === 'granted') {
-    try { new Notification(titulo, { body: corpo, tag: titulo }); } catch { /* alguns navegadores bloqueiam */ }
+    try { new Notification(titulo, { body: corpo, tag: titulo }); } catch {  }
   }
   avisar(`${titulo} · ${corpo}`);
   tocarSom();
 }
 
-// Som curtinho e suave (ok = som de concluído)
 let audio;
 function tocarSom(ok = false) {
   try {
@@ -47,10 +37,9 @@ function tocarSom(ok = false) {
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
       o.start(t); o.stop(t + 0.25);
     });
-  } catch { /* sem som, tudo bem */ }
+  } catch {  }
 }
 
-// Quando o aviso de uma tarefa deve aparecer
 function momentoDoAviso(t) {
   const [h, m] = (t.hora || '08:00').split(':').map(Number);
   const d = paraData(t.data);
@@ -64,7 +53,6 @@ function textoQuando(t) {
   return t.hora ? `${dia} às ${t.hora}` : dia;
 }
 
-// Confere as tarefas e avisa as que chegaram na hora (roda a cada 20s)
 function verificarLembretes() {
   const agora = Date.now();
   let mudou = false;
@@ -76,13 +64,14 @@ function verificarLembretes() {
     if (agora < quando) continue;
     estado.avisados[chave] = true;
     mudou = true;
-    if (agora - quando < 6 * 3600000) notificar(t.titulo, textoQuando(t)); // não avisa coisa muito antiga
+    if (agora - quando < 6 * 3600000) notificar(t.titulo, textoQuando(t));
   }
   if (mudou) salvar();
+  verificarAgua();
+  verificarContas();
   atualizarSino();
 }
 
-// Resumo quando abre o site pela primeira vez no dia
 function resumoDoDia() {
   const hoje = hojeISO();
   if (estado.config.resumoVisto === hoje) return;
@@ -95,7 +84,6 @@ function resumoDoDia() {
   setTimeout(() => notificar('Seu dia', partes.join(' · ')), 1200);
 }
 
-// ---------- Sininho do topo ----------
 function proximosAvisos() {
   const agora = Date.now();
   const limite = agora + 48 * 3600000;

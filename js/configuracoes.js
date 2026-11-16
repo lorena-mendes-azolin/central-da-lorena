@@ -1,6 +1,17 @@
-// =========================================================
-// configuracoes.js — preferências, conta e conexões
-// =========================================================
+const TEMAS = {
+  violeta: { nome: 'Violeta', cor1: '#6f55e8', cor2: '#9d86ff' },
+  rosa: { nome: 'Rosa', cor1: '#d6589f', cor2: '#f59ad8' },
+  azul: { nome: 'Azul', cor1: '#3d7be0', cor2: '#7fb4ff' },
+  verde: { nome: 'Verde-água', cor1: '#1f9e86', cor2: '#5fd6c0' },
+  ambar: { nome: 'Âmbar', cor1: '#c9822b', cor2: '#f7c56b' },
+  lavanda: { nome: 'Lavanda', cor1: '#8a6fd1', cor2: '#c4b5fd' },
+};
+
+let eventoInstalar = null;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); eventoInstalar = e; });
+ACOES.instalar = async () => { if (!eventoInstalar) return; eventoInstalar.prompt(); await eventoInstalar.userChoice; eventoInstalar = null; desenhar(); };
+
+ACOES.tema = (el) => { estado.config.tema = el.dataset.t; aplicarTema(); salvar(); desenhar(); };
 
 PAGINAS.configuracoes = {
   titulo: 'Configurações',
@@ -12,7 +23,7 @@ PAGINAS.configuracoes = {
       : 'ainda não ativadas';
 
     return `
-    <div class="cab-pagina"><div><h1>Configurações</h1><p>Perfil, avisos, conta e conexões.</p></div></div>
+    <div class="cab-pagina"><div><h1>Configurações</h1><p>Perfil, aparência, avisos, conta e conexões.</p></div></div>
 
     <div class="grade g2">
       <section class="card">
@@ -23,6 +34,23 @@ PAGINAS.configuracoes = {
           <label class="campo">Meta de água (copos de 250 ml)
             <input type="number" id="cfg-agua" min="1" max="20" value="${c.metaAgua}" data-mudar="cfg-num" data-campo="metaAgua"></label>
         </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('palette')}</span> Aparência</h2>
+        <p style="margin:0 0 12px">Cor de destaque do site:</p>
+        <div class="temas">
+          ${Object.entries(TEMAS).map(([id, t]) => `<button class="tema ${(c.tema || 'violeta') === id ? 'on' : ''}" data-acao="tema" data-t="${id}" title="${t.nome}">
+            <i style="background:linear-gradient(135deg, ${t.cor1}, ${t.cor2})"></i><span>${t.nome}</span></button>`).join('')}
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-titulo"><span class="selo mini c-azul">${ic('grid')}</span> Instalar como aplicativo</h2>
+        ${location.protocol.startsWith('http') && location.hostname !== '127.0.0.1' && location.hostname !== 'localhost'
+          ? `<p style="margin:0 0 12px">No celular: abra o menu do navegador e toque em <b>Adicionar à tela inicial</b> (no iPhone, pelo botão Compartilhar do Safari). No computador: clique no ícone de instalar na barra de endereço.</p>
+             ${eventoInstalar ? `<button class="btn" data-acao="instalar">${ic('plus', 'p')} Instalar agora</button>` : ''}`
+          : `<p style="margin:0">Para instalar no celular, o site precisa estar publicado na internet (por exemplo no GitHub Pages). Depois é só abrir o link no celular e tocar em <b>Adicionar à tela inicial</b>.</p>`}
       </section>
 
       <section class="card">

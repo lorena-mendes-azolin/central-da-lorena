@@ -1,12 +1,3 @@
-// =========================================================
-// listas.js — o "esqueleto" das listas do menu lateral
-//   • encontra listas e itens (acharLista / acharRef)
-//   • escolhe qual página desenhar para cada tipo de lista
-//   • cria listas novas (perguntando o tipo)
-//   • lista SIMPLES (lista / quadro / caderno)
-// Os outros tipos ficam em: cursos.js, metas.js, colecoes.js, compras.js
-// =========================================================
-
 const listaTela = { filtro: 'todos', notasAbertas: new Set(), arrastando: null };
 const ORDEM_STATUS = ['afazer', 'fazendo', 'feito'];
 
@@ -14,7 +5,6 @@ function acharLista(id) {
   return estado.listas.find((l) => l.id === id);
 }
 
-// "faculdade/abc/tarefa/xyz" -> o objeto da tarefa xyz da matéria abc
 function acharRef(ref) {
   if (!ref) return null;
   const [idLista, ...resto] = ref.split('/');
@@ -30,7 +20,6 @@ function acharRef(ref) {
   return obj || null;
 }
 
-// Página de uma lista: #lista-<id> ou #lista-<id>--<item> (página de dentro)
 function paginaLista(endereco) {
   const [idLista, idItem] = endereco.split('--');
   const l = acharLista(idLista);
@@ -41,7 +30,6 @@ function paginaLista(endereco) {
   return { titulo: l.nome, nomeMenu: 'lista-' + l.id, desenhar: () => (desenhos[l.tipo] || htmlSimples)(l) };
 }
 
-// Cabeçalho comum (ícone + nome + descrição editáveis)
 function htmlCabLista(l, extra = '') {
   return `<div class="lista-cab">
     <button class="lista-icone" style="background:${l.cor}26;color:${l.cor}" data-acao="icone-abrir" data-id="${l.id}" title="Trocar ícone e cor">${ic(l.icone)}</button>
@@ -54,14 +42,10 @@ function htmlCabLista(l, extra = '') {
   </div>`;
 }
 
-// Link de "voltar" nas páginas de dentro
 function htmlVoltar(l) {
   return `<a class="voltar" href="#lista-${l.id}">${ic('left', 'p')} ${esc(l.nome)}</a>`;
 }
 
-// =========================================================
-// Lista SIMPLES
-// =========================================================
 function htmlSimples(l) {
   const f = listaTela.filtro;
   const itens = l.itens.filter((i) => f === 'todos' || (f === 'pendentes' ? i.status !== 'feito' : i.status === 'feito'));
@@ -88,7 +72,7 @@ function htmlSimples(l) {
       ${itens.map((i) => htmlItemLista(l, i)).join('') || '<p class="vazio" style="padding:14px 16px;margin:0">Nenhum item ainda. Escreva abaixo para adicionar.</p>'}
       <form class="add-item" data-form="item-novo" data-lista="${l.id}">
         <span style="color:var(--fraco);display:grid;place-items:center">${ic('plus')}</span>
-        <input type="text" name="titulo" id="item-novo-${l.id}" placeholder="Novo item (Enter para adicionar)" maxlength="140" required>
+        <input type="text" name="titulo" id="item-novo-${l.id}" placeholder="Novo item (Enter para adicionar)" maxlength="140" data-precisa>
       </form>
     </div>
     <p class="dica">Clique no status para mudar · o ícone de anotação abre notas, links e imagens do item.</p>`}`}`;
@@ -131,7 +115,7 @@ function htmlQuadro(l) {
           </div>
         </div>`).join('')}
         <form data-form="item-novo" data-lista="${l.id}" data-status="${st}">
-          <input type="text" name="titulo" class="inline" placeholder="+ Novo item" maxlength="140" required>
+          <input type="text" name="titulo" class="inline" placeholder="+ Novo item" maxlength="140" data-precisa>
         </form>
       </div>`;
     }).join('')}
@@ -185,7 +169,6 @@ MUDAR['item-data'] = (el) => {
   salvar();
 };
 
-// Arrastar cartões no quadro
 document.addEventListener('dragstart', (e) => {
   const c = e.target.closest('[data-arrastar]');
   if (!c) return;
@@ -214,17 +197,12 @@ document.addEventListener('drop', (e) => {
 });
 document.addEventListener('dragend', () => { listaTela.arrastando = null; $$('.coluna.sobre').forEach((c) => c.classList.remove('sobre')); });
 
-// =========================================================
-// Ações de todas as listas
-// =========================================================
-
-// Criar lista: abre a janela perguntando o tipo
 ACOES['lista-nova'] = () => {
   fecharMenu();
   const j = $('#janela-tarefa');
   j.innerHTML = `<form data-form="lista-criar" method="dialog">
     <h2>Nova lista <button type="button" class="btn-icone" data-acao="fechar-janela" aria-label="Fechar">${ic('x')}</button></h2>
-    <label class="campo">Nome<input type="text" name="nome" id="nova-lista-nome" placeholder="Ex.: Inglês, Viagem, Treinos…" maxlength="40" required></label>
+    <label class="campo">Nome<input type="text" name="nome" id="nova-lista-nome" placeholder="Nome da lista" maxlength="40"></label>
     <div class="campo">Que tipo de lista?</div>
     <div class="tipos-lista">
       ${Object.entries(TIPOS_LISTA).map(([id, t], k) => `<label>
@@ -243,7 +221,7 @@ ACOES['lista-nova'] = () => {
 FORMS['lista-criar'] = (d) => {
   const id = novoId();
   const n = estado.listas.length;
-  const base = { id, nome: d.nome, icone: TIPOS_LISTA[d.tipo].icone, cor: CORES_LISTA[n % CORES_LISTA.length], desc: '', tipo: d.tipo };
+  const base = { id, nome: d.nome || "Nova lista", icone: TIPOS_LISTA[d.tipo].icone, cor: CORES_LISTA[n % CORES_LISTA.length], desc: '', tipo: d.tipo };
   const extras = {
     simples: { visao: 'lista', itens: [], notas: [] },
     cursos: { rotulo: 'Curso', materias: [] },
@@ -277,7 +255,6 @@ DIGITAR['lista-nome'] = (el) => {
 };
 DIGITAR['lista-desc'] = (el) => { acharLista(el.dataset.id).desc = el.value; salvar(); };
 
-// Campo de texto genérico de qualquer objeto: data-ref + data-campo
 DIGITAR.campo = (el) => {
   const obj = acharRef(el.dataset.ref);
   if (obj) { obj[el.dataset.campo] = el.value; salvar(); }
@@ -290,7 +267,6 @@ MUDAR.campo = (el) => {
   if (el.dataset.redesenhar) desenhar();
 };
 
-// Escolher ícone e cor da lista
 ACOES['icone-abrir'] = (el) => {
   const l = acharLista(el.dataset.id);
   const caixa = $('#escolha-icone');

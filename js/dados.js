@@ -1,12 +1,5 @@
-// =========================================================
-// dados.js — onde tudo fica guardado
-// Modo local: no navegador (localStorage).
-// Com login: também no Supabase (veja nuvem.js).
-// =========================================================
-
 const CHAVE = 'central-da-lorena-v3';
 
-// Áreas das tarefas da agenda (cada uma com uma cor)
 const AREAS = {
   Faculdade: '#f59ad8',
   Estudos: '#6aaeff',
@@ -16,7 +9,6 @@ const AREAS = {
   Projetos: '#62c9f5',
 };
 
-// Quando avisar (minutos antes)
 const LEMBRETES = [
   { min: -1, nome: 'Sem aviso' },
   { min: 0, nome: 'Na hora' },
@@ -30,7 +22,6 @@ const DURACOES = [15, 30, 45, 60, 90, 120, 180];
 
 const STATUS = { afazer: 'A fazer', fazendo: 'Fazendo', feito: 'Feito' };
 
-// Rostinhos do humor (desenhos no index.html)
 const HUMORES = [
   { id: 'face1', nome: 'Ótimo' },
   { id: 'face2', nome: 'Bem' },
@@ -39,19 +30,15 @@ const HUMORES = [
   { id: 'face5', nome: 'Cansada' },
 ];
 
-// Ícones e cores que dá para escolher nas listas
 const ICONES_LISTA = ['list', 'cap', 'book', 'target', 'heart', 'star', 'bag', 'home', 'code', 'music', 'plane', 'cart',
   'film', 'coffee', 'leaf', 'gym', 'wallet', 'sparkle', 'paw', 'note', 'calendar', 'chat', 'sun', 'moon'];
 const CORES_LISTA = ['#9d86ff', '#f59ad8', '#6aaeff', '#5fd6a4', '#f7c56b', '#ff8f8f', '#62c9f5', '#c99bff', '#ffb38a', '#8fe3cf', '#e3a6ff', '#a5a3c8'];
 
-// Item de lista (função para não repetir código)
 const it = (titulo, status = 'afazer', extra = {}) => ({ id: novoId(), titulo, status, data: '', tag: '', notas: '', ...extra });
 
-// Matéria/curso (listas do tipo "cursos") e as tarefas dentro dela
 const materia = (nome, status = 'afazer', tag = '', tarefas = []) => ({ id: novoId(), nome, status, tag, descricao: '', tarefas, notas: [] });
 const tarefaMateria = (titulo, tipo = 'Atividade', data = '') => ({ id: novoId(), titulo, tipo, data, feito: false });
 
-// Modelos de categoria da "Lista de listas" (o que aparece em "falta" e "já fiz")
 const MODELOS_CATEGORIA = {
   lugares: { nome: 'Lugares', icone: 'plane', falta: 'Quero ir', feito: 'Já fui' },
   filmes: { nome: 'Filmes', icone: 'film', falta: 'Quero ver', feito: 'Já vi' },
@@ -68,7 +55,6 @@ const listaColecoes = () => ({
 });
 const listaCompras = () => ({ id: 'compras', tipo: 'compras', nome: 'Compras', icone: 'cart', cor: '#ffb38a', desc: 'Para agora e a longo prazo', itens: [] });
 
-// Tipos de lista que dá para criar
 const TIPOS_LISTA = {
   simples: { nome: 'Lista simples', desc: 'Itens com status, data e etiqueta, em lista, quadro ou caderno.', icone: 'list' },
   cursos: { nome: 'Matérias ou cursos', desc: 'Cada matéria tem as suas tarefas, provas e caderno de aulas.', icone: 'cap' },
@@ -77,12 +63,25 @@ const TIPOS_LISTA = {
   compras: { nome: 'Compras', desc: 'Para agora e a longo prazo, com valores.', icone: 'cart' },
 };
 
-// Tarefa da agenda
+const PRIORIDADES = { alta: { nome: 'Alta', cor: '#ff7a8f' }, media: { nome: 'Média', cor: '#f7c56b' }, baixa: { nome: 'Baixa', cor: '#6aaeff' } };
+const PESO_PRIORIDADE = { alta: 0, media: 1, baixa: 2 };
+const REPETICOES = { '': 'Não repete', diario: 'Todo dia', uteis: 'Dias úteis (seg a sex)', semanal: 'Toda semana', mensal: 'Todo mês', anual: 'Todo ano' };
+const CATEGORIAS_GASTO = [
+  { id: 'mercado', nome: 'Mercado', cor: '#5fd6a4' },
+  { id: 'alimentacao', nome: 'Comer fora', cor: '#f7c56b' },
+  { id: 'transporte', nome: 'Transporte', cor: '#6aaeff' },
+  { id: 'casa', nome: 'Casa e contas', cor: '#9d86ff' },
+  { id: 'saude', nome: 'Saúde', cor: '#62c9f5' },
+  { id: 'estudos', nome: 'Estudos', cor: '#f59ad8' },
+  { id: 'lazer', nome: 'Lazer', cor: '#ff9f6b' },
+  { id: 'compras', nome: 'Compras', cor: '#c792ea' },
+  { id: 'outros', nome: 'Outros', cor: '#a5a3c8' },
+];
+
 const tarefa = (titulo, data, extra = {}) => ({
   id: novoId(), titulo, data, hora: '', duracao: 60, tipo: 'compromisso', area: 'Faculdade', lembrete: 1440, notas: '', feito: false, ...extra,
 });
 
-// Como o site começa na primeira vez: só as datas da faculdade
 function dadosIniciais() {
   return {
     tarefas: [
@@ -111,21 +110,26 @@ function dadosIniciais() {
       listaCompras(),
     ],
     habitos: [
-      { id: 'h1', nome: 'Olhar a agenda do dia' },
-      { id: 'h2', nome: 'Estudar 30 minutos' },
+      { id: 'h1', nome: 'Olhar a agenda do dia', grupo: 'Geral', dias: [] },
+      { id: 'h2', nome: 'Estudar 30 minutos', grupo: 'Geral', dias: [] },
     ],
-    diario: {},     // um registro por dia: hábitos feitos, água, pomodoros e humor
-    avisados: {},   // lembretes já mostrados (para não repetir)
-    config: { nome: 'Lorena', metaAgua: 8, resumoVisto: '', menu: 'mini' },
+    medidas: [],
+    financas: { lancamentos: [], recorrentes: [], contas: [], categorias: CATEGORIAS_GASTO.map((c) => ({ ...c })) },
+    revisoes: {},
+    flashcards: { baralhos: [] },
+    diario: {},
+    avisados: {},
+    config: { nome: 'Lorena', metaAgua: 8, resumoVisto: '', menu: 'mini', gruposHabito: ['Geral', 'Limpeza'], tema: 'violeta', aguaIntervalo: 0, aguaInicio: '08:00', aguaFim: '22:00', focoMateria: '', avisoContas: 1 },
   };
 }
 
-// Junta dados salvos com o padrão (para campos novos não ficarem vazios)
 function completar(dados) {
   const base = dadosIniciais();
   const final = { ...base, ...dados, config: { ...base.config, ...(dados.config || {}) } };
   final.listas = (final.listas || []).map(migrarLista);
-  // listas novas que ainda não existiam
+  final.habitos = (final.habitos || []).map((h) => ({ grupo: 'Geral', dias: [], meta: 0, ...h }));
+  final.financas = { ...base.financas, ...(dados.financas || {}) };
+
   if (!final.config.temColecoes) {
     if (!final.listas.some((l) => l.tipo === 'colecoes')) final.listas.push(listaColecoes());
     if (!final.listas.some((l) => l.tipo === 'compras')) final.listas.push(listaCompras());
@@ -134,7 +138,6 @@ function completar(dados) {
   return final;
 }
 
-// Converte listas da versão anterior (só itens) para os tipos novos
 function migrarLista(l) {
   if (l.tipo) return l;
   const statusMateria = { afazer: 'afazer', fazendo: 'cursando', feito: 'concluida' };
@@ -154,7 +157,6 @@ function migrarLista(l) {
   return { ...l, tipo: 'simples', itens: l.itens || [], notas: l.notas || [] };
 }
 
-// Quanto falta / quanto já foi feito numa lista (para o menu e o Dashboard)
 function contarLista(l) {
   if (l.tipo === 'cursos') {
     const t = l.materias.flatMap((m) => m.tarefas);
@@ -174,7 +176,6 @@ function contarLista(l) {
   return { total: l.itens.length, feitos: l.itens.filter((i) => i.status === 'feito').length };
 }
 
-// Datas futuras de uma lista (aparecem nas Próximas datas do Dashboard)
 function datasDaLista(l) {
   if (l.tipo === 'cursos') return l.materias.flatMap((m) => m.tarefas.filter((t) => !t.feito && t.data).map((t) => ({ titulo: `${t.titulo} · ${m.nome}`, data: t.data })));
   if (l.tipo === 'metas') return l.metas.filter((m) => m.prazo).map((m) => ({ titulo: `Prazo: ${m.titulo}`, data: m.prazo }));
@@ -194,7 +195,6 @@ function carregar() {
 
 let estado = carregar();
 
-// Salva (espera um pouquinho para juntar várias mudanças em uma só)
 let timerSalvar;
 function salvar() {
   clearTimeout(timerSalvar);
@@ -204,7 +204,7 @@ function salvar() {
     } catch (e) {
       avisar('Não consegui salvar. Faça um backup!');
     }
-    if (typeof salvarNuvem === 'function') salvarNuvem(); // envia pro Supabase (se tiver login)
+    if (typeof salvarNuvem === 'function') salvarNuvem();
   }, 250);
 }
 
@@ -213,9 +213,50 @@ function registroDoDia(iso = hojeISO()) {
   return estado.diario[iso];
 }
 
-// Apaga registros com mais de 120 dias para não pesar
 function limparAntigos() {
   const limite = somarDias(hojeISO(), -120);
-  Object.keys(estado.diario).forEach((dia) => { if (dia < limite) delete estado.diario[dia]; });
+
+  Object.entries(estado.diario).forEach(([dia, r]) => {
+    const vazio = !r.habitos?.length && !r.agua && !r.pomodoros && !r.humor && !r.sono && !r.texto && !r.bom?.some(Boolean) && !r.estudo;
+    if (vazio && dia < hojeISO()) delete estado.diario[dia];
+  });
   Object.keys(estado.avisados).forEach((k) => { if (k.slice(-10) < limite) delete estado.avisados[k]; });
+}
+
+const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const ORDEM_SEMANA = [1, 2, 3, 4, 5, 6, 0];
+
+function valeNoDia(h, iso) {
+  return h.meta > 0 || !h.dias?.length || h.dias.includes(paraData(iso).getDay());
+}
+
+function habitosDoDia(iso) {
+  return estado.habitos.filter((h) => !h.meta && valeNoDia(h, iso));
+}
+function segundaDaSemana(iso) {
+  return somarDias(iso, -((paraData(iso).getDay() + 6) % 7));
+}
+
+function feitosNaSemana(h, iso) {
+  const ini = segundaDaSemana(iso);
+  let n = 0;
+  for (let i = 0; i < 7; i++) if (estado.diario[somarDias(ini, i)]?.habitos.includes(h.id)) n++;
+  return n;
+}
+function feitosNoDia(iso, lista = habitosDoDia(iso)) {
+  const r = estado.diario[iso];
+  return r ? lista.filter((h) => valeNoDia(h, iso) && r.habitos.includes(h.id)).length : 0;
+}
+function gruposHabito() {
+  const g = [...(estado.config.gruposHabito || ['Geral'])];
+  estado.habitos.forEach((h) => { if (!g.includes(h.grupo)) g.push(h.grupo); });
+  return g;
+}
+function textoDias(h) {
+  if (h.meta > 0) return `${h.meta}x por semana`;
+  if (!h.dias?.length || h.dias.length === 7) return 'Todo dia';
+  const d = [...h.dias].sort((a, b) => ORDEM_SEMANA.indexOf(a) - ORDEM_SEMANA.indexOf(b));
+  if (d.join() === '1,2,3,4,5') return 'Seg a Sex';
+  if (d.join() === '6,0') return 'Fim de semana';
+  return d.map((x) => DIAS_SEMANA[x]).join(', ');
 }

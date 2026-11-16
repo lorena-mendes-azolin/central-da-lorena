@@ -1,14 +1,3 @@
-// =========================================================
-// editor.js — peças usadas em várias listas:
-//   • editor de texto (negrito, títulos, listas, link, imagem…)
-//   • caderno (páginas de anotação)
-//   • anexos (links e imagens em qualquer item)
-//   • visualizador de imagem em tela cheia
-// Cada coisa editável tem um "ref" (endereço) tipo "faculdade/<id>"
-// que a função acharRef() (listas.js) transforma no objeto certo.
-// =========================================================
-
-// ---------- Imagens: reduz antes de salvar (para não pesar) ----------
 function lerImagem(arquivo, tamanhoMax = 1000) {
   return new Promise((ok, erro) => {
     if (!arquivo || !arquivo.type.startsWith('image/')) { erro(new Error('não é imagem')); return; }
@@ -40,7 +29,6 @@ function corrigirLink(url) {
   return /^https?:\/\//i.test(u) ? u : 'https://' + u;
 }
 
-// ---------- Anexos (links e imagens) ----------
 function htmlAnexos(obj, ref) {
   const anexos = obj.anexos || [];
   const imagens = anexos.filter((a) => a.tipo === 'imagem');
@@ -56,7 +44,7 @@ function htmlAnexos(obj, ref) {
       </span>`).join('')}</div>` : ''}
     <div class="anexos-add">
       <form class="form-link" data-form="anexo-link" data-ref="${ref}">
-        <input type="text" name="url" placeholder="Colar um link (site, vídeo, receita…)" aria-label="Link" required>
+        <input type="text" name="url" placeholder="Colar um link" aria-label="Link" data-precisa>
         <button class="btn-mini" type="submit">${ic('plus', 'p')} Link</button>
       </form>
       <label class="btn-mini">${ic('image', 'p')} Imagem
@@ -90,7 +78,6 @@ ACOES['anexo-del'] = (el) => {
   if (obj?.anexos) removerComDesfazer(obj.anexos, el.dataset.id, 'Anexo');
 };
 
-// ---------- Ver imagem grande ----------
 ACOES['ver-imagem'] = (el) => {
   const v = document.createElement('div');
   v.className = 'visualizador';
@@ -103,8 +90,6 @@ document.addEventListener('click', (e) => {
   if (img && !e.target.closest('[data-acao]')) ACOES['ver-imagem'](img);
 });
 
-// ---------- Editor de texto ----------
-// ref = endereço do objeto · campo = onde o HTML é guardado
 function htmlEditor(ref, campo, html, vazio = 'Comece a escrever…') {
   return `<div class="com-editor">
     <div class="ferramentas" role="toolbar" aria-label="Formatação">
@@ -141,9 +126,8 @@ DIGITAR.editor = (el) => {
   salvar();
 };
 
-let faixaGuardada = null; // onde estava o cursor (para inserir imagem depois de escolher o arquivo)
+let faixaGuardada = null;
 
-// Botões de formatação (mousedown para não tirar o cursor do texto)
 document.addEventListener('mousedown', (e) => {
   const b = e.target.closest('[data-cmd]');
   if (!b) return;
@@ -185,10 +169,9 @@ document.addEventListener('mousedown', (e) => {
   } else {
     document.execCommand(cmd);
   }
-  editor.dispatchEvent(new Event('input', { bubbles: true })); // salva
+  editor.dispatchEvent(new Event('input', { bubbles: true }));
 });
 
-// Escolheu uma imagem pelo botão do editor: insere onde estava o cursor
 document.addEventListener('change', async (e) => {
   if (!e.target.matches('.editor-arquivo')) return;
   const editor = e.target.closest('.com-editor').querySelector('.editor');
@@ -204,11 +187,10 @@ document.addEventListener('change', async (e) => {
   } catch { avisar('Não consegui abrir essa imagem.'); }
 });
 
-// Links do editor abrem com Ctrl+clique (clique normal continua editando)
 document.addEventListener('click', (e) => {
   const a = e.target.closest('.editor a');
   if (a && (e.ctrlKey || e.metaKey)) { e.preventDefault(); window.open(a.href, '_blank'); }
-  // quadradinho da lista de tarefas do editor
+
   const li = e.target.closest('.editor ul.checklist li');
   if (li && e.clientX - li.getBoundingClientRect().left <= 22) {
     li.classList.toggle('ok');
@@ -216,8 +198,6 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ---------- Caderno (páginas de anotação) ----------
-// dono = objeto que tem .notas (uma lista ou uma matéria) · refBase = endereço do dono
 const paginaAberta = {};
 
 function htmlCaderno(dono, refBase, textoVazio = 'Crie uma página para cada aula, livro ou assunto.') {
@@ -237,7 +217,7 @@ function htmlCaderno(dono, refBase, textoVazio = 'Crie uma página para cada aul
         <button class="btn-mini" data-acao="pagina-del" data-ref="${refBase}" data-id="${aberta.id}" style="margin-left:auto">${ic('trash', 'p')} Excluir página</button>
       </div>
       ${htmlEditor(`${refBase}/nota/${aberta.id}`, 'html', aberta.html, 'Comece a escrever… o que você aprendeu hoje?')}
-    </article>` : `<article class="folha" style="display:grid;place-items:center;text-align:center">
+    </article>` : `<article class="folha vazia">
       <div><p style="font-size:17px;font-weight:700;margin:0 0 6px">Caderno vazio</p>
       <p class="vazio" style="margin:0 0 14px">${textoVazio}</p>
       <button class="btn" data-acao="pagina-nova" data-ref="${refBase}">${ic('plus', 'p')} Criar a primeira página</button></div>

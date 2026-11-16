@@ -1,7 +1,3 @@
-// =========================================================
-// dashboard.js — página inicial com o resumo de tudo
-// =========================================================
-
 PAGINAS.dashboard = {
   titulo: 'Dashboard',
   desenhar() {
@@ -14,13 +10,16 @@ PAGINAS.dashboard = {
     const deHoje = estado.tarefas.filter((t) => t.data === hoje).sort(porHora);
     const pendHoje = deHoje.filter((t) => !t.feito);
     const atrasadas = estado.tarefas.filter((t) => !t.feito && t.data && t.data < hoje);
-    const hab = estado.habitos.filter((x) => reg.habitos.includes(x.id)).length;
+    const habHoje = habitosDoDia(hoje);
+    const hab = feitosNoDia(hoje, habHoje);
+    const gruposComHabito = new Set(habHoje.map((x) => x.grupo)).size;
+    const habSemana = estado.habitos.filter((x) => x.meta > 0);
     const meta = estado.config.metaAgua;
 
-    // Próximas datas: agenda + itens de listas com data
     const proximas = [
       ...estado.tarefas.filter((t) => !t.feito && t.data > hoje).map((t) => ({ titulo: t.titulo, data: t.data, cor: AREAS[t.area] || AREAS.Pessoal })),
       ...estado.listas.flatMap((l) => datasDaLista(l).filter((x) => x.data > hoje).map((x) => ({ ...x, cor: l.cor, lista: l.nome }))),
+      ...datasDasContas().filter((x) => x.data >= hoje).map((x) => ({ ...x, lista: 'Finanças' })),
     ].sort((a, b) => a.data.localeCompare(b.data)).slice(0, 5);
 
     const semana = Array.from({ length: 7 }, (_, i) => somarDias(hoje, i - 6));
@@ -32,6 +31,13 @@ PAGINAS.dashboard = {
       <div class="clima" id="clima">${htmlClima()}</div>
     </div>
     ${htmlPedirNotificacao()}
+    ${(() => {
+      const dsem = agora.getDay();
+      if (dsem !== 0 && dsem !== 1) return '';
+      const semana = dsem === 0 ? segundaDaSemana(hoje) : somarDias(segundaDaSemana(hoje), -7);
+      if (estado.revisoes[semana]?.foco) return '';
+      return `<a class="alerta convite" href="#revisao" data-acao="rev-abrir" data-semana="${semana}">${ic('review')}<span><b>Hora da revisão da semana.</b> Veja o que fez, o que ficou para trás e escolha o foco da próxima.</span><span class="btn">Abrir</span></a>`;
+    })()}
 
     <div class="grade g4">
       <a class="card stat" href="#agenda"><span class="selo c-violeta">${ic('calendar')}</span>
@@ -39,7 +45,7 @@ PAGINAS.dashboard = {
       <a class="card stat" href="#agenda"><span class="selo c-vermelho">${ic('alert')}</span>
         <div><b>${atrasadas.length}</b><span>atrasadas</span></div></a>
       <a class="card stat" href="#rotina"><span class="selo c-verde">${ic('repeat')}</span>
-        <div><b>${hab}/${estado.habitos.length}</b><span>rotina de hoje</span></div></a>
+        <div><b>${hab}/${habHoje.length}</b><span>rotina de hoje</span></div></a>
       <div class="card stat"><span class="selo c-azul">${ic('drop')}</span>
         <div><b>${reg.agua}/${meta}</b><span>copos de água</span></div></div>
     </div>
@@ -47,11 +53,12 @@ PAGINAS.dashboard = {
     <div class="grade g3">
       <section class="card" style="grid-column:span 2">
         <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('sun')}</span> Hoje <a href="#agenda">Abrir agenda</a></h2>
+        ${atrasadas.length > 1 ? `<button class="btn-mini" data-acao="atrasadas-hoje" style="margin:0 0 6px 8px">${ic('right', 'p')} Passar as ${atrasadas.length} atrasadas para hoje</button>` : ''}
         ${atrasadas.map(htmlTarefa).join('')}
         ${deHoje.map(htmlTarefa).join('')}
         ${!deHoje.length && !atrasadas.length ? '<p class="vazio">Nada marcado para hoje.</p>' : ''}
         <form class="form-linha" data-form="tarefa-rapida" style="margin-top:12px">
-          <input type="text" name="titulo" id="rapida-titulo" placeholder="Adicionar tarefa para hoje" maxlength="120" required style="flex:3 1 200px">
+          <input type="text" name="titulo" id="rapida-titulo" placeholder="Adicionar tarefa para hoje" maxlength="120" data-precisa style="flex:3 1 200px">
           <input type="time" name="hora" id="rapida-hora" title="Hora (opcional, para receber aviso)" style="flex:1 1 110px">
           <button class="btn" type="submit">${ic('plus', 'p')} Adicionar</button>
         </form>
@@ -71,54 +78,91 @@ PAGINAS.dashboard = {
       </section>
     </div>
 
-    <div class="grade g3">
-      <section class="card">
-        <h2 class="card-titulo"><span class="selo mini c-verde">${ic('repeat')}</span> Rotina de hoje <a href="#rotina">${hab}/${estado.habitos.length}</a></h2>
-        <div class="prog" style="margin-bottom:10px"><i style="width:${estado.habitos.length ? (hab / estado.habitos.length) * 100 : 0}%"></i></div>
-        ${estado.habitos.map((x) => {
-          const on = reg.habitos.includes(x.id);
-          return `<div class="item ${on ? 'feito' : ''}">
-            <button class="check ${on ? 'on' : ''}" data-acao="habito-hoje" data-id="${x.id}" aria-label="marcar">${on ? ic('check') : ''}</button>
-            <span class="txt">${esc(x.nome)}</span></div>`;
-        }).join('') || '<p class="vazio">Crie hábitos na página Rotina diária.</p>'}
-        <h2 class="card-titulo" style="margin-top:18px"><span class="selo mini c-azul">${ic('drop')}</span> Água <small>${(reg.agua * 0.25).toFixed(2).replace('.', ',')} L</small></h2>
-        <div class="copos">${Array.from({ length: meta }, (_, i) => `<button class="copo ${i < reg.agua ? 'cheio' : ''}" data-acao="agua" data-i="${i}" aria-label="copo ${i + 1}"></button>`).join('')}</div>
+    <div class="grade g-bem">
+      <section class="card coluna">
+        <h2 class="card-titulo"><span class="selo mini c-verde">${ic('repeat')}</span> Rotina de hoje <a href="#rotina">${hab}/${habHoje.length}</a></h2>
+        <div class="prog" style="margin-bottom:10px"><i style="width:${habHoje.length ? (hab / habHoje.length) * 100 : 0}%"></i></div>
+        <div class="lista-rolavel">
+          ${gruposHabito().map((g) => {
+            const hs = habHoje.filter((x) => x.grupo === g);
+            if (!hs.length) return '';
+            return `${gruposComHabito > 1 ? `<div class="grupo-mini">${esc(g)}</div>` : ''}
+              ${hs.map((x) => {
+                const on = reg.habitos.includes(x.id);
+                return `<div class="item ${on ? 'feito' : ''}">
+                  <button class="check ${on ? 'on' : ''}" data-acao="habito-hoje" data-id="${x.id}" aria-label="marcar">${on ? ic('check') : ''}</button>
+                  <span class="txt">${esc(x.nome)}</span></div>`;
+              }).join('')}`;
+          }).join('') || (habSemana.length ? '' : `<p class="vazio">${estado.habitos.length ? 'Nenhum hábito para hoje.' : 'Crie hábitos na página Rotina diária.'}</p>`)}
+          ${habSemana.length ? `<div class="grupo-mini">Na semana</div>
+            ${habSemana.map((x) => {
+              const on = reg.habitos.includes(x.id);
+              const n = feitosNaSemana(x, hoje);
+              return `<div class="item ${on ? 'feito' : ''}">
+                <button class="check ${on ? 'on' : ''}" data-acao="habito-hoje" data-id="${x.id}" aria-label="marcar">${on ? ic('check') : ''}</button>
+                <span class="txt">${esc(x.nome)}</span><span class="meta-sem ${n >= x.meta ? 'ok' : ''}">${n}/${x.meta}</span></div>`;
+            }).join('')}` : ''}
+        </div>
       </section>
 
-      <section class="card">
+      <section class="card coluna">
+        <h2 class="card-titulo"><span class="selo mini c-azul">${ic('drop')}</span> Água <small>meta: ${(meta * 0.25).toFixed(2).replace('.', ',')} L</small></h2>
+        <div class="centro">
+          <div class="agua-total"><b>${(reg.agua * 0.25).toFixed(2).replace('.', ',')} L</b><span>${reg.agua} de ${meta} copos de 250 ml</span></div>
+          <div class="copos">${Array.from({ length: meta }, (_, i) => `<button class="copo ${i < reg.agua ? 'cheio' : ''}" data-acao="agua" data-i="${i}" aria-label="copo ${i + 1}"></button>`).join('')}</div>
+          <div class="botoes">
+            <button class="btn sec" data-acao="agua-menos" aria-label="Tirar um copo">−</button>
+            <button class="btn" data-acao="agua-mais">${ic('plus', 'p')} 1 copo</button>
+          </div>
+        </div>
+        <div class="prog"><i style="width:${Math.min(100, (reg.agua / meta) * 100)}%;background:var(--agua)"></i></div>
+      </section>
+
+      <section class="card coluna">
         <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('heart')}</span> Como você está?</h2>
-        <div class="humores">
-          ${HUMORES.map((x) => `<button class="humor ${reg.humor === x.id ? 'on' : ''}" data-acao="humor" data-h="${x.id}" title="${x.nome}" style="${reg.humor === x.id ? 'color:var(--amarelo)' : ''}">
-            <svg><use href="#i-${x.id}"/></svg></button>`).join('')}
+        <div class="centro">
+          <div class="humores">
+            ${HUMORES.map((x) => `<button class="humor ${reg.humor === x.id ? 'on' : ''}" data-acao="humor" data-h="${x.id}" title="${x.nome}" style="${reg.humor === x.id ? 'color:var(--amarelo)' : ''}">
+              <svg><use href="#i-${x.id}"/></svg></button>`).join('')}
+          </div>
+          <p class="humor-nome">${reg.humor ? HUMORES.find((x) => x.id === reg.humor)?.nome : 'Toque no rostinho que combina com o seu dia'}</p>
+          <div class="semana-humor">
+            ${semana.map((d) => {
+              const hm = estado.diario[d]?.humor;
+              return `<div>${hm ? `<svg class="ic" style="color:var(--amarelo)"><use href="#i-${hm}"/></svg>` : '<span class="ponto"></span>'}${paraData(d).toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0, 3)}</div>`;
+            }).join('')}
+          </div>
         </div>
-        <div class="semana-humor">
-          ${semana.map((d) => {
-            const hm = estado.diario[d]?.humor;
-            return `<div>${hm ? `<svg class="ic" style="color:var(--amarelo)"><use href="#i-${hm}"/></svg>` : '<span class="ponto"></span>'}${paraData(d).toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0, 3)}</div>`;
-          }).join('')}
-        </div>
-        <p class="dica">Registre como foi o seu dia e acompanhe a semana.</p>
+        <a class="dica" href="#graficos" style="margin:0">Ver o humor nos gráficos</a>
       </section>
 
-      <section class="card pomo">
+      <section class="card coluna pomo">
         <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('timer')}</span> Foco</h2>
-        <div class="segmento" style="margin-bottom:12px">
-          ${[['Foco', 25, 'foco'], ['Pausa', 5, 'pausa'], ['Longa', 15, 'longa']].map(([n, m, id]) =>
-            `<button class="${pomo.modo === id ? 'ativo' : ''}" data-acao="pomo-modo" data-min="${m}" data-modo="${id}">${n} ${m}</button>`).join('')}
+        <div class="centro">
+          <div class="segmento" style="margin:0 auto 12px">
+            ${[['Foco', 25, 'foco'], ['Pausa', 5, 'pausa'], ['Longa', 15, 'longa']].map(([n, m, id]) =>
+              `<button class="${pomo.modo === id ? 'ativo' : ''}" data-acao="pomo-modo" data-min="${m}" data-modo="${id}">${n} ${m}</button>`).join('')}
+          </div>
+          <div class="anel">
+            <svg width="160" height="160" viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="70" fill="none" stroke="#28274a" stroke-width="8"/>
+              <circle id="pomo-arco" cx="80" cy="80" r="70" fill="none" stroke="url(#gradFoco)" stroke-width="8" stroke-linecap="round"/>
+              <defs><linearGradient id="gradFoco"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#f59ad8"/></linearGradient></defs>
+            </svg>
+            <div class="anel-tempo"><b id="pomo-tempo">25:00</b><span id="pomo-estado">${pomo.estado}</span></div>
+          </div>
+          <label class="rotulo-select foco-materia">Estudando
+            <select data-mudar="foco-materia">
+              <option value="">Nada específico</option>
+              ${todasMaterias().filter((g) => g.materias.length).map((g) => `<optgroup label="${esc(g.lista.nome)}">
+                ${g.materias.map((m) => `<option value="${g.lista.id}/${m.id}" ${estado.config.focoMateria === `${g.lista.id}/${m.id}` ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}</optgroup>`).join('')}
+            </select></label>
+          <div class="botoes">
+            <button class="btn" id="pomo-play" data-acao="pomo-play">${ic('play', 'p')} Começar</button>
+            <button class="btn sec" data-acao="pomo-reset" aria-label="Reiniciar">${ic('reset', 'p')}</button>
+          </div>
         </div>
-        <div class="anel">
-          <svg width="160" height="160" viewBox="0 0 160 160">
-            <circle cx="80" cy="80" r="70" fill="none" stroke="#28274a" stroke-width="8"/>
-            <circle id="pomo-arco" cx="80" cy="80" r="70" fill="none" stroke="url(#gradFoco)" stroke-width="8" stroke-linecap="round"/>
-            <defs><linearGradient id="gradFoco"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#f59ad8"/></linearGradient></defs>
-          </svg>
-          <div class="anel-tempo"><b id="pomo-tempo">25:00</b><span id="pomo-estado">${pomo.estado}</span></div>
-        </div>
-        <div class="botoes">
-          <button class="btn" id="pomo-play" data-acao="pomo-play">${ic('play', 'p')} Começar</button>
-          <button class="btn sec" data-acao="pomo-reset" aria-label="Reiniciar">${ic('reset', 'p')}</button>
-        </div>
-        <p class="dica">${reg.pomodoros ? `${reg.pomodoros} ${reg.pomodoros === 1 ? 'ciclo' : 'ciclos'} de foco hoje` : 'Nenhum ciclo de foco hoje ainda.'}</p>
+        <p class="dica" style="margin:0">${reg.pomodoros ? `${reg.pomodoros} ${reg.pomodoros === 1 ? 'ciclo' : 'ciclos'} de foco hoje` : 'Nenhum ciclo de foco hoje ainda.'}</p>
       </section>
     </div>
 
@@ -140,10 +184,9 @@ PAGINAS.dashboard = {
 };
 
 function porHora(a, b) {
-  return (a.hora || '99').localeCompare(b.hora || '99');
+  return (a.hora || '99').localeCompare(b.hora || '99') || (PESO_PRIORIDADE[a.prioridade] ?? 3) - (PESO_PRIORIDADE[b.prioridade] ?? 3);
 }
 
-// ---------- Clima (Open-Meteo, grátis e sem cadastro) ----------
 let clima = null;
 function iconeClima(cod) {
   if (cod === 0 || cod === 1) return ['sun', cod === 0 ? 'Céu limpo' : 'Poucas nuvens'];
@@ -178,7 +221,6 @@ async function buscarClima() {
   if ($('#clima')) $('#clima').innerHTML = htmlClima();
 }
 
-// ---------- Ações ----------
 FORMS['tarefa-rapida'] = (d) => {
   estado.tarefas.push(tarefa(d.titulo, hojeISO(), { hora: d.hora || '', tipo: 'tarefa', area: 'Pessoal', lembrete: d.hora ? 15 : -1 }));
   salvar(); desenhar();
@@ -189,10 +231,15 @@ FORMS['tarefa-rapida'] = (d) => {
 ACOES.agua = (el) => {
   const reg = registroDoDia();
   const i = Number(el.dataset.i);
-  reg.agua = i < reg.agua ? i : i + 1; // clicar num copo cheio esvazia a partir dele
+  reg.agua = i < reg.agua ? i : i + 1;
   salvar(); desenhar();
   if (reg.agua === estado.config.metaAgua) avisar('Meta de água do dia concluída!');
 };
+
+ACOES['rev-abrir'] = (el) => { revTela.semana = el.dataset.semana === segundaDaSemana(hojeISO()) ? null : el.dataset.semana; location.hash = 'revisao'; };
+
+ACOES['agua-mais'] = () => { const reg = registroDoDia(); reg.agua++; salvar(); desenhar(); if (reg.agua === estado.config.metaAgua) avisar('Meta de água do dia concluída!'); };
+ACOES['agua-menos'] = () => { const reg = registroDoDia(); reg.agua = Math.max(0, reg.agua - 1); salvar(); desenhar(); };
 
 ACOES.humor = (el) => {
   const reg = registroDoDia();
@@ -200,7 +247,6 @@ ACOES.humor = (el) => {
   salvar(); desenhar();
 };
 
-// ---------- Pomodoro (foco) ----------
 const pomo = { total: 25 * 60, resta: 25 * 60, rodando: false, fimEm: 0, modo: 'foco', estado: 'pronta para focar' };
 
 function atualizarPomodoro() {
@@ -225,7 +271,13 @@ function passoPomodoro() {
   if (pomo.resta === 0) {
     pomo.rodando = false;
     if (pomo.modo === 'foco') {
-      registroDoDia().pomodoros++;
+      const reg = registroDoDia();
+      reg.pomodoros++;
+      const ref = estado.config.focoMateria;
+      if (ref && acharRef(ref)) {
+        reg.estudo = reg.estudo || {};
+        reg.estudo[ref] = (reg.estudo[ref] || 0) + Math.round(pomo.total / 60);
+      }
       salvar();
       pomo.estado = 'hora da pausa';
       notificar('Ciclo de foco concluído', 'Hora de uma pausa.');
@@ -259,6 +311,8 @@ ACOES['pomo-reset'] = () => {
   atualizarCaminho();
   atualizarPomodoro();
 };
+
+MUDAR['foco-materia'] = (el) => { estado.config.focoMateria = el.value; salvar(); };
 
 ACOES['pomo-modo'] = (el) => {
   pomo.rodando = false;
