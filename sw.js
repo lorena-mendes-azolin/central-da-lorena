@@ -1,9 +1,9 @@
-const CACHE = 'central-v1';
+const CACHE = 'central-v2';
 const ARQUIVOS = [
   './', './index.html', './login.html', './redefinir.html', './css/style.css', './manifest.webmanifest',
   './icons/icone-192.png', './icons/icone-512.png',
   ...['config', 'utils', 'seletor', 'dados', 'nuvem', 'dashboard', 'agenda', 'rotina', 'graficos', 'editor', 'listas', 'cursos',
-    'metas', 'colecoes', 'compras', 'bemestar', 'flashcards', 'financas', 'revisao', 'notificacoes', 'configuracoes', 'app', 'login']
+    'metas', 'colecoes', 'compras', 'bemestar', 'flashcards', 'financas', 'revisao', 'lixeira', 'imagens', 'arrastar', 'notificacoes', 'configuracoes', 'app', 'login']
     .map((n) => `./js/${n}.js`),
 ];
 
@@ -29,5 +29,15 @@ self.addEventListener('fetch', (e) => {
         return resp;
       })
       .catch(() => caches.match(e.request).then((r) => r || caches.match('./index.html'))),
+  );
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {
+      if (janelas.length) return janelas[0].focus();
+      return self.clients.openWindow('./index.html#agenda');
+    }),
   );
 });

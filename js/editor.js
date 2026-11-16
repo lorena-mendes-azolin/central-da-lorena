@@ -12,7 +12,7 @@ function lerImagem(arquivo, tamanhoMax = 1000) {
         c.width = Math.round(img.width * escala);
         c.height = Math.round(img.height * escala);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        ok(c.toDataURL('image/jpeg', 0.78));
+        ok(guardarImagem(c.toDataURL('image/jpeg', 0.78)));
       };
       img.src = leitor.result;
     };
@@ -206,7 +206,7 @@ function htmlCaderno(dono, refBase, textoVazio = 'Crie uma página para cada aul
   return `<div class="caderno">
     <aside class="paginas">
       <button class="btn" data-acao="pagina-nova" data-ref="${refBase}" style="margin-bottom:6px">${ic('plus', 'p')} Nova página</button>
-      ${dono.notas.map((n) => `<button class="pg ${aberta && n.id === aberta.id ? 'ativo' : ''}" data-acao="pagina-abrir" data-ref="${refBase}" data-id="${n.id}">
+      ${dono.notas.map((n) => `<button class="pg ${aberta && n.id === aberta.id ? 'ativo' : ''}" data-acao="pagina-abrir" data-ref="${refBase}" data-id="${n.id}" ${ordem(refBase + '|notas', n.id)} data-pegar>
         ${ic('note', 'p')}<span id="pg-${n.id}">${esc(n.titulo || 'Sem título')}</span><small>${n.criado.slice(8)}/${n.criado.slice(5, 7)}</small></button>`).join('')
         || '<p class="vazio" style="padding:4px 8px">Nenhuma página ainda.</p>'}
     </aside>

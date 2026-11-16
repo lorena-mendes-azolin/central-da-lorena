@@ -24,22 +24,8 @@ PAGINAS.dashboard = {
 
     const semana = Array.from({ length: 7 }, (_, i) => somarDias(hoje, i - 6));
 
-    return `
-    <div class="ola">
-      <div><h1>${oi}, ${esc(estado.config.nome)}</h1>
-        <p>${agora.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div>
-      <div class="clima" id="clima">${htmlClima()}</div>
-    </div>
-    ${htmlPedirNotificacao()}
-    ${(() => {
-      const dsem = agora.getDay();
-      if (dsem !== 0 && dsem !== 1) return '';
-      const semana = dsem === 0 ? segundaDaSemana(hoje) : somarDias(segundaDaSemana(hoje), -7);
-      if (estado.revisoes[semana]?.foco) return '';
-      return `<a class="alerta convite" href="#revisao" data-acao="rev-abrir" data-semana="${semana}">${ic('review')}<span><b>Hora da revisão da semana.</b> Veja o que fez, o que ficou para trás e escolha o foco da próxima.</span><span class="btn">Abrir</span></a>`;
-    })()}
-
-    <div class="grade g4">
+    const blocos = {
+      resumo: `<div class="grade g4">
       <a class="card stat" href="#agenda"><span class="selo c-violeta">${ic('calendar')}</span>
         <div><b>${pendHoje.length}</b><span>para hoje</span></div></a>
       <a class="card stat" href="#agenda"><span class="selo c-vermelho">${ic('alert')}</span>
@@ -48,10 +34,8 @@ PAGINAS.dashboard = {
         <div><b>${hab}/${habHoje.length}</b><span>rotina de hoje</span></div></a>
       <div class="card stat"><span class="selo c-azul">${ic('drop')}</span>
         <div><b>${reg.agua}/${meta}</b><span>copos de água</span></div></div>
-    </div>
-
-    <div class="grade g3">
-      <section class="card" style="grid-column:span 2">
+    </div>`,
+      hoje: `<section class="card">
         <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('sun')}</span> Hoje <a href="#agenda">Abrir agenda</a></h2>
         ${atrasadas.length > 1 ? `<button class="btn-mini" data-acao="atrasadas-hoje" style="margin:0 0 6px 8px">${ic('right', 'p')} Passar as ${atrasadas.length} atrasadas para hoje</button>` : ''}
         ${atrasadas.map(htmlTarefa).join('')}
@@ -62,9 +46,8 @@ PAGINAS.dashboard = {
           <input type="time" name="hora" id="rapida-hora" title="Hora (opcional, para receber aviso)" style="flex:1 1 110px">
           <button class="btn" type="submit">${ic('plus', 'p')} Adicionar</button>
         </form>
-      </section>
-
-      <section class="card">
+      </section>`,
+      proximas: `<section class="card">
         <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('clock')}</span> Próximas datas</h2>
         ${proximas.length ? proximas.map((p) => {
           const d = paraData(p.data);
@@ -75,11 +58,8 @@ PAGINAS.dashboard = {
             <span class="barra-cor" style="background:${p.cor}"></span>
           </div>`;
         }).join('') : '<p class="vazio">Nenhuma data marcada.</p>'}
-      </section>
-    </div>
-
-    <div class="grade g-bem">
-      <section class="card coluna">
+      </section>`,
+      rotina: `<section class="card coluna">
         <h2 class="card-titulo"><span class="selo mini c-verde">${ic('repeat')}</span> Rotina de hoje <a href="#rotina">${hab}/${habHoje.length}</a></h2>
         <div class="prog" style="margin-bottom:10px"><i style="width:${habHoje.length ? (hab / habHoje.length) * 100 : 0}%"></i></div>
         <div class="lista-rolavel">
@@ -103,9 +83,8 @@ PAGINAS.dashboard = {
                 <span class="txt">${esc(x.nome)}</span><span class="meta-sem ${n >= x.meta ? 'ok' : ''}">${n}/${x.meta}</span></div>`;
             }).join('')}` : ''}
         </div>
-      </section>
-
-      <section class="card coluna">
+      </section>`,
+      agua: `<section class="card coluna">
         <h2 class="card-titulo"><span class="selo mini c-azul">${ic('drop')}</span> Água <small>meta: ${(meta * 0.25).toFixed(2).replace('.', ',')} L</small></h2>
         <div class="centro">
           <div class="agua-total"><b>${(reg.agua * 0.25).toFixed(2).replace('.', ',')} L</b><span>${reg.agua} de ${meta} copos de 250 ml</span></div>
@@ -116,9 +95,8 @@ PAGINAS.dashboard = {
           </div>
         </div>
         <div class="prog"><i style="width:${Math.min(100, (reg.agua / meta) * 100)}%;background:var(--agua)"></i></div>
-      </section>
-
-      <section class="card coluna">
+      </section>`,
+      humor: `<section class="card coluna">
         <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('heart')}</span> Como você está?</h2>
         <div class="centro">
           <div class="humores">
@@ -134,9 +112,8 @@ PAGINAS.dashboard = {
           </div>
         </div>
         <a class="dica" href="#graficos" style="margin:0">Ver o humor nos gráficos</a>
-      </section>
-
-      <section class="card coluna pomo">
+      </section>`,
+      foco: `<section class="card coluna pomo">
         <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('timer')}</span> Foco</h2>
         <div class="centro">
           <div class="segmento" style="margin:0 auto 12px">
@@ -163,10 +140,8 @@ PAGINAS.dashboard = {
           </div>
         </div>
         <p class="dica" style="margin:0">${reg.pomodoros ? `${reg.pomodoros} ${reg.pomodoros === 1 ? 'ciclo' : 'ciclos'} de foco hoje` : 'Nenhum ciclo de foco hoje ainda.'}</p>
-      </section>
-    </div>
-
-    <section class="card">
+      </section>`,
+      listas: `<section class="card">
       <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('list')}</span> Minhas listas
         <a href="#" data-acao="lista-nova">${ic('plus', 'p')} Nova lista</a></h2>
       <div class="grade g3" style="margin:0">
@@ -179,9 +154,75 @@ PAGINAS.dashboard = {
           </a>`;
         }).join('')}
       </div>
-    </section>`;
+    </section>`,
+    };
+
+    return `
+    <div class="ola">
+      <div><h1>${oi}, ${esc(estado.config.nome)}</h1>
+        <p>${agora.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div>
+      <div class="ola-acoes">
+        <div class="clima" id="clima">${htmlClima()}</div>
+        <button class="btn-mini ${dashTela.editando ? 'ativo' : ''}" data-acao="dash-personalizar">${ic('sliders', 'p')} Personalizar</button>
+      </div>
+    </div>
+    ${htmlPedirNotificacao()}
+    ${(() => {
+      const dsem = agora.getDay();
+      if (dsem !== 0 && dsem !== 1) return '';
+      const semana = dsem === 0 ? segundaDaSemana(hoje) : somarDias(segundaDaSemana(hoje), -7);
+      if (estado.revisoes[semana]?.foco) return '';
+      return `<a class="alerta convite" href="#revisao" data-acao="rev-abrir" data-semana="${semana}">${ic('review')}<span><b>Hora da revisão da semana.</b> Veja o que fez, o que ficou para trás e escolha o foco da próxima.</span><span class="btn">Abrir</span></a>`;
+    })()}
+    ${dashTela.editando ? htmlPersonalizarDash() : ''}
+    <div class="grade-dash">
+      ${blocosDash().filter((b) => b.visivel).map((b) => `<div class="bloco-dash tam-${BLOCOS_DASH[b.id].tam}">${blocos[b.id]}</div>`).join('')}
+    </div>`;
   },
 };
+
+const BLOCOS_DASH = {
+  resumo: { nome: 'Resumo do dia', tam: 'cheio' },
+  hoje: { nome: 'Hoje', tam: 'meio' },
+  proximas: { nome: 'Próximas datas', tam: 'meio' },
+  rotina: { nome: 'Rotina de hoje', tam: 'um' },
+  agua: { nome: 'Água', tam: 'um' },
+  humor: { nome: 'Como você está?', tam: 'um' },
+  foco: { nome: 'Foco', tam: 'um' },
+  listas: { nome: 'Minhas listas', tam: 'cheio' },
+};
+const dashTela = { editando: false };
+
+function blocosDash() {
+  const salvos = (estado.config.dashboard || []).filter((b) => BLOCOS_DASH[b.id]);
+  Object.keys(BLOCOS_DASH).forEach((id) => { if (!salvos.some((b) => b.id === id)) salvos.push({ id, visivel: true }); });
+  estado.config.dashboard = salvos;
+  return salvos;
+}
+
+function htmlPersonalizarDash() {
+  return `<section class="card personalizar-dash">
+    <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('sliders')}</span> Personalizar o Dashboard
+      <a href="#" data-acao="dash-padrao">Voltar ao padrão</a></h2>
+    <p class="dica" style="margin:-6px 0 12px">Arraste para mudar a ordem e use o olho para mostrar ou esconder cada parte.</p>
+    <div class="blocos-dash-lista">
+      ${blocosDash().map((b) => `<div class="item ${b.visivel ? '' : 'feito'}" ${ordem('|config.dashboard', b.id)}>
+        ${alca()}
+        <span class="txt">${BLOCOS_DASH[b.id].nome}</span>
+        <button class="acao-item" data-acao="dash-ver" data-id="${b.id}" title="${b.visivel ? 'Esconder' : 'Mostrar'}">${ic(b.visivel ? 'eye' : 'eyeoff', 'p')}</button>
+      </div>`).join('')}
+    </div>
+    <button class="btn" data-acao="dash-personalizar" style="margin-top:12px">${ic('check', 'p')} Pronto</button>
+  </section>`;
+}
+
+ACOES['dash-personalizar'] = () => { dashTela.editando = !dashTela.editando; desenhar(); };
+ACOES['dash-ver'] = (el) => {
+  const b = blocosDash().find((x) => x.id === el.dataset.id);
+  b.visivel = !b.visivel;
+  salvar(); desenhar();
+};
+ACOES['dash-padrao'] = () => { estado.config.dashboard = []; salvar(); desenhar(); };
 
 function porHora(a, b) {
   return (a.hora || '99').localeCompare(b.hora || '99') || (PESO_PRIORIDADE[a.prioridade] ?? 3) - (PESO_PRIORIDADE[b.prioridade] ?? 3);

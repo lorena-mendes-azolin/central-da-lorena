@@ -58,7 +58,7 @@ function desenharMenu() {
   $('#nav-listas').innerHTML = estado.listas.map((l) => {
     const c = contarLista(l);
     const pend = l.tipo === 'cursos' || l.tipo === 'metas' ? 0 : c.total - c.feitos;
-    return `<a href="#lista-${l.id}" data-pagina="lista-${l.id}" title="${esc(l.nome)}">
+    return `<a href="#lista-${l.id}" data-pagina="lista-${l.id}" title="${esc(l.nome)}" ${ordem('|listas', l.id)} data-pegar>
       <span class="selo mini" style="background:${l.cor}26;color:${l.cor}">${ic(l.icone)}</span><span>${esc(l.nome)}</span><em>${pend || ''}</em></a>`;
   }).join('');
   $$('.lateral a[data-pagina]').forEach((a) => a.classList.toggle('ativo', a.dataset.pagina === atual));
@@ -212,6 +212,7 @@ async function iniciar() {
   verificarLembretes();
   setInterval(verificarLembretes, 20000);
   resumoDoDia();
+  setTimeout(migrarImagens, 3000);
 }
 iniciar();
 

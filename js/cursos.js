@@ -183,7 +183,7 @@ function htmlCartaoMateria(l, m) {
   const capa = secoesDe(m).flatMap((x) => x.anexos || []).find((a) => a.tipo === 'imagem');
   const notas = calcNotas(l, m);
   const minutos = minutosEstudo(`${l.id}/${m.id}`);
-  return `<a class="card cartao-materia" href="#lista-${l.id}--${m.id}">
+  return `<a class="card cartao-materia" href="#lista-${l.id}--${m.id}" ${ordem(l.id + '|materias', m.id, true)} data-pegar>
     ${capa ? `<img class="capa" src="${capa.url}" alt="">` : ''}
     <div class="cm-topo"><b>${esc(m.nome)}</b><span class="status-materia st-m-${m.status}">${nomeStatus(l, m.status)}</span></div>
     ${m.tag ? `<span class="tag">${esc(m.tag)}</span>` : ''}
@@ -283,7 +283,7 @@ function htmlSecoes(m, ref) {
   return `<div class="caderno">
     <aside class="paginas">
       <button class="btn" data-acao="secao-nova" data-ref="${ref}" style="margin-bottom:6px">${ic('plus', 'p')} Nova seção</button>
-      ${secoes.map((x) => `<button class="pg ${aberta && x.id === aberta.id ? 'ativo' : ''}" data-acao="secao-abrir" data-ref="${ref}" data-id="${x.id}">
+      ${secoes.map((x) => `<button class="pg ${aberta && x.id === aberta.id ? 'ativo' : ''}" data-acao="secao-abrir" data-ref="${ref}" data-id="${x.id}" ${ordem(ref + '|secoes', x.id)} data-pegar>
         ${ic('note', 'p')}<span id="sec-${x.id}">${esc(x.titulo || 'Sem título')}</span>${(x.anexos || []).length ? `<small>${ic('link', 'p')}${x.anexos.length}</small>` : ''}</button>`).join('')
         || '<p class="vazio" style="padding:4px 8px">Nenhuma seção ainda.</p>'}
     </aside>

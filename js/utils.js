@@ -67,10 +67,55 @@ function avisar(mensagem, desfazer) {
   timerToast = setTimeout(() => t.classList.remove('show'), 4500);
 }
 
+function caminhoDe(alvo, obj = estado, trilha = []) {
+  if (obj === alvo) return trilha;
+  if (!obj || typeof obj !== 'object') return null;
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      const x = obj[i];
+      if (x && typeof x === 'object') {
+        const r = caminhoDe(alvo, x, [...trilha, x.id !== undefined ? { id: x.id } : { i }]);
+        if (r) return r;
+      }
+    }
+    return null;
+  }
+  for (const k of Object.keys(obj)) {
+    if (k === 'lixeira') continue;
+    const v = obj[k];
+    if (v && typeof v === 'object') {
+      const r = caminhoDe(alvo, v, [...trilha, { k }]);
+      if (r) return r;
+    }
+  }
+  return null;
+}
+
+function seguirCaminho(trilha) {
+  let o = estado;
+  for (const p of trilha || []) {
+    if (!o) return null;
+    if ('k' in p) o = o[p.k];
+    else if ('id' in p) o = Array.isArray(o) ? o.find((x) => x && x.id === p.id) : null;
+    else o = o[p.i];
+  }
+  return o || null;
+}
+
+const nomeDoItem = (x) => x.titulo || x.nome || x.desc || x.frente || 'Sem nome';
+
 function removerComDesfazer(lista, id, nome = 'Item') {
   const i = lista.findIndex((x) => x.id === id);
   if (i < 0) return;
+  const caminho = caminhoDe(lista);
   const [removido] = lista.splice(i, 1);
+  const registro = { id: removido.id, tipo: nome, nome: nomeDoItem(removido), quando: new Date().toISOString(), pos: i, caminho, item: removido };
+  estado.lixeira = estado.lixeira || [];
+  if (caminho) estado.lixeira.unshift(registro);
   salvar(); desenhar();
-  avisar(`${nome} removido`, () => { lista.splice(i, 0, removido); salvar(); desenhar(); });
+  avisar(`${nome} foi para a lixeira`, () => {
+    estado.lixeira = estado.lixeira.filter((x) => x !== registro);
+    lista.splice(i, 0, removido);
+    salvar(); desenhar();
+  });
 }

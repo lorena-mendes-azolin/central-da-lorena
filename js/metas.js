@@ -15,7 +15,7 @@ function htmlMetas(l) {
     ${l.metas.map((m) => {
       const pct = progressoMeta(m);
       const capa = (m.anexos || []).find((a) => a.tipo === 'imagem') || null;
-      return `<a class="card cartao-materia" href="#lista-${l.id}--${m.id}">
+      return `<a class="card cartao-materia" href="#lista-${l.id}--${m.id}" ${ordem(l.id + '|metas', m.id, true)} data-pegar>
         ${capa ? `<img class="capa" src="${capa.url}" alt="">` : ''}
         <div class="cm-topo"><b>${esc(m.titulo)}</b>${pct === 100 ? '<span class="status-materia st-m-concluida">Conquistada</span>' : ''}</div>
         <div class="cm-prog"><span>${pct}%</span><span class="prog"><i style="width:${pct}%"></i></span></div>
@@ -70,7 +70,8 @@ function htmlMeta(l, m) {
     <section class="card">
       <h2 class="card-titulo"><span class="selo mini c-verde">${ic('check')}</span> Etapas <small>${m.etapas.filter((e) => e.feito).length}/${m.etapas.length}</small></h2>
       <div class="lista-rolavel" style="max-height:320px">
-      ${m.etapas.map((e) => `<div class="item ${e.feito ? 'feito' : ''}">
+      ${m.etapas.map((e) => `<div class="item ${e.feito ? 'feito' : ''}" ${ordem(ref + '|etapas', e.id)}>
+        ${alca()}
         <button class="check ${e.feito ? 'on' : ''}" data-acao="etapa-check" data-ref="${ref}/etapa/${e.id}" aria-label="Concluir">${e.feito ? ic('check') : ''}</button>
         <input class="inline inline-t txt" value="${esc(e.titulo)}" data-digitar="campo" data-ref="${ref}/etapa/${e.id}" data-campo="titulo" aria-label="Etapa">
         <button class="acao-item apagar" data-acao="etapa-del" data-ref="${ref}" data-id="${e.id}" title="Apagar etapa">${ic('trash', 'p')}</button>

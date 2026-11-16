@@ -84,7 +84,8 @@ function htmlSimples(l) {
 function htmlItemLista(l, i) {
   const aberta = listaTela.notasAbertas.has(i.id);
   const temExtra = i.notas || i.anexos?.length;
-  return `<div class="item-lista ${i.status === 'feito' ? 'feito' : ''}">
+  return `<div class="item-lista ${i.status === 'feito' ? 'feito' : ''}" ${ordem(l.id + '|itens', i.id)}>
+    ${alca()}
     <button class="check ${i.status === 'feito' ? 'on' : ''}" data-acao="item-check" data-lista="${l.id}" data-id="${i.id}" aria-label="Concluir">${i.status === 'feito' ? ic('check') : ''}</button>
     <input class="inline inline-t" value="${esc(i.titulo)}" data-digitar="item-campo" data-campo="titulo" data-lista="${l.id}" data-id="${i.id}" aria-label="Título">
     <button class="status st-${i.status}" data-acao="item-status" data-lista="${l.id}" data-id="${i.id}">${STATUS[i.status]}</button>

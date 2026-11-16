@@ -116,6 +116,7 @@ function dadosIniciais() {
     medidas: [],
     financas: { lancamentos: [], recorrentes: [], contas: [], categorias: CATEGORIAS_GASTO.map((c) => ({ ...c })) },
     revisoes: {},
+    lixeira: [],
     flashcards: { baralhos: [] },
     diario: {},
     avisados: {},
@@ -214,6 +215,8 @@ function registroDoDia(iso = hojeISO()) {
 }
 
 function limparAntigos() {
+  const limiteLixeira = new Date(Date.now() - 30 * 86400000).toISOString();
+  estado.lixeira = (estado.lixeira || []).filter((x) => x.quando >= limiteLixeira);
   const limite = somarDias(hojeISO(), -120);
 
   Object.entries(estado.diario).forEach(([dia, r]) => {

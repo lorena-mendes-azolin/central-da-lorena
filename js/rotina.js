@@ -32,9 +32,9 @@ function semanasSeguidas(h) {
 function htmlLinhaHabito(h, dias, hoje) {
   const seq = sequencia(h);
   const editando = rotinaTela.editando === h.id;
-  return `<tr class="${editando ? 'editando' : ''}">
+  return `<tr class="${editando ? 'editando' : ''}" ${ordem('|habitos', h.id)}>
     <td>
-      <input class="inline inline-t" value="${esc(h.nome)}" data-digitar="habito-nome" data-id="${h.id}" aria-label="Nome do hábito">
+      ${alca()}<input class="inline inline-t" value="${esc(h.nome)}" data-digitar="habito-nome" data-id="${h.id}" aria-label="Nome do hábito">
       <button class="dias-hab" data-acao="habito-editar" data-id="${h.id}" title="Escolher dias e grupo">${ic('calendar', 'p')} ${textoDias(h)}</button>
     </td>
     ${dias.map((d) => {
@@ -166,7 +166,7 @@ PAGINAS.rotina = {
       <h2 class="card-titulo"><span class="selo mini c-verde">${ic('repeat')}</span> Meus hábitos</h2>
       <div class="chips">
         <button class="chip ${rotinaTela.grupo === 'todos' ? 'ativo' : ''}" data-acao="rotina-grupo" data-g="todos">Todos <b>${estado.habitos.length}</b></button>
-        ${grupos.map((g) => `<button class="chip ${rotinaTela.grupo === g ? 'ativo' : ''}" data-acao="rotina-grupo" data-g="${esc(g)}">${esc(g)} <b>${estado.habitos.filter((h) => h.grupo === g).length}</b></button>`).join('')}
+        ${grupos.map((g) => `<button class="chip ${rotinaTela.grupo === g ? 'ativo' : ''}" data-acao="rotina-grupo" data-g="${esc(g)}" ${ordem('|config.gruposHabito', g, true)} data-pegar>${esc(g)} <b>${estado.habitos.filter((h) => h.grupo === g).length}</b></button>`).join('')}
         <span class="espaco"></span>
         ${rotinaTela.grupo !== 'todos' && rotinaTela.grupo !== 'Geral' ? `<button class="chip" data-acao="grupo-del" data-g="${esc(rotinaTela.grupo)}" title="Excluir categoria (os hábitos vão para Geral)">${ic('trash', 'p')}</button>` : ''}
         ${rotinaTela.criandoGrupo

@@ -38,6 +38,9 @@
       <symbol id="i-money" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></symbol>
       <symbol id="i-review" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
       <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 1 10-10c0 2.5-2 4-4.5 4H15a2 2 0 0 0-1.5 3.3A1.6 1.6 0 0 1 12 22Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="16.5" cy="10.5" r="1"/></symbol>
+      <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
       <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
       <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
       <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M16 15l-3-3 3-3"/></symbol>
@@ -143,6 +146,7 @@
     <header class="barra-topo">
       <button class="btn-icone" data-acao="abrir-menu" id="btn-menu" aria-label="Menu"><svg class="ic"><use href="#i-menu"/></svg></button>
       <span class="caminho" id="caminho"></span>
+      <span id="status-nuvem" class="status-nuvem"></span>
       <span class="relogio-topo" id="relogio-topo"></span>
       <button class="btn-icone sino" data-acao="abrir-avisos" aria-label="Avisos"><svg class="ic"><use href="#i-bell"/></svg><b id="sino-num" hidden></b></button>
       <div class="painel-avisos" id="painel-avisos" hidden></div>
@@ -163,6 +167,7 @@
   <script src="js/config.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/seletor.js"></script>
+  <script src="js/arrastar.js"></script>
   <script src="js/dados.js"></script>
   <script src="js/nuvem.js"></script>
   <script src="js/dashboard.js"></script>
@@ -179,6 +184,8 @@
   <script src="js/flashcards.js"></script>
   <script src="js/financas.js"></script>
   <script src="js/revisao.js"></script>
+  <script src="js/lixeira.js"></script>
+  <script src="js/imagens.js"></script>
   <script src="js/notificacoes.js"></script>
   <script src="js/configuracoes.js"></script>
   <script src="js/app.js"></script>

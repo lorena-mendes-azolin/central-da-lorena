@@ -56,6 +56,12 @@ PAGINAS.configuracoes = {
       </section>
 
       <section class="card">
+        <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('trash')}</span> Lixeira</h2>
+        <p style="margin:0 0 12px">${(estado.lixeira || []).length ? `${estado.lixeira.length} ${estado.lixeira.length === 1 ? 'item apagado' : 'itens apagados'} nos últimos 30 dias.` : 'Nada apagado nos últimos 30 dias.'} Dá para restaurar qualquer coisa que você apagou.</p>
+        <a class="btn sec" href="#lixeira">${ic('trash', 'p')} Abrir a lixeira</a>
+      </section>
+
+      <section class="card">
         <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('bell')}</span> Notificações</h2>
         <p style="margin:0 0 12px">Notificações do computador: <b>${permissao}</b></p>
         <div class="form-linha" style="justify-content:flex-start">

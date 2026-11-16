@@ -31,7 +31,7 @@ function htmlCompras(l) {
     <button class="seta esq" data-acao="carrossel" data-d="-1" aria-label="Voltar">${ic('left', 'p')}</button>
     <div class="faixa">
       <button class="chip ${filtro === 'todas' ? 'ativo' : ''}" data-acao="compra-cat" data-c="todas">Todas <b>${l.itens.filter((i) => !i.comprado).length}</b></button>
-      ${cats.map((c) => `<button class="chip ${filtro === c ? 'ativo' : ''}" data-acao="compra-cat" data-c="${esc(c)}">${esc(c)} <b>${l.itens.filter((i) => !i.comprado && i.cat === c).length}</b></button>`).join('')}
+      ${cats.map((c) => `<button class="chip ${filtro === c ? 'ativo' : ''}" data-acao="compra-cat" data-c="${esc(c)}" ${ordem(l.id + '|categoriasCompra', c, true)} data-pegar>${esc(c)} <b>${l.itens.filter((i) => !i.comprado && i.cat === c).length}</b></button>`).join('')}
     </div>
     <button class="seta dir" data-acao="carrossel" data-d="1" aria-label="Avançar">${ic('right', 'p')}</button>
     ${filtro !== 'todas' ? `<button class="chip" data-acao="compra-cat-del" data-c="${esc(filtro)}" title="Excluir categoria">${ic('trash', 'p')}</button>` : ''}
@@ -48,7 +48,7 @@ function htmlCompras(l) {
     ${Object.entries(GRUPOS_COMPRA).map(([id, g]) => {
       const todos = l.itens.filter((i) => i.prazo === id && (filtro === 'todas' || i.cat === filtro));
       const itens = todos.filter((i) => comprasTela.mostrarComprados || !i.comprado)
-        .sort((a, b) => Number(a.comprado) - Number(b.comprado) || (a.mes || '9999').localeCompare(b.mes || '9999'));
+        .sort((a, b) => Number(a.comprado) - Number(b.comprado));
       const total = todos.filter((i) => !i.comprado).reduce((s, i) => s + valorNumero(i.valor), 0);
       return `<section class="card">
         <h2 class="card-titulo"><span class="selo mini ${g.cor}">${ic(g.icone)}</span> ${g.nome} <small>${total ? 'total ' + dinheiro(total) : g.desc}</small></h2>
@@ -64,8 +64,9 @@ function htmlCompras(l) {
           const img = (i.anexos || []).find((a) => a.tipo === 'imagem');
           const link = (i.anexos || []).find((a) => a.tipo === 'link');
           const temDetalhe = i.notas || i.anexos?.length || i.mes;
-          return `<div class="item-colecao ${i.comprado ? 'feito' : ''}">
+          return `<div class="item-colecao ${i.comprado ? 'feito' : ''}" ${ordem(l.id + '|itens', i.id)}>
             <div class="ic-linha">
+              ${alca()}
               <button class="check ${i.comprado ? 'on' : ''}" data-acao="compra-check" data-ref="${ref}" aria-label="Comprado">${i.comprado ? ic('check') : ''}</button>
               ${img ? `<img class="miniatura" src="${img.url}" alt="" data-acao="ver-imagem" data-src="${img.url}">` : ''}
               <input class="inline inline-t" value="${esc(i.titulo)}" data-digitar="campo" data-ref="${ref}" data-campo="titulo" aria-label="Item">

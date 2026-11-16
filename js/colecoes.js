@@ -5,8 +5,9 @@ function htmlItemColecao(l, cat, i, mostrarCategoria = false) {
   const aberto = colecaoTela.abertos.has(i.id);
   const img = (i.anexos || []).find((a) => a.tipo === 'imagem');
   const temExtra = i.notas || i.anexos?.length;
-  return `<div class="item-colecao ${i.feito ? 'feito' : ''}">
+  return `<div class="item-colecao ${i.feito ? 'feito' : ''}" ${mostrarCategoria ? '' : ordem(`${l.id}/${cat.id}|itens`, i.id)}>
     <div class="ic-linha">
+      ${mostrarCategoria ? '' : alca()}
       <button class="check ${i.feito ? 'on' : ''}" data-acao="col-check" data-ref="${ref}" title="${i.feito ? cat.falta : cat.feito}">${i.feito ? ic('check') : ''}</button>
       ${img ? `<img class="miniatura" src="${img.url}" alt="" data-acao="ver-imagem" data-src="${img.url}">` : ''}
       <input class="inline inline-t" value="${esc(i.titulo)}" data-digitar="campo" data-ref="${ref}" data-campo="titulo" aria-label="Item">
@@ -28,7 +29,7 @@ function htmlColecoes(l) {
   const cat = verFav ? null : l.categorias.find((c) => c.id === colecaoTela.cat[l.id]) || l.categorias[0];
   const f = colecaoTela.filtro;
   const itens = cat ? cat.itens.filter((i) => f === 'todos' || (f === 'falta' && !i.feito) || (f === 'feito' && i.feito) || (f === 'fav' && i.favorito))
-    .sort((a, b) => Number(a.feito) - Number(b.feito) || Number(b.favorito) - Number(a.favorito)) : [];
+    .sort((a, b) => Number(a.feito) - Number(b.feito)) : [];
   const favoritos = l.categorias.flatMap((c) => c.itens.filter((i) => i.favorito).map((i) => ({ c, i })));
 
   return `
@@ -37,7 +38,7 @@ function htmlColecoes(l) {
     <button class="seta esq" data-acao="carrossel" data-d="-1" aria-label="Voltar">${ic('left', 'p')}</button>
     <div class="faixa">
       <button class="chip chip-fav ${verFav ? 'ativo' : ''}" data-acao="col-cat" data-lista="${l.id}" data-id="__fav">${ic('star', 'p')} Favoritos <b>${favoritos.length}</b></button>
-      ${l.categorias.map((c) => `<button class="chip ${cat && c.id === cat.id ? 'ativo' : ''}" data-acao="col-cat" data-lista="${l.id}" data-id="${c.id}">
+      ${l.categorias.map((c) => `<button class="chip ${cat && c.id === cat.id ? 'ativo' : ''}" data-acao="col-cat" data-lista="${l.id}" data-id="${c.id}" ${ordem(l.id + '|categorias', c.id, true)} data-pegar>
         ${ic(c.icone, 'p')} ${esc(c.nome)} <b>${c.itens.filter((i) => !i.feito).length}</b></button>`).join('')}
     </div>
     <button class="seta dir" data-acao="carrossel" data-d="1" aria-label="Avançar">${ic('right', 'p')}</button>

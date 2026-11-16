@@ -916,3 +916,41 @@ body[data-tema] { background: var(--fundo); }
 .form-link input { flex: 1 1 auto; min-width: 0; padding: 8px 12px; }
 .form-link .btn-mini, .anexos-add > .btn-mini { flex: 0 0 auto; padding: 8px 14px; }
 .lista-compras { max-height: 460px; overflow-y: auto; padding-right: 4px; }
+.alca { display: inline-grid; place-items: center; width: 22px; height: 28px; flex: 0 0 22px; color: var(--fraco); cursor: grab; touch-action: none; border-radius: 6px; opacity: .55; transition: opacity .15s; }
+.alca:hover { opacity: 1; color: var(--suave); background: var(--hover); }
+.alca .ic { width: 15px; height: 15px; fill: currentColor; stroke: none; }
+[data-ordem]:hover > .alca, [data-ordem]:hover > .ic-linha > .alca, [data-ordem]:hover > td > .alca { opacity: 1; }
+.habitos td:first-child .inline-t { width: calc(100% - 28px); }
+.habitos td:first-child .dias-hab { display: flex; padding-left: 34px; margin-top: 2px; }
+.habitos td:first-child .alca { vertical-align: middle; margin-right: 2px; }
+.arrastando { opacity: .35; }
+.arrastando-algo, .arrastando-algo * { cursor: grabbing !important; user-select: none !important; }
+.fantasma-arraste { position: fixed; left: 0; top: 0; z-index: 2000; pointer-events: none; opacity: .92; box-shadow: 0 14px 34px rgba(0, 0, 0, .45); border-radius: 12px; background: var(--card-2); list-style: none; margin: 0; }
+tr.fantasma-arraste { display: flex; align-items: center; }
+.alvo-antes { box-shadow: 0 -2px 0 0 var(--destaque-2) !important; }
+.alvo-depois { box-shadow: 0 2px 0 0 var(--destaque-2) !important; }
+[data-ordem-x].alvo-antes { box-shadow: -3px 0 0 0 var(--destaque-2) !important; }
+[data-ordem-x].alvo-depois { box-shadow: 3px 0 0 0 var(--destaque-2) !important; }
+@media (hover: none) { .alca { opacity: .8; } }
+
+.status-nuvem { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12.5px; font-weight: 700; color: var(--fraco); padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.status-nuvem:empty { display: none; }
+.status-nuvem .ic { width: 14px; height: 14px; }
+.status-nuvem.salvo { color: var(--verde); }
+.status-nuvem.salvando { color: var(--suave); }
+.status-nuvem.offline, .status-nuvem.erro { color: var(--amarelo); background: rgba(247, 197, 107, .12); }
+.status-nuvem + .relogio-topo { margin-left: 14px; }
+@media (max-width: 760px) { .status-nuvem span { display: none; } }
+.item-lixeira .txt { min-width: 0; }
+.ola-acoes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.grade-dash { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+.bloco-dash { min-width: 0; display: flex; flex-direction: column; }
+.bloco-dash > .card, .bloco-dash > section { flex: 1; margin: 0; }
+.bloco-dash > .grade { margin: 0; }
+.tam-cheio { grid-column: 1 / -1; }
+.tam-meio { grid-column: span 2; }
+@media (max-width: 1450px) { .grade-dash { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .grade-dash { grid-template-columns: minmax(0, 1fr); } .tam-meio { grid-column: auto; } }
+.personalizar-dash { margin-bottom: 16px; max-width: 520px; }
+.blocos-dash-lista { display: grid; gap: 4px; }
+.blocos-dash-lista .item { background: var(--card-2); border-radius: 10px; }

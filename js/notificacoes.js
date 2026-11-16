@@ -5,7 +5,7 @@ function htmlPedirNotificacao() {
     return `<div class="alerta">${ic('bell')}<span>Os avisos aparecem aqui dentro do site. Para receber também a notificação do Windows, abra pelo <b>Live Server</b> do VS Code.</span></div>`;
   }
   if (!('Notification' in window) || Notification.permission !== 'default') return '';
-  return `<div class="alerta">${ic('bell')}<span>Quer receber os avisos das tarefas como notificação no computador?</span>
+  return `<div class="alerta">${ic('bell')}<span>Quer receber os avisos das tarefas como notificação no ${/Android|iPhone|iPad/.test(navigator.userAgent) ? 'celular' : 'computador'}?</span>
     <button class="btn" data-acao="permitir-notif">Ativar</button></div>`;
 }
 
@@ -16,11 +16,20 @@ ACOES['permitir-notif'] = async () => {
 };
 
 function notificar(titulo, corpo) {
-  if (PODE_NOTIFICAR && Notification.permission === 'granted') {
-    try { new Notification(titulo, { body: corpo, tag: titulo }); } catch {  }
-  }
+  if (PODE_NOTIFICAR && Notification.permission === 'granted') mostrarNotificacao(titulo, corpo);
   avisar(`${titulo} · ${corpo}`);
   tocarSom();
+}
+
+async function mostrarNotificacao(titulo, corpo) {
+  const opcoes = { body: corpo, tag: titulo, icon: 'icons/icone-192.png', badge: 'icons/icone-192.png', vibrate: [120, 60, 120] };
+  try {
+    const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+    if (reg) await reg.showNotification(titulo, opcoes);
+    else new Notification(titulo, opcoes);
+  } catch {
+    try { new Notification(titulo, opcoes); } catch { }
+  }
 }
 
 let audio;
