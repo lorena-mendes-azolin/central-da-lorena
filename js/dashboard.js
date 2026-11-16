@@ -145,9 +145,9 @@ PAGINAS.dashboard = {
           </div>
           <div class="anel">
             <svg width="160" height="160" viewBox="0 0 160 160">
-              <circle cx="80" cy="80" r="70" fill="none" stroke="#28274a" stroke-width="8"/>
+              <circle cx="80" cy="80" r="70" fill="none" style="stroke:var(--card-2)" stroke-width="8"/>
               <circle id="pomo-arco" cx="80" cy="80" r="70" fill="none" stroke="url(#gradFoco)" stroke-width="8" stroke-linecap="round"/>
-              <defs><linearGradient id="gradFoco"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#f59ad8"/></linearGradient></defs>
+              <defs><linearGradient id="gradFoco"><stop offset="0" style="stop-color:var(--destaque-2)"/><stop offset="1" stop-color="#f59ad8"/></linearGradient></defs>
             </svg>
             <div class="anel-tempo"><b id="pomo-tempo">25:00</b><span id="pomo-estado">${pomo.estado}</span></div>
           </div>

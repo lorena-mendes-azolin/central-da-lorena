@@ -167,10 +167,11 @@ PAGINAS.rotina = {
       <div class="chips">
         <button class="chip ${rotinaTela.grupo === 'todos' ? 'ativo' : ''}" data-acao="rotina-grupo" data-g="todos">Todos <b>${estado.habitos.length}</b></button>
         ${grupos.map((g) => `<button class="chip ${rotinaTela.grupo === g ? 'ativo' : ''}" data-acao="rotina-grupo" data-g="${esc(g)}">${esc(g)} <b>${estado.habitos.filter((h) => h.grupo === g).length}</b></button>`).join('')}
+        <span class="espaco"></span>
+        ${rotinaTela.grupo !== 'todos' && rotinaTela.grupo !== 'Geral' ? `<button class="chip" data-acao="grupo-del" data-g="${esc(rotinaTela.grupo)}" title="Excluir categoria (os hábitos vão para Geral)">${ic('trash', 'p')}</button>` : ''}
         ${rotinaTela.criandoGrupo
           ? `<form class="form-chip" data-form="grupo-novo"><input type="text" name="nome" id="grupo-nome" placeholder="Nome da categoria" maxlength="24"><button class="btn-mini" type="submit">Criar</button></form>`
           : `<button class="chip" data-acao="grupo-criar">${ic('plus', 'p')} Nova categoria</button>`}
-        ${rotinaTela.grupo !== 'todos' && rotinaTela.grupo !== 'Geral' ? `<button class="chip" data-acao="grupo-del" data-g="${esc(rotinaTela.grupo)}" title="Excluir categoria (os hábitos vão para Geral)">${ic('trash', 'p')}</button>` : ''}
       </div>
 
       ${estado.habitos.length ? `<div class="tabela-rolavel">

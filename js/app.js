@@ -20,6 +20,7 @@ function desenhar() {
   ajustarTrilhos(true);
   fecharMenuSelect();
   melhorarSelects();
+  melhorarDatas();
 }
 
 function aplicarTema() {

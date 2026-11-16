@@ -271,6 +271,7 @@ function abrirJanela(t) {
   </form>`;
   j.showModal();
   melhorarSelects(j);
+  melhorarDatas(j);
   setTimeout(() => $('#j-titulo').focus(), 30);
 }
 
@@ -287,6 +288,7 @@ ACOES['tarefa-nova'] = (el) => {
   $('#j-hora').value = base.hora;
   $('#j-lembrete').value = base.lembrete;
   $$('#janela-tarefa select').forEach(rotuloSelect);
+  $$('#janela-tarefa input[type=date]').forEach(rotuloData);
 };
 
 ACOES['tarefa-abrir'] = (el) => {

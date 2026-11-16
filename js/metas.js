@@ -1,3 +1,4 @@
+const textoPrazo = (m) => (m.prazoMes ? mesAno(m.prazo) : dataCurta(m.prazo));
 const guardadoMeta = (m) => (m.depositos || []).reduce((s, d) => s + d.valor, 0);
 const alvoMeta = (m) => valorNumero(m.valorAlvo);
 
@@ -18,7 +19,7 @@ function htmlMetas(l) {
         ${capa ? `<img class="capa" src="${capa.url}" alt="">` : ''}
         <div class="cm-topo"><b>${esc(m.titulo)}</b>${pct === 100 ? '<span class="status-materia st-m-concluida">Conquistada</span>' : ''}</div>
         <div class="cm-prog"><span>${pct}%</span><span class="prog"><i style="width:${pct}%"></i></span></div>
-        <div class="cm-prox">${m.prazo ? `${ic('calendar', 'p')} até ${dataCurta(m.prazo)} · ${quandoFalta(m.prazo).toLowerCase()}` : `<span style="color:var(--fraco)">Sem prazo</span>`}
+        <div class="cm-prox">${m.prazo ? `${ic('calendar', 'p')} até ${textoPrazo(m)} · ${quandoFalta(m.prazo).toLowerCase()}` : `<span style="color:var(--fraco)">Sem prazo</span>`}
           · ${m.etapas.length} ${m.etapas.length === 1 ? 'etapa' : 'etapas'}</div>
         ${alvoMeta(m) ? `<div class="cm-extra"><span>${ic('money', 'p')} ${dinheiro(guardadoMeta(m))} de ${dinheiro(alvoMeta(m))}</span></div>` : ''}
       </a>`;
@@ -47,8 +48,8 @@ function htmlMeta(l, m) {
     <div class="textos">
       <input class="titulo-edit" value="${esc(m.titulo)}" data-digitar="campo" data-ref="${ref}" data-campo="titulo" aria-label="Meta" maxlength="80">
       <div class="meta-info">
-        <label>Prazo <input type="date" value="${m.prazo}" data-mudar="campo" data-ref="${ref}" data-campo="prazo" data-redesenhar="1"></label>
-        ${m.prazo ? `<span>${quandoFalta(m.prazo)}</span>` : ''}
+        <label>Prazo <input type="date" value="${m.prazo}" data-mudar="campo" data-ref="${ref}" data-campo="prazo" data-redesenhar="1" data-mes-ok="1" data-campo-mes="prazoMes" data-so-mes="${m.prazoMes ? 1 : 0}"></label>
+        ${m.prazo ? `<span>${m.prazoMes ? 'até o fim do mês · ' : ''}${quandoFalta(m.prazo)}</span>` : ''}
       </div>
     </div>
     <button class="btn-mini" data-acao="meta-del" data-lista="${l.id}" data-id="${m.id}">${ic('trash', 'p')} Excluir meta</button>
@@ -68,11 +69,13 @@ function htmlMeta(l, m) {
     ${htmlDinheiroMeta(m, ref)}
     <section class="card">
       <h2 class="card-titulo"><span class="selo mini c-verde">${ic('check')}</span> Etapas <small>${m.etapas.filter((e) => e.feito).length}/${m.etapas.length}</small></h2>
+      <div class="lista-rolavel" style="max-height:320px">
       ${m.etapas.map((e) => `<div class="item ${e.feito ? 'feito' : ''}">
         <button class="check ${e.feito ? 'on' : ''}" data-acao="etapa-check" data-ref="${ref}/etapa/${e.id}" aria-label="Concluir">${e.feito ? ic('check') : ''}</button>
         <input class="inline inline-t txt" value="${esc(e.titulo)}" data-digitar="campo" data-ref="${ref}/etapa/${e.id}" data-campo="titulo" aria-label="Etapa">
         <button class="acao-item apagar" data-acao="etapa-del" data-ref="${ref}" data-id="${e.id}" title="Apagar etapa">${ic('trash', 'p')}</button>
       </div>`).join('') || '<p class="vazio">Divida a meta em passos menores.</p>'}
+      </div>
       <form class="form-linha" data-form="etapa-nova" data-ref="${ref}" style="margin-top:10px">
         <input type="text" name="titulo" id="etapa-titulo" placeholder="Nova etapa" maxlength="100" data-precisa>
         <button class="btn" type="submit">${ic('plus', 'p')}</button>

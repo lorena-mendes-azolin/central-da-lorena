@@ -137,7 +137,7 @@ PAGINAS.graficos = {
       }
       html += pontos.map((p) => {
         const nome = HUMORES.find((h) => NOTA_HUMOR[h.id] === p.nota).nome;
-        return `<circle cx="${x(p.i)}" cy="${y(p.nota)}" r="5" fill="#f7c56b" stroke="#201f38" stroke-width="2"/>
+        return `<circle cx="${x(p.i)}" cy="${y(p.nota)}" r="5" fill="#f7c56b" style="stroke:var(--card)" stroke-width="2"/>
           <circle class="ponto-hit" cx="${x(p.i)}" cy="${y(p.nota)}" r="14" fill="transparent" data-dica="${dataCurta(p.d)} · ${nome}"/>`;
       }).join('');
       svg.innerHTML = html;

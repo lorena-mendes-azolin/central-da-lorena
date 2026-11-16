@@ -11,9 +11,12 @@ function acharRef(ref) {
   let obj = acharLista(idLista);
   for (let i = 0; obj && i < resto.length; i++) {
     const seg = resto[i];
-    if (seg === 'nota') { obj = (obj.notas || []).find((n) => n.id === resto[++i]); continue; }
-    if (seg === 'tarefa') { obj = (obj.tarefas || []).find((t) => t.id === resto[++i]); continue; }
-    if (seg === 'etapa') { obj = (obj.etapas || []).find((t) => t.id === resto[++i]); continue; }
+    const lista = { nota: 'notas', tarefa: 'tarefas', etapa: 'etapas', secao: 'secoes', item: 'itensNota' }[seg];
+    if (lista) {
+      const id = resto[++i];
+      obj = (obj[lista] || []).find((x) => x.id === id);
+      continue;
+    }
     const filhos = obj.materias || obj.metas || obj.categorias || obj.itens || [];
     obj = filhos.find((x) => x.id === seg);
   }

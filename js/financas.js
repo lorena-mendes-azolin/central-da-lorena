@@ -152,7 +152,7 @@ PAGINAS.financas = {
               <input class="inline inline-t" value="${esc(c.nome)}" data-digitar="cat-nome" data-id="${c.id}" aria-label="Nome">
               ${c.id !== 'outros' ? `<button class="acao-item apagar" data-acao="cat-del" data-id="${c.id}" title="Apagar">${ic('trash', 'p')}</button>` : ''}</div>`).join('')}
             <form class="form-linha" data-form="cat-nova" style="margin-top:8px"><input type="text" name="nome" placeholder="Nova categoria" maxlength="30" data-precisa><button class="btn sec" type="submit">${ic('plus', 'p')}</button></form>
-          </div>` : cats.length ? `<div class="barras-h dinheiro">
+          </div>` : cats.length ? `<div class="barras-h dinheiro fin-rolavel">
             ${cats.map(([id, v]) => {
               const c = catGasto(id);
               return `<div class="barra-h" data-dica="${esc(c.nome)} · ${dinheiro(v)} (${Math.round((v / saidas) * 100)}%)">
@@ -165,17 +165,17 @@ PAGINAS.financas = {
 
         <section class="card">
           <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('calendar')}</span> Contas de ${nomeMes(ym).split(' ')[0].toLowerCase()} <a href="#" data-acao="fin-aba" data-a="contas">Ver todas</a></h2>
-          ${fin().contas.map((c) => htmlConta(c, ym, true)).join('') || '<p class="vazio">Cadastre aluguel, internet, celular… em Contas fixas.</p>'}
+          <div class="fin-rolavel">${fin().contas.map((c) => htmlConta(c, ym, true)).join('') || '<p class="vazio">Cadastre aluguel, internet, celular… em Contas fixas.</p>'}</div>
         </section>
 
         <section class="card">
           <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('repeat')}</span> Repetições e parcelas</h2>
-          ${regras.map((r) => `<div class="item">
+          <div class="fin-rolavel">${regras.map((r) => `<div class="item">
             <span class="barra-cor" style="background:${r.tipo === 'entrada' ? 'var(--verde)' : catGasto(r.cat).cor}"></span>
             <span class="txt">${esc(r.desc)}<span class="sub">${textoRegra(r)}</span></span>
             <b class="${r.tipo === 'entrada' ? 'valor-entrada' : ''}">${dinheiro(r.valor)}</b>
             <button class="acao-item apagar" data-acao="regra-del" data-id="${r.id}" title="Parar de repetir">${ic('trash', 'p')}</button>
-          </div>`).join('') || '<p class="vazio">Ao adicionar um lançamento, escolha "Todo mês", "Toda semana" ou "Parcelado" para ele aparecer aqui.</p>'}
+          </div>`).join('') || '<p class="vazio">Ao adicionar um lançamento, escolha "Todo mês", "Toda semana" ou "Parcelado" para ele aparecer aqui.</p>'}</div>
         </section>
       </div>
     </div>` : htmlContas(ym)}`;
@@ -207,7 +207,7 @@ function htmlContas(ym) {
       <select name="cat" aria-label="Categoria">${fin().categorias.map((c) => `<option value="${c.id}" ${c.id === 'casa' ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}</select>
       <button class="btn" type="submit">${ic('plus', 'p')} Adicionar conta</button>
     </form>
-    ${contas.map((c) => htmlConta(c, ym)).join('') || '<p class="vazio">Nenhuma conta fixa ainda.</p>'}
+    <div class="fin-rolavel" style="max-height:440px">${contas.map((c) => htmlConta(c, ym)).join('') || '<p class="vazio">Nenhuma conta fixa ainda.</p>'}</div>
     <div class="form-linha" style="margin-top:14px;justify-content:flex-start">
       <label class="rotulo-select">Avisar
         <select data-mudar="cfg-contas">
@@ -232,6 +232,7 @@ MUDAR['fin-repetir'] = (el) => {
   desenhar();
   const n = $('form[data-form="gasto-novo"]');
   n.desc.value = desc; n.valor.value = valor; n.data.value = data;
+  rotuloData(n.data);
 };
 
 FORMS['gasto-novo'] = (d) => {

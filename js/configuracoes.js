@@ -50,7 +50,9 @@ PAGINAS.configuracoes = {
         ${location.protocol.startsWith('http') && location.hostname !== '127.0.0.1' && location.hostname !== 'localhost'
           ? `<p style="margin:0 0 12px">No celular: abra o menu do navegador e toque em <b>Adicionar à tela inicial</b> (no iPhone, pelo botão Compartilhar do Safari). No computador: clique no ícone de instalar na barra de endereço.</p>
              ${eventoInstalar ? `<button class="btn" data-acao="instalar">${ic('plus', 'p')} Instalar agora</button>` : ''}`
-          : `<p style="margin:0">Para instalar no celular, o site precisa estar publicado na internet (por exemplo no GitHub Pages). Depois é só abrir o link no celular e tocar em <b>Adicionar à tela inicial</b>.</p>`}
+          : `<p style="margin:0 0 10px">Você está abrindo o site ${location.protocol === 'file:' ? 'direto do arquivo do computador' : 'pelo Live Server'}. Para instalar, abra pelo endereço publicado no GitHub Pages:</p>
+             <a class="btn sec" href="https://lorena-mendes-azolin.github.io/central-da-lorena/" target="_blank" rel="noopener">${ic('link', 'p')} Abrir o site publicado</a>
+             <p class="dica">No celular, abra esse link e toque em <b>Adicionar à tela inicial</b>.</p>`}
       </section>
 
       <section class="card">

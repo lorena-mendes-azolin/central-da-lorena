@@ -12,7 +12,62 @@ function palavras(rotulo) {
 function regraNotas(l) { return { media: 6, p1: 1, p2: 1, ...(l.regra || {}) }; }
 const fmtNota = (n) => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
 
+const modoLivre = (l, m) => (m.notaModo === undefined ? l.rotulo !== 'Matéria' : m.notaModo === 'pontos');
+
+// "Média": cada item tem nota de 0 a 10 e um peso
+function calcMediaItens(l, m) {
+  const r = regraNotas(l);
+  const itens = m.itensNota || [];
+  const res = { media: null, texto: 'Adicione as provas, atividades e trabalhos. Cada um com nota de 0 a 10 e um peso.', tom: '', total: 0, max: 0 };
+  if (!itens.length) return res;
+  const peso = (i) => numero(i.peso) || 1;
+  const comNota = itens.filter((i) => i.nota !== '' && i.nota !== undefined && numero(i.nota) !== null);
+  const faltam = itens.filter((i) => !comNota.includes(i));
+  const P = itens.reduce((s, i) => s + peso(i), 0);
+  const somaFeita = comNota.reduce((s, i) => s + numero(i.nota) * peso(i), 0);
+  const pFeito = comNota.reduce((s, i) => s + peso(i), 0);
+  if (!comNota.length) return Object.assign(res, { texto: `Para passar a média das notas precisa ser ${fmtNota(r.media)}.` });
+  res.media = somaFeita / pFeito;
+  if (!faltam.length) {
+    return Object.assign(res, res.media >= r.media
+      ? { texto: `Aprovada com média ${fmtNota(res.media)}!`, tom: 'ok' }
+      : { texto: `Média ${fmtNota(res.media)}, abaixo de ${fmtNota(r.media)}.`, tom: 'ruim' });
+  }
+  const precisa = (r.media * P - somaFeita) / (P - pFeito);
+  if (precisa <= 0) return Object.assign(res, { texto: `Média até agora ${fmtNota(res.media)}. Já está garantida!`, tom: 'ok' });
+  if (precisa > 10) return Object.assign(res, { texto: `Média até agora ${fmtNota(res.media)}. Mesmo tirando 10 no que falta não chega a ${fmtNota(r.media)}.`, tom: 'ruim' });
+  return Object.assign(res, { texto: `Média até agora ${fmtNota(res.media)}. Precisa de ${fmtNota(Math.ceil(precisa * 10) / 10)} em média ${faltam.length === 1 ? 'no item que falta' : `nos ${faltam.length} itens que faltam`}.`, tom: precisa > 7 ? 'atencao' : '' });
+}
+
+function calcPontos(l, m) {
+  if (m.calcModo === 'media') return calcMediaItens(l, m);
+  const r = regraNotas(l);
+  const itens = m.itensNota || [];
+  const res = { media: null, texto: 'Adicione os itens que formam a nota, como trabalho e prova, e quanto cada um vale.', tom: '', total: 0, max: 0 };
+  if (!itens.length) return res;
+  const comNota = itens.filter((i) => i.nota !== '' && i.nota !== undefined && numero(i.nota) !== null);
+  const total = comNota.reduce((s, i) => s + numero(i.nota), 0);
+  const max = itens.reduce((s, i) => s + (numero(i.vale) || 0), 0);
+  const faltaVale = itens.filter((i) => !comNota.includes(i)).reduce((s, i) => s + (numero(i.vale) || 0), 0);
+  Object.assign(res, { total, max });
+  if (!max) return Object.assign(res, { texto: 'Coloque quanto vale cada item.' });
+  const alvo = (r.media * max) / 10;
+  const final = (total / max) * 10;
+  if (!comNota.length) return Object.assign(res, { texto: `Para passar você precisa somar ${fmtNota(alvo)} de ${fmtNota(max)} pontos.` });
+  res.media = final;
+  if (!faltaVale) {
+    return Object.assign(res, final >= r.media
+      ? { texto: `Aprovada! Somou ${fmtNota(total)} de ${fmtNota(max)} pontos.`, tom: 'ok' }
+      : { texto: `Somou ${fmtNota(total)} de ${fmtNota(max)} pontos, abaixo da média ${fmtNota(r.media)}.`, tom: 'ruim' });
+  }
+  const precisa = alvo - total;
+  if (precisa <= 0) return Object.assign(res, { texto: `Média garantida! Já somou ${fmtNota(total)} pontos.`, tom: 'ok' });
+  if (precisa > faltaVale) return Object.assign(res, { texto: `Faltam ${fmtNota(precisa)} pontos, mas os itens que restam valem só ${fmtNota(faltaVale)}.`, tom: 'ruim' });
+  return Object.assign(res, { texto: `Somou ${fmtNota(total)} até agora. Precisa de mais ${fmtNota(Math.ceil(precisa * 10) / 10)} dos ${fmtNota(faltaVale)} pontos que faltam.`, tom: precisa / faltaVale > 0.7 ? 'atencao' : '' });
+}
+
 function calcNotas(l, m) {
+  if (modoLivre(l, m)) return calcPontos(l, m);
   const r = regraNotas(l);
   const av = m.av || {};
   const num = (v) => (v === '' || v === undefined ? null : numero(v));
@@ -90,10 +145,11 @@ function htmlCursos(l) {
     const ref = m ? `${l.id}/${m.id}` : l.id;
     return `${topo}
     <div class="chips">
-      <button class="chip ${!m ? 'ativo' : ''}" data-acao="cursos-cad-dono" data-lista="${l.id}" data-id="geral">${ic('notebook', 'p')} Geral <b>${(l.notas || []).length}</b></button>
+      <button class="chip ${!m ? 'ativo' : ''}" data-acao="cursos-cad-dono" data-lista="${l.id}" data-id="geral">${ic('notebook', 'p')} Anotações gerais <b>${(l.notas || []).length}</b></button>
       ${l.materias.map((x) => `<button class="chip ${m && m.id === x.id ? 'ativo' : ''}" data-acao="cursos-cad-dono" data-lista="${l.id}" data-id="${x.id}">${esc(x.nome)} <b>${(x.notas || []).length}</b></button>`).join('')}
     </div>
-    ${htmlCaderno(dono, ref, m ? `Crie uma página para cada aula de ${esc(m.nome)}.` : `Anotações que valem para ${p.todasMin} ${p.plural === 'matérias' ? 'as' : 'os'} ${p.plural}.`)}`;
+    ${!m ? `<p class="dica" style="margin:-4px 0 12px">Aqui ficam as anotações que não são de ${p.um} ${p.nome} específic${p.nome === 'matéria' ? 'a' : 'o'}. ${l.materias.length ? `Para o caderno de ${p.um} ${p.nome}, clique no nome ${p.nome === 'matéria' ? 'dela' : 'dele'} acima.` : `Cada ${p.nome} que você criar ganha um caderno próprio, que aparece aqui ao lado.`}</p>` : ''}
+    ${htmlCaderno(dono, ref, m ? `Crie uma página para cada aula de ${esc(m.nome)}.` : 'Comece uma página para as suas anotações.')}`;
   }
 
   return `${topo}
@@ -124,7 +180,7 @@ function htmlCartaoMateria(l, m) {
   const total = m.tarefas.length;
   const feitas = m.tarefas.filter((t) => t.feito).length;
   const prox = m.tarefas.filter((t) => !t.feito && t.data).sort((a, b) => a.data.localeCompare(b.data))[0];
-  const capa = (m.anexos || []).find((a) => a.tipo === 'imagem');
+  const capa = secoesDe(m).flatMap((x) => x.anexos || []).find((a) => a.tipo === 'imagem');
   const notas = calcNotas(l, m);
   const minutos = minutosEstudo(`${l.id}/${m.id}`);
   return `<a class="card cartao-materia" href="#lista-${l.id}--${m.id}">
@@ -195,11 +251,7 @@ function htmlMateria(l, m) {
 
   ${aba === 'notas' ? htmlNotasEstudo(l, m, ref) : ''}
 
-  ${aba === 'sobre' ? `<section class="card">
-    ${htmlEditor(ref, 'descricao', m.descricao, 'Escreva aqui…')}
-    <h3 class="sub-titulo">${ic('image', 'p')} Links e imagens</h3>
-    ${htmlAnexos(m, ref)}
-  </section>` : ''}
+  ${aba === 'sobre' ? htmlSecoes(m, ref) : ''}
 
   ${aba === 'tarefas' ? `<section class="card">
     <form class="form-linha" data-form="tm-nova" data-ref="${ref}" style="margin-bottom:12px">
@@ -213,30 +265,126 @@ function htmlMateria(l, m) {
   </section>` : ''}`;
 }
 
+// Seções da aba "Sobre": cada uma com título, texto, links e imagens
+function secoesDe(m) {
+  if (!m.secoes) {
+    m.secoes = [];
+    if (m.descricao || (m.anexos || []).length) m.secoes.push({ id: novoId(), titulo: 'Sobre', html: m.descricao || '', anexos: m.anexos || [] });
+  }
+  return m.secoes;
+}
+
+const secaoAberta = {};
+
+function htmlSecoes(m, ref) {
+  const secoes = secoesDe(m);
+  const aberta = secoes.find((x) => x.id === secaoAberta[ref]) || secoes[0];
+  const i = aberta ? secoes.indexOf(aberta) : -1;
+  return `<div class="caderno">
+    <aside class="paginas">
+      <button class="btn" data-acao="secao-nova" data-ref="${ref}" style="margin-bottom:6px">${ic('plus', 'p')} Nova seção</button>
+      ${secoes.map((x) => `<button class="pg ${aberta && x.id === aberta.id ? 'ativo' : ''}" data-acao="secao-abrir" data-ref="${ref}" data-id="${x.id}">
+        ${ic('note', 'p')}<span id="sec-${x.id}">${esc(x.titulo || 'Sem título')}</span>${(x.anexos || []).length ? `<small>${ic('link', 'p')}${x.anexos.length}</small>` : ''}</button>`).join('')
+        || '<p class="vazio" style="padding:4px 8px">Nenhuma seção ainda.</p>'}
+    </aside>
+    ${aberta ? `<article class="folha">
+      <input class="folha-titulo" value="${esc(aberta.titulo)}" placeholder="Título da seção" data-digitar="secao-titulo" data-ref="${ref}/secao/${aberta.id}" data-id="${aberta.id}" maxlength="60" aria-label="Título da seção">
+      <div class="folha-info">
+        <button class="btn-mini" data-acao="secao-mover" data-ref="${ref}" data-id="${aberta.id}" data-n="-1" ${i === 0 ? 'disabled' : ''}>${ic('left', 'p rot90')} Subir</button>
+        <button class="btn-mini" data-acao="secao-mover" data-ref="${ref}" data-id="${aberta.id}" data-n="1" ${i === secoes.length - 1 ? 'disabled' : ''}>${ic('right', 'p rot90')} Descer</button>
+        <button class="btn-mini" data-acao="secao-del" data-ref="${ref}" data-id="${aberta.id}" style="margin-left:auto">${ic('trash', 'p')} Excluir seção</button>
+      </div>
+      ${htmlEditor(`${ref}/secao/${aberta.id}`, 'html', aberta.html, 'Escreva aqui…')}
+      <h3 class="sub-titulo">${ic('image', 'p')} Links e imagens</h3>
+      ${htmlAnexos(aberta, `${ref}/secao/${aberta.id}`)}
+    </article>` : `<article class="folha vazia">
+      <div><p style="font-size:17px;font-weight:700;margin:0 0 6px">Nenhuma seção</p>
+      <p class="vazio" style="margin:0 0 14px">Crie seções separadas, como Professor, Avaliação, Materiais e Links úteis.</p>
+      <button class="btn" data-acao="secao-nova" data-ref="${ref}">${ic('plus', 'p')} Criar a primeira seção</button></div>
+    </article>`}
+  </div>`;
+}
+
+ACOES['secao-abrir'] = (el) => { secaoAberta[el.dataset.ref] = el.dataset.id; desenhar(); };
+DIGITAR['secao-titulo'] = (el) => {
+  const x = acharRef(el.dataset.ref);
+  x.titulo = el.value;
+  salvar();
+  const nome = $('#sec-' + el.dataset.id);
+  if (nome) nome.textContent = el.value || 'Sem título';
+};
+
+ACOES['secao-nova'] = (el) => {
+  const m = acharRef(el.dataset.ref);
+  const x = { id: novoId(), titulo: '', html: '', anexos: [] };
+  secoesDe(m).push(x);
+  secaoAberta[el.dataset.ref] = x.id;
+  salvar(); desenhar();
+  $('.folha-titulo')?.focus();
+};
+ACOES['secao-del'] = (el) => { delete secaoAberta[el.dataset.ref]; removerComDesfazer(secoesDe(acharRef(el.dataset.ref)), el.dataset.id, 'Seção'); };
+ACOES['secao-mover'] = (el) => {
+  const lista = secoesDe(acharRef(el.dataset.ref));
+  const i = lista.findIndex((x) => x.id === el.dataset.id);
+  const j = i + Number(el.dataset.n);
+  if (j < 0 || j >= lista.length) return;
+  [lista[i], lista[j]] = [lista[j], lista[i]];
+  salvar(); desenhar();
+};
+
 function htmlNotasEstudo(l, m, ref) {
   const r = regraNotas(l);
   const av = m.av || {};
   const res = calcNotas(l, m);
   const semana = segundaDaSemana(hojeISO());
   const focando = estado.config.focoMateria === ref;
+  const pontos = modoLivre(l, m);
+  const media = m.calcModo === 'media';
+  const itens = m.itensNota || [];
   return `<div class="grade g2">
     <section class="card">
       <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('star')}</span> Notas</h2>
-      <div class="notas-grade">
+      <div class="segmento" style="margin-bottom:14px">
+        <button class="${!pontos ? 'ativo' : ''}" data-acao="nota-modo" data-ref="${ref}" data-m="">A1, A2 e AF</button>
+        <button class="${pontos ? 'ativo' : ''}" data-acao="nota-modo" data-ref="${ref}" data-m="pontos">Do meu jeito</button>
+      </div>
+      ${pontos ? `<div class="calc-modo">
+        <span>Como a nota é calculada:</span>
+        <div class="segmento">
+          <button class="${!media ? 'ativo' : ''}" data-acao="calc-modo" data-ref="${ref}" data-m="soma">Soma de pontos</button>
+          <button class="${media ? 'ativo' : ''}" data-acao="calc-modo" data-ref="${ref}" data-m="media">Média das notas</button>
+        </div>
+      </div>
+      <div class="itens-nota">
+        ${itens.length ? `<div class="in-cab"><span>Prova, atividade, trabalho…</span><span>${media ? 'Peso' : 'Vale'}</span><span>Nota</span><span></span></div>` : ''}
+        ${itens.map((i) => `<div class="in-linha">
+          <input type="text" value="${esc(i.nome)}" data-mudar="item-nota" data-ref="${ref}" data-id="${i.id}" data-k="nome" aria-label="Item">
+          <input type="text" inputmode="decimal" value="${esc((media ? i.peso : i.vale) ?? '')}" placeholder="${media ? '1' : ''}" data-mudar="item-nota" data-ref="${ref}" data-id="${i.id}" data-k="${media ? 'peso' : 'vale'}" aria-label="${media ? 'Peso' : 'Vale'}">
+          <input type="text" inputmode="decimal" value="${esc(i.nota ?? '')}" placeholder="—" data-mudar="item-nota" data-ref="${ref}" data-id="${i.id}" data-k="nota" aria-label="Nota">
+          <button class="acao-item apagar" data-acao="item-nota-del" data-ref="${ref}" data-id="${i.id}" title="Apagar">${ic('trash', 'p')}</button>
+        </div>`).join('')}
+        <form class="in-linha in-novo" data-form="item-nota-novo" data-ref="${ref}">
+          <input type="text" name="nome" placeholder="Nova prova, atividade…" maxlength="40" data-precisa>
+          <input type="text" name="${media ? 'peso' : 'vale'}" inputmode="decimal" placeholder="${media ? 'Peso' : 'Vale'}">
+          <span></span>
+          <button class="btn" type="submit" aria-label="Adicionar">${ic('plus', 'p')}</button>
+        </form>
+        ${itens.length && !media ? `<p class="soma-nota">Total: <b>${fmtNota(res.total)}</b> de ${fmtNota(res.max)} pontos${res.max && res.max !== 10 ? ' (a média é calculada sobre 10)' : ''}</p>` : ''}
+      </div>` : `<div class="notas-grade">
         ${[['a1', 'A1'], ['a2', 'A2'], ['af', 'AF (substitutiva)']].map(([k, n]) => `<label class="campo">${n}
           <input type="text" inputmode="decimal" value="${esc(av[k] ?? '')}" placeholder="—" data-mudar="nota" data-ref="${ref}" data-k="${k}"></label>`).join('')}
-      </div>
+      </div>`}
       <div class="resultado-nota ${res.tom}">
         ${res.media !== null ? `<b>${fmtNota(res.media)}</b>` : ''}<span>${res.texto}</span>
       </div>
       <details class="regra">
-        <summary>Regra de cálculo: média ${fmtNota(r.media)} · pesos ${r.p1} e ${r.p2}</summary>
+        <summary>Regra de cálculo: média ${fmtNota(r.media)}${pontos ? '' : ` · pesos ${r.p1} e ${r.p2}`}</summary>
         <div class="notas-grade">
           <label class="campo">Média para passar<input type="text" inputmode="decimal" value="${fmtNota(r.media)}" data-mudar="regra" data-lista="${l.id}" data-k="media"></label>
-          <label class="campo">Peso da A1<input type="number" min="1" max="10" value="${r.p1}" data-mudar="regra" data-lista="${l.id}" data-k="p1"></label>
-          <label class="campo">Peso da A2<input type="number" min="1" max="10" value="${r.p2}" data-mudar="regra" data-lista="${l.id}" data-k="p2"></label>
+          ${pontos ? '' : `<label class="campo">Peso da A1<input type="number" min="1" max="10" value="${r.p1}" data-mudar="regra" data-lista="${l.id}" data-k="p1"></label>
+          <label class="campo">Peso da A2<input type="number" min="1" max="10" value="${r.p2}" data-mudar="regra" data-lista="${l.id}" data-k="p2"></label>`}
         </div>
-        <p class="dica">Vale para todas as ${palavras(l.rotulo).plural} de ${esc(l.nome)}. A AF entra no lugar da nota que mais ajudar.</p>
+        <p class="dica">${pontos ? (media ? 'Cada item tem nota de 0 a 10. O peso diz quanto ele conta (deixe 1 se todos contam igual).' : 'A soma dos pontos vira a média final. Se os itens somarem mais ou menos que 10, a média é ajustada para 0 a 10.') : `Vale para todas as ${palavras(l.rotulo).plural} de ${esc(l.nome)}. A AF entra no lugar da nota que mais ajudar.`}</p>
       </details>
     </section>
 
@@ -246,16 +394,37 @@ function htmlNotasEstudo(l, m, ref) {
         <div><b>${textoMinutos(minutosEstudo(ref, semana))}</b><span>nesta semana</span></div>
         <div><b>${textoMinutos(minutosEstudo(ref))}</b><span>no total</span></div>
       </div>
-      <form class="form-linha" data-form="estudo-manual" data-ref="${ref}" style="margin-top:14px">
-        <input type="number" name="min" min="1" max="600" placeholder="Minutos" data-precisa style="flex:1 1 110px">
-        <input type="date" name="data" value="${hojeISO()}" style="flex:1 1 140px" aria-label="Dia">
+      <form class="tempo-estudo" data-form="estudo-manual" data-ref="${ref}">
+        <input type="number" name="min" min="1" max="600" placeholder="Minutos" data-precisa>
+        <input type="date" name="data" value="${hojeISO()}" aria-label="Dia">
         <button class="btn sec" type="submit">${ic('plus', 'p')} Registrar tempo</button>
+        <button class="btn ${focando ? 'sec' : ''}" type="button" data-acao="estudar-com-foco" data-ref="${ref}">${ic('play', 'p')} ${focando ? 'Foco já nesta matéria' : 'Estudar com o Foco'}</button>
       </form>
-      <button class="btn ${focando ? 'sec' : ''}" data-acao="estudar-com-foco" data-ref="${ref}" style="margin-top:12px">${ic('play', 'p')} ${focando ? 'O Foco já está nesta matéria' : 'Estudar com o Foco'}</button>
       <p class="dica">Cada ciclo de Foco completo com esta matéria escolhida soma o tempo aqui sozinho.</p>
     </section>
   </div>`;
 }
+
+ACOES['calc-modo'] = (el) => { acharRef(el.dataset.ref).calcModo = el.dataset.m; salvar(); desenhar(); };
+ACOES['nota-modo'] = (el) => { acharRef(el.dataset.ref).notaModo = el.dataset.m; salvar(); desenhar(); };
+FORMS['item-nota-novo'] = (d, form) => {
+  const m = acharRef(form.dataset.ref);
+  m.itensNota = m.itensNota || [];
+  m.itensNota.push({ id: novoId(), nome: d.nome, vale: d.vale || '', peso: d.peso || '', nota: '' });
+  salvar(); desenhar();
+  $('.in-novo input')?.focus();
+};
+MUDAR['item-nota'] = (el) => {
+  const i = acharRef(el.dataset.ref).itensNota.find((x) => x.id === el.dataset.id);
+  const v = el.value.trim();
+  if (el.dataset.k !== 'nome' && v !== '' && (numero(v) === null || numero(v) < 0)) { avisar('Use só números.'); el.value = i[el.dataset.k] || ''; return; }
+  const m = acharRef(el.dataset.ref);
+  const limite = m.calcModo === 'media' ? 10 : numero(i.vale);
+  if (el.dataset.k === 'nota' && v !== '' && limite && numero(v) > limite) { avisar(m.calcModo === 'media' ? 'A nota vai de 0 a 10.' : `Esse item vale só ${i.vale}.`); el.value = i.nota || ''; return; }
+  i[el.dataset.k] = v;
+  salvar(); desenhar();
+};
+ACOES['item-nota-del'] = (el) => removerComDesfazer(acharRef(el.dataset.ref).itensNota, el.dataset.id, 'Item');
 
 MUDAR.nota = (el) => {
   const m = acharRef(el.dataset.ref);

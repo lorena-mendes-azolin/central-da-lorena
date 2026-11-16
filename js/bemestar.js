@@ -87,7 +87,7 @@ PAGINAS.bemestar = {
         <div class="dc-linha">
           <label class="campo">Dormi às<input type="time" value="${reg.sono?.deitou || ''}" data-mudar="bem-sono" data-dia="${dia}" data-campo="deitou"></label>
           <label class="campo">Acordei às<input type="time" value="${reg.sono?.acordou || ''}" data-mudar="bem-sono" data-dia="${dia}" data-campo="acordou"></label>
-          <div class="sono-total"><b>${horasSono(reg.sono) ? textoHoras(horasSono(reg.sono)) : '—'}</b><span>${dia === hoje ? 'esta noite' : 'na noite de ' + dataCurta(somarDias(dia, -1))}</span></div>
+          <label class="campo">${dia === hoje ? 'Dormiu esta noite' : 'Dormiu na noite de ' + somarDias(dia, -1).slice(8) + '/' + somarDias(dia, -1).slice(5, 7)}<div class="sono-total">${ic('bed', 'p')}<b>${horasSono(reg.sono) ? textoHoras(horasSono(reg.sono)) : '—'}</b></div></label>
         </div>
         <div class="grafico-colunas sono" style="margin-top:16px">
           <div class="linha-meta" style="bottom:${(8 / maxSono) * 100}%"><span>8h</span></div>
