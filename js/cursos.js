@@ -398,9 +398,17 @@ function htmlNotasEstudo(l, m, ref) {
         <input type="number" name="min" min="1" max="600" placeholder="Minutos" data-precisa>
         <input type="date" name="data" value="${hojeISO()}" aria-label="Dia">
         <button class="btn sec" type="submit">${ic('plus', 'p')} Registrar tempo</button>
-        <button class="btn ${focando ? 'sec' : ''}" type="button" data-acao="estudar-com-foco" data-ref="${ref}">${ic('play', 'p')} ${focando ? 'Foco já nesta matéria' : 'Estudar com o Foco'}</button>
+        <button class="btn ${focando ? 'sec' : ''}" type="button" data-acao="estudar-com-foco" data-ref="${ref}">${ic('play', 'p')} ${focando ? 'Foco já nesta matéria' : 'Estudar agora'}</button>
       </form>
-      <p class="dica">Cada ciclo de Foco completo com esta matéria escolhida soma o tempo aqui sozinho.</p>
+      <p class="dica">O Pomodoro e o Cronômetro do Dashboard somam o tempo aqui sozinhos quando esta matéria está escolhida.</p>
+      ${(() => {
+        const sessoes = Object.entries(estado.diario).flatMap(([d, r]) => (r.sessoes || []).filter((x) => x.ref === ref).map((x) => ({ ...x, d })))
+          .sort((a, b) => (b.d + b.fim).localeCompare(a.d + a.fim)).slice(0, 12);
+        return sessoes.length ? `<h3 class="sub-titulo">Últimas sessões</h3>
+          <div class="lista-rolavel" style="max-height:260px">${sessoes.map((x) => `<div class="item">
+            <span class="txt">${esc(x.assunto || 'Estudo')}<span class="sub">${dataCurta(x.d)}${x.ini ? ` · das ${x.ini} às ${x.fim} (manual)` : x.fim ? ' · terminou às ' + x.fim : ''}</span></span>
+            <b>${textoMinutos(x.min)}</b></div>`).join('')}</div>` : '';
+      })()}
     </section>
   </div>`;
 }
@@ -449,8 +457,9 @@ FORMS['estudo-manual'] = (d, form) => {
 ACOES['estudar-com-foco'] = (el) => {
   estado.config.focoMateria = el.dataset.ref;
   salvar();
+  focoTela.tipo = 'cronometro';
   location.hash = 'dashboard';
-  avisar('Foco ligado a esta matéria. É só clicar em Começar.');
+  avisar(`Cronômetro pronto para ${nomeMateria(el.dataset.ref)}. É só clicar em Iniciar.`);
 };
 
 ACOES['cursos-vista'] = (el) => { cursosTela.vista[el.dataset.lista] = el.dataset.v; desenhar(); };

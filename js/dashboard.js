@@ -114,19 +114,21 @@ PAGINAS.dashboard = {
         <a class="dica" href="#graficos" style="margin:0">Ver o humor nos gráficos</a>
       </section>`,
       foco: `<section class="card coluna pomo">
-        <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('timer')}</span> Foco</h2>
+        <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('timer')}</span> Foco
+          <span class="segmento foco-tipo">
+            <button class="${focoTela.tipo === 'pomodoro' ? 'ativo' : ''}" data-acao="foco-tipo" data-t="pomodoro">Pomodoro</button>
+            <button class="${focoTela.tipo === 'cronometro' ? 'ativo' : ''}" data-acao="foco-tipo" data-t="cronometro">Cronômetro</button>
+          </span></h2>
         <div class="centro">
-          <div class="segmento" style="margin:0 auto 12px">
-            ${[['Foco', 25, 'foco'], ['Pausa', 5, 'pausa'], ['Longa', 15, 'longa']].map(([n, m, id]) =>
-              `<button class="${pomo.modo === id ? 'ativo' : ''}" data-acao="pomo-modo" data-min="${m}" data-modo="${id}">${n} ${m}</button>`).join('')}
-          </div>
           <div class="anel">
-            <svg width="160" height="160" viewBox="0 0 160 160">
+            <svg width="150" height="150" viewBox="0 0 160 160">
               <circle cx="80" cy="80" r="70" fill="none" style="stroke:var(--card-2)" stroke-width="8"/>
               <circle id="pomo-arco" cx="80" cy="80" r="70" fill="none" stroke="url(#gradFoco)" stroke-width="8" stroke-linecap="round"/>
               <defs><linearGradient id="gradFoco"><stop offset="0" style="stop-color:var(--destaque-2)"/><stop offset="1" stop-color="#f59ad8"/></linearGradient></defs>
             </svg>
-            <div class="anel-tempo"><b id="pomo-tempo">25:00</b><span id="pomo-estado">${pomo.estado}</span></div>
+            <div class="anel-tempo">${focoTela.tipo === 'pomodoro'
+              ? `<b id="pomo-tempo">25:00</b><span id="pomo-estado">${pomo.estado}</span>`
+              : `<b id="crono-tempo">${textoCrono(tempoCrono())}</b><span id="crono-estado">${estadoCrono()}</span>`}</div>
           </div>
           <label class="rotulo-select foco-materia">Estudando
             <select data-mudar="foco-materia">
@@ -134,12 +136,33 @@ PAGINAS.dashboard = {
               ${todasMaterias().filter((g) => g.materias.length).map((g) => `<optgroup label="${esc(g.lista.nome)}">
                 ${g.materias.map((m) => `<option value="${g.lista.id}/${m.id}" ${estado.config.focoMateria === `${g.lista.id}/${m.id}` ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}</optgroup>`).join('')}
             </select></label>
-          <div class="botoes">
-            <button class="btn" id="pomo-play" data-acao="pomo-play">${ic('play', 'p')} Começar</button>
-            <button class="btn sec" data-acao="pomo-reset" aria-label="Reiniciar">${ic('reset', 'p')}</button>
-          </div>
+          <div class="foco-linha">${focoTela.tipo === 'pomodoro'
+            ? `<div class="segmento">${[['Foco', 25, 'foco'], ['Pausa', 5, 'pausa'], ['Longa', 15, 'longa']].map(([n, m, id]) =>
+                `<button class="${pomo.modo === id ? 'ativo' : ''}" data-acao="pomo-modo" data-min="${m}" data-modo="${id}">${n} ${m}</button>`).join('')}</div>`
+            : `<input class="foco-assunto" type="text" maxlength="80" placeholder="O que está vendo?" value="${esc(crono().assunto || '')}" data-digitar="crono-assunto" aria-label="O que está vendo">`}</div>
+          <div class="botoes">${focoTela.tipo === 'pomodoro'
+            ? `<button class="btn" id="pomo-play" data-acao="pomo-play">${ic('play', 'p')} Começar</button>
+              <button class="btn sec" data-acao="pomo-reset" aria-label="Reiniciar" title="Reiniciar">${ic('reset', 'p')}</button>`
+            : `<button class="btn" id="crono-play" data-acao="crono-play">${crono().inicio ? `${ic('pause', 'p')} Pausar` : `${ic('play', 'p')} ${crono().acumulado ? 'Continuar' : 'Iniciar'}`}</button>
+              <button class="btn sec" data-acao="crono-finalizar" ${tempoCrono() >= 1000 ? '' : 'disabled'} title="Salvar o tempo estudado">${ic('check', 'p')} Finalizar</button>
+              <button class="btn sec" data-acao="crono-descartar" ${tempoCrono() >= 1000 ? '' : 'disabled'} aria-label="Descartar" title="Descartar">${ic('reset', 'p')}</button>`}</div>
         </div>
-        <p class="dica" style="margin:0">${reg.pomodoros ? `${reg.pomodoros} ${reg.pomodoros === 1 ? 'ciclo' : 'ciclos'} de foco hoje` : 'Nenhum ciclo de foco hoje ainda.'}</p>
+        <p class="dica foco-rodape">${focoTela.tipo === 'cronometro'
+          ? `${minutosHoje() ? `${textoMinutos(minutosHoje())} hoje · ` : ''}<a href="#" data-acao="crono-manual">Esqueceu de iniciar? Lançar manualmente</a>`
+          : (reg.pomodoros ? `${reg.pomodoros} ${reg.pomodoros === 1 ? 'ciclo' : 'ciclos'} de foco hoje` : 'Nenhum ciclo de foco hoje ainda.')}</p>
+        ${focoTela.tipo === 'cronometro' && focoTela.manual ? `<form class="crono-manual" data-form="crono-manual">
+          <h3>Lançar horário manualmente</h3>
+          <p class="dica">Fica salvo em <b>${estado.config.focoMateria && acharRef(estado.config.focoMateria) ? esc(nomeMateria(estado.config.focoMateria)) : 'Nada específico'}</b>${crono().assunto ? ` · ${esc(crono().assunto)}` : ''}</p>
+          <label class="campo">Dia<input type="date" name="dia" value="${hojeISO()}" max="${hojeISO()}"></label>
+          <div class="crono-manual-campos">
+            <label class="campo">Das<input type="time" name="ini"></label>
+            <label class="campo">Até<input type="time" name="fim"></label>
+          </div>
+          <div class="crono-manual-botoes">
+            <button type="button" class="btn sec" data-acao="crono-manual">Cancelar</button>
+            <button class="btn">${ic('check', 'p')} Salvar tempo</button>
+          </div>
+        </form>` : ''}
       </section>`,
       listas: `<section class="card">
       <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('list')}</span> Minhas listas
@@ -286,6 +309,78 @@ ACOES.humor = (el) => {
   const reg = registroDoDia();
   reg.humor = reg.humor === el.dataset.h ? '' : el.dataset.h;
   salvar(); desenhar();
+};
+
+const focoTela = { tipo: 'pomodoro' };
+const crono = () => (estado.config.cronometro = estado.config.cronometro || { acumulado: 0, inicio: 0, assunto: '' });
+const tempoCrono = () => { const c = crono(); return c.acumulado + (c.inicio ? Date.now() - c.inicio : 0); };
+const estadoCrono = () => (crono().inicio ? 'estudando' : tempoCrono() ? 'pausado' : 'pronto para começar');
+function textoCrono(ms) {
+  const t = Math.floor(ms / 1000);
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sg = t % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(sg).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(sg).padStart(2, '0')}`;
+}
+const minutosHoje = () => Object.values(registroDoDia().estudo || {}).reduce((a, b) => a + b, 0) + (registroDoDia().sessoes || []).filter((x) => !x.ref).reduce((a, x) => a + x.min, 0);
+
+function atualizarCronometro() {
+  const el = $('#crono-tempo');
+  if (!el) return;
+  const ms = tempoCrono();
+  el.textContent = textoCrono(ms);
+  $('#crono-estado').textContent = estadoCrono();
+  const C = 2 * Math.PI * 70;
+  const arco = $('#pomo-arco');
+  arco.style.strokeDasharray = C;
+  arco.style.strokeDashoffset = C * (1 - ((ms / 1000) % 3600) / 3600);
+  if (crono().inicio) document.title = `${textoCrono(ms)} · estudando`;
+}
+
+ACOES['foco-tipo'] = (el) => { focoTela.tipo = el.dataset.t; desenhar(); };
+DIGITAR['crono-assunto'] = (el) => { crono().assunto = el.value; salvar(); };
+ACOES['crono-play'] = () => {
+  const c = crono();
+  if (c.inicio) { c.acumulado += Date.now() - c.inicio; c.inicio = 0; }
+  else c.inicio = Date.now();
+  salvar(); desenhar();
+};
+ACOES['crono-descartar'] = () => {
+  if (!confirmarDuasVezes('crono-descartar', 'Clique de novo para descartar o tempo.')) return;
+  estado.config.cronometro = { acumulado: 0, inicio: 0, assunto: crono().assunto };
+  document.title = 'Central da Lorena';
+  salvar(); desenhar();
+};
+ACOES['crono-finalizar'] = () => {
+  const c = crono();
+  const min = Math.max(1, Math.round(tempoCrono() / 60000));
+  const ref = estado.config.focoMateria && acharRef(estado.config.focoMateria) ? estado.config.focoMateria : '';
+  const reg = registroDoDia();
+  if (ref) { reg.estudo = reg.estudo || {}; reg.estudo[ref] = (reg.estudo[ref] || 0) + min; }
+  reg.sessoes = reg.sessoes || [];
+  reg.sessoes.push({ id: novoId(), ref, assunto: (c.assunto || '').trim(), min, fim: new Date().toTimeString().slice(0, 5) });
+  estado.config.cronometro = { acumulado: 0, inicio: 0, assunto: '' };
+  document.title = 'Central da Lorena';
+  salvar(); desenhar();
+  tocarSom(true);
+  avisar(`${textoMinutos(min)} de estudo salvos${ref ? ` em ${nomeMateria(ref)}` : ''}.`);
+};
+
+ACOES['crono-manual'] = () => { focoTela.manual = !focoTela.manual; desenhar(); };
+FORMS['crono-manual'] = (d) => {
+  if (!d.ini || !d.fim) { avisar('Preencha o horário de início e de fim.'); return; }
+  const paraMin = (h) => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
+  let min = paraMin(d.fim) - paraMin(d.ini);
+  if (min <= 0) min += 24 * 60;
+  if (min < 1 || min > 16 * 60) { avisar('Confira os horários: o tempo ficou estranho.'); return; }
+  const dia = d.dia || hojeISO();
+  const ref = estado.config.focoMateria && acharRef(estado.config.focoMateria) ? estado.config.focoMateria : '';
+  const reg = registroDoDia(dia);
+  if (ref) { reg.estudo = reg.estudo || {}; reg.estudo[ref] = (reg.estudo[ref] || 0) + min; }
+  reg.sessoes = reg.sessoes || [];
+  reg.sessoes.push({ id: novoId(), ref, assunto: (crono().assunto || '').trim(), min, ini: d.ini, fim: d.fim, manual: true });
+  if (!crono().inicio && !crono().acumulado) crono().assunto = '';
+  focoTela.manual = false;
+  salvar(); desenhar();
+  avisar(`${textoMinutos(min)} de estudo salvos${ref ? ` em ${nomeMateria(ref)}` : ''}${dia !== hojeISO() ? ` no dia ${paraData(dia).toLocaleDateString('pt-BR')}` : ''}.`);
 };
 
 const pomo = { total: 25 * 60, resta: 25 * 60, rodando: false, fimEm: 0, modo: 'foco', estado: 'pronta para focar' };

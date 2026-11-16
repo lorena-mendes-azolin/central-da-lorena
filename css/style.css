@@ -954,3 +954,35 @@ tr.fantasma-arraste { display: flex; align-items: center; }
 .personalizar-dash { margin-bottom: 16px; max-width: 520px; }
 .blocos-dash-lista { display: grid; gap: 4px; }
 .blocos-dash-lista .item { background: var(--card-2); border-radius: 10px; }
+.busca-diario { display: flex; align-items: center; gap: 8px; background: var(--card-2); border: 1px solid var(--linha); border-radius: 10px; padding: 0 12px; margin-bottom: 12px; }
+.busca-diario .ic { color: var(--fraco); flex: 0 0 auto; }
+.busca-diario input { border: 0; background: transparent; padding: 9px 0; flex: 1; min-width: 0; outline: none; }
+.busca-diario small { color: var(--fraco); font-weight: 700; white-space: nowrap; }
+.busca-diario:focus-within { border-color: var(--destaque); }
+.diario-item[hidden] { display: none; }
+.diarios { max-height: 420px; }
+.busca-diario input { border: 0 !important; background: transparent !important; box-shadow: none !important; border-radius: 0; padding-left: 0; padding-right: 0; }
+.salvar-linha { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
+.salvar-linha .btn { flex: 0 0 auto; margin-left: auto; }
+@media (max-width: 640px) { .salvar-linha { flex-direction: column; align-items: stretch; } }
+.noite-legenda { display: flex; align-items: center; gap: 6px; margin: -6px 0 12px; font-size: 13px; color: var(--suave); font-weight: 600; }
+.noite-legenda .ic { color: var(--destaque-2); }
+.grafico-colunas.sono .col { cursor: pointer; }
+.grafico-colunas.sono .col:hover i { filter: brightness(1.25); }
+.grafico-colunas.sono .col.escolhida { background: var(--destaque-bg); border-radius: 6px; }
+.foco-tipo { margin-left: auto; }
+.foco-tipo button { font-size: 12px; padding: 4px 10px; }
+.pomo { position: relative; }
+.pomo .anel { width: 150px; height: 150px; }
+.foco-linha { height: 40px; display: flex; align-items: center; justify-content: center; margin: 8px 0 10px; }
+.foco-linha .segmento { margin: 0; }
+.foco-assunto { text-align: center; font-size: 14px; padding: 8px 12px; max-width: 260px; width: 100%; height: 38px; }
+.pomo .botoes { justify-content: center; flex-wrap: nowrap; gap: 8px; }
+.pomo .botoes .btn { height: 40px; padding-left: 14px; padding-right: 14px; white-space: nowrap; }
+.foco-rodape { margin: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.foco-rodape a { cursor: pointer; }
+.crono-manual { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: inherit; background: var(--card); text-align: left; overflow: auto; }
+.crono-manual h3 { margin: 0; font-size: 16px; }
+.crono-manual .dica { margin: 0; }
+.crono-manual-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.crono-manual-botoes { margin-top: auto; display: flex; justify-content: flex-end; gap: 8px; }

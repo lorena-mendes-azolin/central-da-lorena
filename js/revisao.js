@@ -6,6 +6,10 @@ function semanaDaRevisao() {
 
 PAGINAS.revisao = {
   titulo: 'Revisão da semana',
+  async depois() {
+    const ini = semanaDaRevisao();
+    if (await carregarDiario(ini, somarDias(ini, 6)) && location.hash === '#revisao') desenharSeguro();
+  },
   desenhar() {
     const ini = semanaDaRevisao();
     const fim = somarDias(ini, 6);
@@ -39,7 +43,7 @@ PAGINAS.revisao = {
     const mediaAgua = regs.reduce((s, r) => s + (r.agua || 0), 0) / Math.max(1, diasPassados.length);
     const sonos = regs.map((r) => horasSono(r.sono)).filter(Boolean);
     const mediaSono = sonos.length ? sonos.reduce((a, b) => a + b, 0) / sonos.length : 0;
-    const coisasBoas = dias.flatMap((d) => (estado.diario[d]?.bom || []).filter(Boolean).map((b) => ({ d, b })));
+    const coisasBoas = dias.flatMap((d) => (lerDiario(d).bom || []).filter(Boolean).map((b) => ({ d, b })));
     const focos = regs.reduce((s, r) => s + (r.pomodoros || 0), 0);
 
     const gastos = lancamentosEntre(ini, fim).filter((l) => l.tipo !== 'entrada');

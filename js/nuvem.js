@@ -7,6 +7,8 @@ let salvandoNuvem = false;
 let pendenteNuvem = false;
 let timerNuvem;
 let timerTentar;
+let conflitosSeguidos = 0;
+const CHAVE_PENDENTE = CHAVE + '-pendente';
 
 const STATUS_NUVEM = {
   salvo: ['check', 'Salvo na nuvem'],
@@ -57,10 +59,18 @@ async function baixarDados(soSeMudou = false) {
   if (soSeMudou && mesmaVersao(data.atualizado_em, versaoNuvem)) return;
   if (soSeMudou && (salvandoNuvem || pendenteNuvem)) return;
   versaoNuvem = data.atualizado_em;
+  const tinhaPendente = !soSeMudou && localStorage.getItem(CHAVE_PENDENTE) === usuario.id;
+  if (tinhaPendente) {
+    const apagados = new Set([...(estado.lixeira || []), ...(data.dados.lixeira || [])].map((x) => x.id));
+    estado = completar(mesclar(estado, data.dados, apagados));
+    localStorage.setItem(CHAVE, JSON.stringify(estado));
+    salvarNuvem();
+    return;
+  }
   estado = completar(data.dados);
   localStorage.setItem(CHAVE, JSON.stringify(estado));
   if (soSeMudou) {
-    desenhar();
+    desenharSeguro();
     avisar('Atualizado com o que você mudou em outro aparelho.');
   }
 }
@@ -71,6 +81,7 @@ function salvarNuvem() {
   if (!NUVEM_ATIVA || !usuario) return;
   clearTimeout(timerNuvem);
   pendenteNuvem = true;
+  try { localStorage.setItem(CHAVE_PENDENTE, usuario.id); } catch { }
   statusNuvem(navigator.onLine ? 'salvando' : 'offline');
   timerNuvem = setTimeout(enviarDados, 1200);
 }
@@ -84,10 +95,12 @@ async function enviarDados() {
   pendenteNuvem = false;
   statusNuvem('salvando');
   const agora = new Date().toISOString();
-  const tabela = sb.from('central_dados');
-  const resp = versaoNuvem
+  const tabela = { select: (...a) => sb.from('central_dados').select(...a), update: (...a) => sb.from('central_dados').update(...a), upsert: (...a) => sb.from('central_dados').upsert(...a) };
+  const condicional = versaoNuvem && conflitosSeguidos < 2;
+  const resp = condicional
     ? await tabela.update({ dados: estado, atualizado_em: agora }).eq('user_id', usuario.id).eq('atualizado_em', versaoNuvem).select('atualizado_em')
     : await tabela.upsert({ user_id: usuario.id, dados: estado, atualizado_em: agora }).select('atualizado_em');
+  try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch { }
 
   if (resp.error) {
     salvandoNuvem = false;
@@ -98,6 +111,7 @@ async function enviarDados() {
   }
 
   if (!resp.data?.length) {
+    conflitosSeguidos++;
     const { data } = await tabela.select('dados, atualizado_em').eq('user_id', usuario.id).maybeSingle();
     salvandoNuvem = false;
     if (data) {
@@ -105,8 +119,8 @@ async function enviarDados() {
       estado = completar(mesclar(estado, data.dados, apagados));
       versaoNuvem = data.atualizado_em;
       localStorage.setItem(CHAVE, JSON.stringify(estado));
-      desenhar();
-      avisar('Juntei com as mudanças feitas em outro aparelho.');
+      desenharSeguro();
+      if (conflitosSeguidos === 1) avisar('Juntei com as mudanças feitas em outro aparelho.');
     } else {
       versaoNuvem = '';
     }
@@ -114,8 +128,10 @@ async function enviarDados() {
   }
 
   versaoNuvem = resp.data[0].atualizado_em;
+  conflitosSeguidos = 0;
   salvandoNuvem = false;
-  statusNuvem('salvo');
+  if (!pendenteNuvem) { try { localStorage.removeItem(CHAVE_PENDENTE); } catch { } }
+  statusNuvem(typeof diarioTimers !== 'undefined' && Object.keys(diarioTimers).length ? 'salvando' : 'salvo');
   if (pendenteNuvem) salvarNuvem();
 }
 

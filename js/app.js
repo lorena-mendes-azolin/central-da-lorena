@@ -14,6 +14,7 @@ function desenhar() {
   desenharMenu();
   atualizarCaminho();
   atualizarPomodoro();
+  atualizarCronometro();
   atualizarSino();
   $('#escolha-icone').hidden = true;
   if (!$('#painel-avisos').hidden) preencherAvisos();
@@ -21,6 +22,16 @@ function desenhar() {
   fecharMenuSelect();
   melhorarSelects();
   melhorarDatas();
+}
+
+function digitando() {
+  const a = document.activeElement;
+  return !!a && (a.matches('input:not([type=checkbox]):not([type=radio]), textarea') || a.isContentEditable);
+}
+
+function desenharSeguro() {
+  if (!digitando()) { desenhar(); return; }
+  document.activeElement.addEventListener('blur', () => setTimeout(() => { if (!digitando()) desenhar(); }, 0), { once: true });
 }
 
 function aplicarTema() {
@@ -179,6 +190,7 @@ function aCadaSegundo() {
     a.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' +
     a.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   passoPomodoro();
+  atualizarCronometro();
 
   if (a.getMinutes() !== minutoAberto) {
     minutoAberto = a.getMinutes();
@@ -213,6 +225,7 @@ async function iniciar() {
   setInterval(verificarLembretes, 20000);
   resumoDoDia();
   setTimeout(migrarImagens, 3000);
+  migrarDiario().then(() => { if (diarioStatus.tabela && ['#bemestar', '#revisao'].includes(location.hash)) desenharSeguro(); });
 }
 iniciar();
 
