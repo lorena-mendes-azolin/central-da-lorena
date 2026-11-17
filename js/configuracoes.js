@@ -29,8 +29,13 @@ PAGINAS.configuracoes = {
       <section class="card">
         <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('user')}</span> Perfil</h2>
         <div style="display:grid;gap:12px">
-          <label class="campo">Como quer ser chamada
+          <label class="campo">Como quer ser chamado(a)
             <input type="text" id="cfg-nome" value="${esc(c.nome)}" maxlength="30" data-digitar="cfg" data-campo="nome"></label>
+          <div class="campo"><span>Como o site fala com você</span>
+            <div class="segmento">${[['a', 'Feminino'], ['o', 'Masculino'], ['n', 'Neutro']].map(([v, n]) => `<button class="${c.genero === v ? 'ativo' : ''}" data-acao="bv-genero" data-v="${v}">${n}</button>`).join('')}</div></div>
+          <label class="campo">Nome do seu espaço (aparece na aba do navegador)
+            <input type="text" value="${esc(c.nomeEspaco || '')}" maxlength="40" placeholder="Minha Central" data-digitar="bv-espaco"></label>
+          <div class="campo"><span>Cidade do clima</span>${htmlBuscaCidade('cfg-cidade')}</div>
           <label class="campo">Meta de água (copos de 250 ml)
             <input type="number" id="cfg-agua" min="1" max="20" value="${c.metaAgua}" data-mudar="cfg-num" data-campo="metaAgua"></label>
         </div>
@@ -103,15 +108,57 @@ PAGINAS.configuracoes = {
         <p style="margin:0 0 12px">Todo dia em que você mexe no site, a nuvem guarda sozinha uma cópia de como estava antes. As cópias ficam 30 dias. Se algo sumir ou for apagado sem querer, volte para um dia anterior.</p>
         ${htmlHistorico()}
       </section>
+
+      <section class="card">
+        <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('bell')}</span> Avisos com o site fechado</h2>
+        ${htmlPush()}
+      </section>
+
+      <section class="card zona-perigo">
+        <h2 class="card-titulo"><span class="selo mini c-vermelho">${ic('user')}</span> Conta e privacidade</h2>
+        <p style="margin:0 0 12px">Veja como seus dados são guardados em <a href="privacidade.html" target="_blank" rel="noopener">Privacidade e seus dados</a>.</p>
+        ${usuario ? (cfgTela.excluindo ? `<div class="excluir-conta">
+          <p><b>Isso apaga para sempre</b> sua conta, todos os seus dados e imagens da nuvem. Não dá para desfazer. Se quiser guardar alguma coisa, faça um backup antes.</p>
+          <label class="campo">Para confirmar, digite EXCLUIR<input type="text" id="confirma-excluir" autocomplete="off"></label>
+          <div class="form-linha" style="justify-content:flex-end;margin-top:10px">
+            <button class="btn sec" data-acao="conta-excluir-cancelar">Cancelar</button>
+            <button class="btn perigo" data-acao="conta-excluir-confirmar" ${cfgTela.apagando ? 'disabled' : ''}>${cfgTela.apagando ? 'Apagando…' : 'Excluir para sempre'}</button>
+          </div></div>`
+          : `<button class="btn sec" data-acao="conta-excluir">${ic('trash', 'p')} Excluir minha conta</button>`)
+          : '<p class="dica" style="margin:0">No modo local, os dados ficam só neste navegador. Para apagar, limpe os dados do site no navegador.</p>'}
+      </section>
     </div>`;
   },
 };
 
+const cfgTela = { excluindo: false, apagando: false };
+ACOES['conta-excluir'] = () => { cfgTela.excluindo = true; desenhar(); $('#confirma-excluir')?.focus(); };
+ACOES['conta-excluir-cancelar'] = () => { cfgTela.excluindo = false; desenhar(); };
+ACOES['conta-excluir-confirmar'] = async () => {
+  if (($('#confirma-excluir')?.value || '').trim().toUpperCase() !== 'EXCLUIR') { avisar('Digite EXCLUIR para confirmar.'); return; }
+  cfgTela.apagando = true; desenhar();
+  try {
+    const pasta = await sb.storage.from(BUCKET_IMAGENS).list(usuario.id, { limit: 1000 });
+    const arquivos = (pasta.data || []).map((f) => `${usuario.id}/${f.name}`);
+    if (arquivos.length) await sb.storage.from(BUCKET_IMAGENS).remove(arquivos);
+  } catch { }
+  const { error } = await sb.rpc('excluir_minha_conta');
+  if (error) {
+    cfgTela.apagando = false; desenhar();
+    avisar(/excluir_minha_conta|PGRST202|42883/.test(`${error.code} ${error.message}`) ? 'A exclusão ainda não foi ativada no Supabase (falta rodar o supabase.sql).' : 'Não consegui excluir agora. Tente de novo.');
+    return;
+  }
+  clearTimeout(timerNuvem); pendenteNuvem = false;
+  Object.keys(localStorage).filter((k) => k.startsWith(CHAVE)).forEach((k) => localStorage.removeItem(k));
+  try { await sb.auth.signOut(); } catch { }
+  location.href = 'login.html?conta=excluida';
+};
+
 DIGITAR.cfg = (el) => {
-  estado.config[el.dataset.campo] = el.value.trim() || 'Lorena';
+  if (!el.value.trim()) return;
+  estado.config[el.dataset.campo] = el.value.trim();
   salvar();
-  $('#perfil-nome').textContent = estado.config.nome;
-  $('#perfil-foto').textContent = estado.config.nome[0].toUpperCase();
+  atualizarPerfil();
 };
 
 MUDAR['cfg-num'] = (el) => {

@@ -22,12 +22,17 @@ const DURACOES = [15, 30, 45, 60, 90, 120, 180];
 
 const STATUS = { afazer: 'A fazer', fazendo: 'Fazendo', feito: 'Feito' };
 
+function g(fem, masc, neutro) {
+  const x = typeof estado !== 'undefined' ? estado.config?.genero : 'n';
+  return x === 'a' ? fem : x === 'o' ? masc : neutro;
+}
+
 const HUMORES = [
   { id: 'face1', nome: 'Ótimo' },
   { id: 'face2', nome: 'Bem' },
   { id: 'face3', nome: 'Normal' },
   { id: 'face4', nome: 'Pra baixo' },
-  { id: 'face5', nome: 'Cansada' },
+  { id: 'face5', get nome() { return g('Cansada', 'Cansado', 'Sem energia'); } },
 ];
 
 const ICONES_LISTA = ['list', 'cap', 'book', 'target', 'heart', 'star', 'bag', 'home', 'code', 'music', 'plane', 'cart',
@@ -84,26 +89,8 @@ const tarefa = (titulo, data, extra = {}) => ({
 
 function dadosIniciais() {
   return {
-    tarefas: [
-      tarefa('Fazer rematrícula para 2027', '2026-11-18', { tipo: 'tarefa', lembrete: 0, notas: 'Período de rematrícula: 18/11/2026 a 14/02/2027.' }),
-      tarefa('Notas das disciplinas de Outubro', '2026-11-23', { lembrete: -1 }),
-      tarefa('Prova A1 – começa o período', '2026-11-27', { notas: 'Prova A1 das disciplinas de Novembro e Dezembro, de 27 a 30/11.' }),
-      tarefa('Prova A1 – último dia', '2026-11-30'),
-      tarefa('Recurso da Prova A1 (se precisar)', '2026-12-01', { lembrete: 0 }),
-      tarefa('Notas de Novembro e Dezembro', '2026-12-07', { lembrete: -1 }),
-      tarefa('Prova AF (só se reprovar)', '2026-12-11', { notas: 'Prova AF de 11 a 12/12. Recurso até 13/12, notas em 21/12.' }),
-      tarefa('Último dia das Atividades Complementares', '2026-12-14', { tipo: 'tarefa' }),
-      tarefa('Fim do semestre', '2026-12-19', { lembrete: -1 }),
-    ],
+    tarefas: [],
     listas: [
-      {
-        id: 'faculdade', tipo: 'cursos', nome: 'Faculdade', icone: 'cap', cor: '#f59ad8', desc: 'ADS · Universidade Positivo · 1º período',
-        rotulo: 'Matéria',
-        materias: [
-          materia('Modelagem de Banco de Dados', 'cursando', 'Nov/Dez', [tarefaMateria('Prova A1', 'Prova', '2026-11-27')]),
-          materia('Meio Ambiente e Cuidados de Saúde', 'cursando', 'Novembro', [tarefaMateria('Prova A1', 'Prova', '2026-11-27')]),
-        ],
-      },
       { id: 'estudos', tipo: 'cursos', nome: 'Estudos', icone: 'book', cor: '#6aaeff', desc: '', rotulo: 'Curso', materias: [] },
       { id: 'metas', tipo: 'metas', nome: 'Metas', icone: 'target', cor: '#5fd6a4', desc: '', metas: [] },
       listaColecoes(),
@@ -111,7 +98,7 @@ function dadosIniciais() {
     ],
     habitos: [
       { id: 'h1', nome: 'Olhar a agenda do dia', grupo: 'Geral', dias: [] },
-      { id: 'h2', nome: 'Estudar 30 minutos', grupo: 'Geral', dias: [] },
+      { id: 'h2', nome: 'Beber água', grupo: 'Geral', dias: [] },
     ],
     medidas: [],
     financas: { lancamentos: [], recorrentes: [], contas: [], categorias: CATEGORIAS_GASTO.map((c) => ({ ...c })) },
@@ -120,7 +107,7 @@ function dadosIniciais() {
     flashcards: { baralhos: [] },
     diario: {},
     avisados: {},
-    config: { nome: 'Lorena', metaAgua: 8, resumoVisto: '', menu: 'mini', gruposHabito: ['Geral', 'Limpeza'], tema: 'violeta', aguaIntervalo: 0, aguaInicio: '08:00', aguaFim: '22:00', focoMateria: '', avisoContas: 1 },
+    config: { nome: '', genero: 'n', nomeEspaco: 'Minha Central', cidade: null, boasVindas: false, metaAgua: 8, resumoVisto: '', menu: 'mini', gruposHabito: ['Geral', 'Limpeza'], tema: 'violeta', aguaIntervalo: 0, aguaInicio: '08:00', aguaFim: '22:00', focoMateria: '', avisoContas: 1, modulos: {}, temColecoes: true },
   };
 }
 
@@ -130,6 +117,14 @@ function completar(dados) {
   final.listas = (final.listas || []).map(migrarLista);
   final.habitos = (final.habitos || []).map((h) => ({ grupo: 'Geral', dias: [], meta: 0, ...h }));
   final.financas = { ...base.financas, ...(dados.financas || {}) };
+  if (!dados.config?.modulos) final.config.modulos = { flashcards: true, financas: true, revisao: true };
+  if (dados.config && dados.config.boasVindas === undefined) {
+    final.config.boasVindas = true;
+    if (!dados.config.genero) final.config.genero = 'a';
+    if (!dados.config.nomeEspaco) final.config.nomeEspaco = `Central da ${dados.config.nome || 'Lorena'}`;
+    if (!dados.config.cidade) final.config.cidade = { nome: 'Curitiba', lat: -25.43, lon: -49.27 };
+    if (!dados.config.nome) final.config.nome = 'Lorena';
+  }
 
   if (!final.config.temColecoes) {
     if (!final.listas.some((l) => l.tipo === 'colecoes')) final.listas.push(listaColecoes());

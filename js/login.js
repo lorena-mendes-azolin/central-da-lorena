@@ -92,3 +92,5 @@ if (formRedefinir) {
     setTimeout(() => { location.href = 'index.html'; }, 1200);
   });
 }
+
+if (new URLSearchParams(location.search).get('conta') === 'excluida') mostrar('Sua conta e seus dados foram apagados.');

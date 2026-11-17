@@ -154,6 +154,7 @@ FORMS['etapa-nova'] = (d, form) => {
 ACOES['etapa-check'] = (el) => {
   const e = acharRef(el.dataset.ref);
   e.feito = !e.feito;
+  e.feitoEm = e.feito ? hojeISO() : '';
   salvar(); desenhar();
   if (e.feito) tocarSom(true);
 };

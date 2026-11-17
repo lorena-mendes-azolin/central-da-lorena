@@ -89,7 +89,14 @@ const historicoDisponivel = () => NUVEM_ATIVA && !!usuario;
 async function carregarHistorico() {
   if (!historicoDisponivel() || historicoTela.carregando) return;
   historicoTela.carregando = true;
-  const { data, error } = await sb.from('central_historico').select('dia, criado_em').eq('user_id', usuario.id).order('dia', { ascending: false }).limit(31);
+  let { data, error } = await sb.from('central_historico').select('dia, criado_em').eq('user_id', usuario.id).order('dia', { ascending: false }).limit(31);
+  if (!error && partesOk) {
+    const r = await sb.from('central_partes_historico').select('dia').eq('user_id', usuario.id);
+    if (!r.error) {
+      const dias = new Set([...(data || []).map((x) => x.dia), ...(r.data || []).map((x) => x.dia)]);
+      data = [...dias].sort().reverse().slice(0, 31).map((dia) => ({ dia }));
+    }
+  }
   historicoTela.carregando = false;
   if (error) {
     historicoTela.lista = [];
@@ -124,8 +131,22 @@ ACOES['historico-voltar'] = async (el) => {
   historicoTela.restaurando = dia;
   desenhar();
   try {
-    const { data, error } = await sb.from('central_historico').select('dados').eq('user_id', usuario.id).eq('dia', dia).single();
-    if (error || !data) throw error || new Error('sem dados');
+    const h = await sb.from('central_historico').select('dia, dados').eq('user_id', usuario.id).gte('dia', dia).order('dia');
+    if (h.error) throw h.error;
+    const atual = await sb.from('central_dados').select('dados').eq('user_id', usuario.id).maybeSingle();
+    const data = { dados: { ...((h.data && h.data[0]?.dados) || atual.data?.dados || {}) } };
+    if (partesOk) {
+      const ph = await sb.from('central_partes_historico').select('chave, dia, dados').eq('user_id', usuario.id).gte('dia', dia).order('dia');
+      if (ph.error) throw ph.error;
+      const pa = await sb.from('central_partes').select('chave, dados').eq('user_id', usuario.id);
+      PARTES.forEach((k) => {
+        const antiga = (ph.data || []).find((x) => x.chave === k);
+        const agora = (pa.data || []).find((x) => x.chave === k);
+        if (antiga) data.dados[k] = antiga.dados;
+        else if (agora) data.dados[k] = agora.dados;
+      });
+    }
+    if (!Object.keys(data.dados).length) throw new Error('sem dados');
     const anterior = estado;
     let diarioAntes = [];
     try { diarioAntes = await linhasDoDiario(); } catch { }

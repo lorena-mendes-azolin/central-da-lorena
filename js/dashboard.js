@@ -127,7 +127,7 @@ PAGINAS.dashboard = {
               <defs><linearGradient id="gradFoco"><stop offset="0" style="stop-color:var(--destaque-2)"/><stop offset="1" stop-color="#f59ad8"/></linearGradient></defs>
             </svg>
             <div class="anel-tempo">${focoTela.tipo === 'pomodoro'
-              ? `<b id="pomo-tempo">25:00</b><span id="pomo-estado">${pomo.estado}</span>`
+              ? `<b id="pomo-tempo">25:00</b><span id="pomo-estado">${pomo.estado || g('pronta para focar', 'pronto para focar', 'hora de focar')}</span>`
               : `<b id="crono-tempo">${textoCrono(tempoCrono())}</b><span id="crono-estado">${estadoCrono()}</span>`}</div>
           </div>
           <label class="rotulo-select foco-materia">Estudando
@@ -191,15 +191,25 @@ PAGINAS.dashboard = {
     </div>
     ${htmlPedirNotificacao()}
     ${htmlAvisoBackup()}
+    ${estado.treino?.ativo ? `<a class="alerta convite" href="#treino">${ic('gym')}<span><b>Treino em andamento.</b> Toque para voltar de onde parou.</span><span class="btn">Voltar</span></a>` : ''}
+    ${temModulo('jejum') && estado.jejum?.ativo ? `<a class="alerta convite" href="#bemestar">${ic('timer')}<span><b>Jejum em andamento:</b> ${fmtHoras((Date.now() - estado.jejum.ativo.inicio) / 3600000)} de ${estado.jejum.ativo.metaH}h.</span><span class="btn">Ver</span></a>` : ''}
     ${(() => {
       if (agora.getDay() !== 0) return '';
       const semana = segundaDaSemana(hoje);
       if (estado.revisoes[semana]?.foco || estado.config.revisaoVista === semana) return '';
       return `<a class="alerta convite" href="#revisao" data-acao="rev-abrir" data-semana="${semana}">${ic('review')}<span><b>Hora da revisão da semana.</b> Veja o que fez, o que ficou para trás e escolha o foco da próxima.</span><span class="btn">Abrir</span></a>`;
     })()}
+    ${(() => {
+      const d = paraData(hoje);
+      if (d.getDate() > 5) return '';
+      const ant = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+      const m = `${ant.getFullYear()}-${String(ant.getMonth() + 1).padStart(2, '0')}`;
+      if (estado.config.retroVista === m) return '';
+      return `<a class="alerta convite" href="#retrospectiva" data-acao="retro-abrir" data-m="${m}">${ic('sparkle')}<span><b>Sua retrospectiva de ${MESES_LONGOS[ant.getMonth()].toLowerCase()} está pronta.</b> Veja tudo o que você fez no mês.</span><span class="btn">Ver</span></a>`;
+    })()}
     ${dashTela.editando ? htmlPersonalizarDash() : ''}
     <div class="grade-dash">
-      ${blocosDash().filter((b) => b.visivel).map((b) => `<div class="bloco-dash tam-${BLOCOS_DASH[b.id].tam}">${blocos[b.id]}</div>`).join('')}
+      ${(() => { Object.assign(blocos, blocosDosModulos()); return blocosDash().filter((b) => b.visivel && blocoDisponivel(b.id) && blocos[b.id]).map((b) => `<div class="bloco-dash tam-${BLOCOS_DASH[b.id].tam}">${blocos[b.id]}</div>`).join(''); })()}
     </div>`;
   },
 };
@@ -212,13 +222,22 @@ const BLOCOS_DASH = {
   agua: { nome: 'Água', tam: 'um' },
   humor: { nome: 'Como você está?', tam: 'um' },
   foco: { nome: 'Foco', tam: 'um' },
+  treino: { nome: 'Treino de hoje', tam: 'um', modulo: 'treino' },
+  jejum: { nome: 'Jejum', tam: 'um', modulo: 'jejum' },
+  pets: { nome: 'Pets', tam: 'um', modulo: 'pets' },
+  apps: { nome: 'Apps de estudo', tam: 'um', modulo: 'apps' },
   listas: { nome: 'Minhas listas', tam: 'cheio' },
 };
+const blocoDisponivel = (id) => !BLOCOS_DASH[id].modulo || temModulo(BLOCOS_DASH[id].modulo);
 const dashTela = { editando: false };
 
 function blocosDash() {
   const salvos = (estado.config.dashboard || []).filter((b) => BLOCOS_DASH[b.id]);
-  Object.keys(BLOCOS_DASH).forEach((id) => { if (!salvos.some((b) => b.id === id)) salvos.push({ id, visivel: true }); });
+  Object.keys(BLOCOS_DASH).forEach((id) => {
+    if (salvos.some((b) => b.id === id)) return;
+    const pos = salvos.findIndex((b) => b.id === 'listas');
+    if (BLOCOS_DASH[id].modulo && pos >= 0) salvos.splice(pos, 0, { id, visivel: true }); else salvos.push({ id, visivel: true });
+  });
   estado.config.dashboard = salvos;
   return salvos;
 }
@@ -229,7 +248,7 @@ function htmlPersonalizarDash() {
       <a href="#" data-acao="dash-padrao">Voltar ao padrão</a></h2>
     <p class="dica" style="margin:-6px 0 12px">Arraste para mudar a ordem e use o olho para mostrar ou esconder cada parte.</p>
     <div class="blocos-dash-lista">
-      ${blocosDash().map((b) => `<div class="item ${b.visivel ? '' : 'feito'}" ${ordem('|config.dashboard', b.id)}>
+      ${blocosDash().filter((b) => blocoDisponivel(b.id)).map((b) => `<div class="item ${b.visivel ? '' : 'feito'}" ${ordem('|config.dashboard', b.id)}>
         ${alca()}
         <span class="txt">${BLOCOS_DASH[b.id].nome}</span>
         <button class="acao-item" data-acao="dash-ver" data-id="${b.id}" title="${b.visivel ? 'Esconder' : 'Mostrar'}">${ic(b.visivel ? 'eye' : 'eyeoff', 'p')}</button>
@@ -262,15 +281,19 @@ function iconeClima(cod) {
 }
 
 function htmlClima() {
-  if (!clima || clima.erro) return `${ic('moon')}<div><b>Curitiba</b><small>${clima ? 'clima indisponível' : 'carregando…'}</small></div>`;
-  return `${ic(clima.icone)}<div><b>${clima.temp}°</b><small>Curitiba · ${clima.texto} · ${clima.min}°/${clima.max}°</small></div>`;
+  const cid = estado.config.cidade;
+  if (!cid) return `<a href="#configuracoes" class="clima-vazio">${ic('cloud')}<div><b>Clima</b><small>escolher cidade</small></div></a>`;
+  if (!clima || clima.erro) return `${ic('moon')}<div><b>${esc(cid.nome)}</b><small>${clima ? 'clima indisponível' : 'carregando…'}</small></div>`;
+  return `${ic(clima.icone)}<div><b>${clima.temp}°</b><small>${esc(cid.nome)} · ${clima.texto} · ${clima.min}°/${clima.max}°</small></div>`;
 }
 
 async function buscarClima() {
   try {
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude=-25.43&longitude=-49.27'
+    const cid = estado.config.cidade;
+    if (!cid) { clima = null; if ($('#clima')) $('#clima').innerHTML = htmlClima(); return; }
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${cid.lat}&longitude=${cid.lon}`
       + '&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min'
-      + '&timezone=America%2FSao_Paulo&forecast_days=1';
+      + '&timezone=auto&forecast_days=1';
     const j = await (await fetch(url)).json();
     const [icone, texto] = iconeClima(j.current.weather_code);
     clima = {
@@ -346,7 +369,7 @@ ACOES['crono-play'] = () => {
 ACOES['crono-descartar'] = () => {
   if (!confirmarDuasVezes('crono-descartar', 'Clique de novo para descartar o tempo.')) return;
   estado.config.cronometro = { acumulado: 0, inicio: 0, assunto: crono().assunto };
-  document.title = 'Central da Lorena';
+  document.title = estado.config.nomeEspaco || 'Minha Central';
   salvar(); desenhar();
 };
 ACOES['crono-finalizar'] = () => {
@@ -358,7 +381,7 @@ ACOES['crono-finalizar'] = () => {
   reg.sessoes = reg.sessoes || [];
   reg.sessoes.push({ id: novoId(), ref, assunto: (c.assunto || '').trim(), min, fim: new Date().toTimeString().slice(0, 5) });
   estado.config.cronometro = { acumulado: 0, inicio: 0, assunto: '' };
-  document.title = 'Central da Lorena';
+  document.title = estado.config.nomeEspaco || 'Minha Central';
   salvar(); desenhar();
   tocarSom(true);
   avisar(`${textoMinutos(min)} de estudo salvos${ref ? ` em ${nomeMateria(ref)}` : ''}.`);
@@ -383,14 +406,14 @@ FORMS['crono-manual'] = (d) => {
   avisar(`${textoMinutos(min)} de estudo salvos${ref ? ` em ${nomeMateria(ref)}` : ''}${dia !== hojeISO() ? ` no dia ${paraData(dia).toLocaleDateString('pt-BR')}` : ''}.`);
 };
 
-const pomo = { total: 25 * 60, resta: 25 * 60, rodando: false, fimEm: 0, modo: 'foco', estado: 'pronta para focar' };
+const pomo = { total: 25 * 60, resta: 25 * 60, rodando: false, fimEm: 0, modo: 'foco', estado: '' };
 
 function atualizarPomodoro() {
   if (!$('#pomo-tempo')) return;
   const mm = String(Math.floor(pomo.resta / 60)).padStart(2, '0');
   const ss = String(pomo.resta % 60).padStart(2, '0');
   $('#pomo-tempo').textContent = `${mm}:${ss}`;
-  $('#pomo-estado').textContent = pomo.estado;
+  $('#pomo-estado').textContent = pomo.estado || g('pronta para focar', 'pronto para focar', 'hora de focar');
   const C = 2 * Math.PI * 70;
   const arco = $('#pomo-arco');
   arco.style.strokeDasharray = C;
@@ -443,7 +466,7 @@ ACOES['pomo-play'] = () => {
 ACOES['pomo-reset'] = () => {
   pomo.rodando = false;
   pomo.resta = pomo.total;
-  pomo.estado = 'pronta para focar';
+  pomo.estado = g('pronta para focar', 'pronto para focar', 'hora de focar');
   atualizarCaminho();
   atualizarPomodoro();
 };
@@ -454,6 +477,8 @@ ACOES['pomo-modo'] = (el) => {
   pomo.rodando = false;
   pomo.total = pomo.resta = Number(el.dataset.min) * 60;
   pomo.modo = el.dataset.modo;
-  pomo.estado = pomo.modo === 'foco' ? 'pronta para focar' : 'hora de respirar';
+  pomo.estado = pomo.modo === 'foco' ? g('pronta para focar', 'pronto para focar', 'hora de focar') : 'hora de respirar';
   desenhar();
 };
+
+ACOES['retro-abrir'] = (el) => { estado.config.retroVista = el.dataset.m; retroTela.tipo = 'mes'; retroTela.mes = el.dataset.m; salvar(); location.hash = 'retrospectiva'; };

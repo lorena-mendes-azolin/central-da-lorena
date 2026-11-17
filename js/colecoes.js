@@ -107,6 +107,7 @@ FORMS['col-item'] = (d, form) => {
 ACOES['col-check'] = (el) => {
   const i = acharRef(el.dataset.ref);
   i.feito = !i.feito;
+  i.feitoEm = i.feito ? hojeISO() : '';
   salvar(); desenhar();
   if (i.feito) tocarSom(true);
 };

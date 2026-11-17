@@ -4,11 +4,13 @@ function paginaAtual() {
     const pag = paginaLista(nome.slice(6));
     if (pag) return { nome, ...pag };
   }
+  if (precisaBoasVindas()) return { nome: 'boasvindas', ...PAGINAS.boasvindas };
   return PAGINAS[nome] ? { nome, ...PAGINAS[nome] } : { nome: 'dashboard', ...PAGINAS.dashboard };
 }
 
 function desenhar() {
   const pag = paginaAtual();
+  document.body.classList.toggle('sem-menu', pag.nome === 'boasvindas');
   $('#conteudo').innerHTML = pag.desenhar();
   if (pag.depois) pag.depois();
   desenharMenu();
@@ -64,6 +66,7 @@ ACOES.carrossel = (el) => {
 };
 
 function desenharMenu() {
+  aplicarModulos();
   const pag = paginaAtual();
   const atual = pag.nomeMenu || pag.nome;
   $('#nav-listas').innerHTML = estado.listas.map((l) => {
@@ -84,7 +87,7 @@ function desenharMenu() {
 function atualizarCaminho() {
   const pag = paginaAtual();
   $('#caminho').textContent = pag.titulo;
-  if (!pomo.rodando) document.title = `${pag.titulo} · Central da Lorena`;
+  if (!pomo.rodando) document.title = `${pag.titulo} · ${estado.config.nomeEspaco || 'Minha Central'}`;
 }
 
 const telaPequena = () => window.matchMedia('(max-width: 860px)').matches;
@@ -171,6 +174,9 @@ function aCadaSegundo() {
     a.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   passoPomodoro();
   atualizarCronometro();
+  atualizarTreino();
+  atualizarCorrida();
+  atualizarJejum();
 
   if (a.getMinutes() !== minutoAberto) {
     minutoAberto = a.getMinutes();
@@ -186,10 +192,10 @@ async function iniciar() {
   if (!logada) return;
   limparAntigos();
   avancarAniversarios();
+  try { const fuso = Intl.DateTimeFormat().resolvedOptions().timeZone; if (fuso && estado.config.fuso !== fuso) { estado.config.fuso = fuso; salvar(); } } catch { }
   aplicarMenu();
   aplicarTema();
-  $('#perfil-nome').textContent = estado.config.nome;
-  $('#perfil-foto').textContent = estado.config.nome[0].toUpperCase();
+  atualizarPerfil();
   if (usuario) {
     $('#perfil-sub').textContent = usuario.email;
     $('#txt-sair').textContent = 'Sair';

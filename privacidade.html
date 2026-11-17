@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacidade · Central</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236c4cf1'/><stop offset='1' stop-color='%23f59ad8'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23g)'/><path d='M15 6l2.2 7.8L25 16l-7.8 2.2L15 26l-2.2-7.8L5 16l7.8-2.2z' fill='white'/></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="tela-texto">
+  <main class="texto-legal">
+    <a href="login.html" class="link-btn voltar-legal">← Voltar</a>
+    <h1>Privacidade e seus dados</h1>
+    <p class="atualizado">Última atualização: novembro de 2026</p>
+
+    <p>A Central é um espaço pessoal de organização: agenda, rotina, estudos, listas e bem-estar. Este texto explica, de forma simples, o que acontece com as informações que você coloca aqui, seguindo a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).</p>
+
+    <h2>Quais dados são guardados</h2>
+    <ul>
+      <li><b>Conta:</b> seu e-mail e a senha (a senha fica criptografada e ninguém consegue ver).</li>
+      <li><b>O que você registra:</b> tarefas, hábitos, anotações, diário, treinos, finanças, imagens e tudo mais que você escreve no site.</li>
+      <li><b>Preferências:</b> nome que você escolheu, tema, cidade do clima e módulos ativados.</li>
+    </ul>
+    <p>Algumas informações podem ser sensíveis, como o diário, humor, sono, jejum e finanças. Elas são usadas <b>só para mostrar para você</b> dentro do site.</p>
+
+    <h2>Para que são usados</h2>
+    <ul>
+      <li>Mostrar suas informações e sincronizar entre os seus aparelhos.</li>
+      <li>Gerar gráficos, lembretes e a retrospectiva, apenas para você.</li>
+    </ul>
+    <p>Seus dados <b>não são vendidos, não são usados para anúncios</b> e não são compartilhados com outras pessoas.</p>
+
+    <h2>Onde ficam</h2>
+    <p>Os dados ficam no seu navegador e na nuvem do <b>Supabase</b>, um serviço de banco de dados que guarda as informações com acesso protegido: cada conta só consegue ler os próprios dados. Para mostrar o clima, o site consulta o serviço Open-Meteo usando apenas a cidade escolhida, sem enviar nada pessoal.</p>
+
+    <h2>Seus direitos</h2>
+    <ul>
+      <li><b>Ver e baixar tudo:</b> em Configurações › Backup, o botão "Fazer backup" gera um arquivo com todos os seus dados.</li>
+      <li><b>Corrigir:</b> qualquer informação pode ser editada direto no site.</li>
+      <li><b>Apagar:</b> em Configurações › Conta, o botão "Excluir minha conta" apaga sua conta, seus dados e suas imagens da nuvem de forma permanente.</li>
+    </ul>
+
+    <h2>Por quanto tempo</h2>
+    <p>Os dados ficam guardados enquanto sua conta existir. Itens na Lixeira são apagados depois de 30 dias e o histórico de versões guarda só os últimos 30 dias. Ao excluir a conta, tudo é apagado da nuvem.</p>
+
+    <h2>Contato</h2>
+    <p id="contato">Dúvidas sobre seus dados? Fale com quem mantém o site.</p>
+  </main>
+  <script src="js/config.js"></script>
+  <script>
+    if (typeof CONTATO_SUPORTE !== 'undefined' && CONTATO_SUPORTE) {
+      const p = document.getElementById('contato');
+      p.innerHTML = 'Dúvidas sobre seus dados? Escreva para <a></a>.';
+      const a = p.querySelector('a'); a.href = 'mailto:' + CONTATO_SUPORTE; a.textContent = CONTATO_SUPORTE;
+    }
+  </script>
+</body>
+</html>

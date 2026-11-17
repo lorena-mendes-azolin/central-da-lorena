@@ -1,9 +1,9 @@
-const CACHE = 'central-v5';
+const CACHE = 'central-v9';
 const ARQUIVOS = [
   './', './index.html', './login.html', './redefinir.html', './css/style.css', './manifest.webmanifest',
   './icons/icone-192.png', './icons/icone-512.png',
   ...['config', 'utils', 'seletor', 'dados', 'nuvem', 'dashboard', 'agenda', 'rotina', 'graficos', 'editor', 'listas', 'cursos',
-    'metas', 'colecoes', 'compras', 'diario', 'bemestar', 'flashcards', 'financas', 'revisao', 'lixeira', 'imagens', 'arrastar', 'historico', 'notificacoes', 'configuracoes', 'app', 'login']
+    'metas', 'colecoes', 'compras', 'diario', 'bemestar', 'flashcards', 'financas', 'revisao', 'lixeira', 'imagens', 'arrastar', 'historico', 'modulos', 'boasvindas', 'exercicios', 'treino', 'pets', 'apps', 'jejum', 'retrospectiva', 'notificacoes', 'configuracoes', 'app', 'login']
     .map((n) => `./js/${n}.js`),
 ];
 
@@ -32,12 +32,20 @@ self.addEventListener('fetch', (e) => {
   );
 });
 
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { titulo: 'Lembrete', corpo: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Lembrete', {
+    body: d.corpo || '', tag: d.tag || 'aviso', icon: 'icons/icone-192.png', badge: 'icons/icone-192.png', vibrate: [120, 60, 120], data: { url: d.url || './index.html' },
+  }));
+});
+
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {
       if (janelas.length) return janelas[0].focus();
-      return self.clients.openWindow('./index.html#agenda');
+      return self.clients.openWindow((e.notification.data && e.notification.data.url) || './index.html#agenda');
     }),
   );
 });

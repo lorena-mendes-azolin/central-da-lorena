@@ -83,7 +83,7 @@ function verificarLembretes() {
 
 function resumoDoDia() {
   const hoje = hojeISO();
-  if (estado.config.resumoVisto === hoje) return;
+  if (estado.config.resumoVisto === hoje || precisaBoasVindas()) return;
   estado.config.resumoVisto = hoje;
   salvar();
   const n = estado.tarefas.filter((t) => !t.feito && t.data === hoje).length;
@@ -132,3 +132,73 @@ function preencherAvisos() {
       || '<p class="vazio">Nenhum aviso nas próximas 48 horas.</p>'}
     ${PODE_NOTIFICAR && Notification.permission !== 'granted' ? '<button class="btn" data-acao="permitir-notif" style="margin-top:10px">Ativar notificações do computador</button>' : ''}`;
 }
+
+const pushTela = { estado: null, ocupado: false };
+const pushSuportado = () => NUVEM_ATIVA && typeof VAPID_PUBLICA !== 'undefined' && VAPID_PUBLICA && 'serviceWorker' in navigator && 'PushManager' in window && location.protocol === 'https:';
+
+function chaveVapid(b64) {
+  const p = '='.repeat((4 - (b64.length % 4)) % 4);
+  const bruto = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...bruto].map((c) => c.charCodeAt(0)));
+}
+
+async function conferirPush() {
+  if (!pushSuportado() || !usuario) { pushTela.estado = 'indisponivel'; setTimeout(() => { if (location.hash === '#configuracoes') desenharSeguro(); }, 0); return; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    pushTela.estado = sub ? 'ativo' : Notification.permission === 'denied' ? 'bloqueado' : 'inativo';
+  } catch { pushTela.estado = 'inativo'; }
+  if (location.hash === '#configuracoes') desenharSeguro();
+}
+
+function htmlPush() {
+  if (pushTela.estado === null) { conferirPush(); return '<p class="dica" style="margin:0">Verificando…</p>'; }
+  if (pushTela.estado === 'indisponivel') {
+    return `<p class="dica" style="margin:0">${location.protocol !== 'https:' ? 'Funciona no site publicado (endereço com https), não no Live Server.' : !usuario ? 'Entre na sua conta para ativar.' : 'Este navegador não aceita esse tipo de aviso.'}
+      ${/iPhone|iPad/.test(navigator.userAgent) ? ' No iPhone, primeiro instale o site na tela inicial (Compartilhar › Adicionar à Tela de Início) e abra por lá.' : ''}</p>`;
+  }
+  if (pushTela.estado === 'bloqueado') return '<p class="dica" style="margin:0">As notificações estão bloqueadas neste aparelho. Libere nas configurações do navegador (cadeado ao lado do endereço) e volte aqui.</p>';
+  return pushTela.estado === 'ativo'
+    ? `<p style="margin:0 0 12px"><b>Ativado neste aparelho.</b> Os lembretes das tarefas chegam mesmo com o site fechado.</p>
+      <div class="form-linha"><button class="btn sec" data-acao="push-teste" ${pushTela.ocupado ? 'disabled' : ''}>${ic('bell', 'p')} Mandar um teste</button>
+      <button class="btn sec" data-acao="push-desativar" ${pushTela.ocupado ? 'disabled' : ''}>Desativar neste aparelho</button></div>`
+    : `<p style="margin:0 0 12px">Receba os lembretes das tarefas, aniversários e cuidados dos pets mesmo com o site fechado. Ative em cada aparelho (celular e computador).</p>
+      <button class="btn" data-acao="push-ativar" ${pushTela.ocupado ? 'disabled' : ''}>${ic('bell', 'p')} Ativar neste aparelho</button>`;
+}
+
+ACOES['push-ativar'] = async () => {
+  pushTela.ocupado = true; desenhar();
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { pushTela.estado = perm === 'denied' ? 'bloqueado' : 'inativo'; return; }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveVapid(VAPID_PUBLICA) });
+    const json = sub.toJSON();
+    const { error } = await sb.from('push_inscricoes').upsert({ endpoint: json.endpoint, user_id: usuario.id, inscricao: json, aparelho: navigator.userAgent.slice(0, 120) });
+    if (error) { await sub.unsubscribe(); avisar(/push_inscricoes|PGRST205|42P01/.test(`${error.code} ${error.message}`) ? 'Falta rodar o supabase.sql para ativar esse aviso.' : 'Não consegui ativar agora.'); pushTela.estado = 'inativo'; return; }
+    pushTela.estado = 'ativo';
+    avisar('Pronto! Os lembretes vão chegar mesmo com o site fechado.');
+  } catch { avisar('Não consegui ativar neste aparelho.'); }
+  finally { pushTela.ocupado = false; desenhar(); }
+};
+ACOES['push-desativar'] = async () => {
+  pushTela.ocupado = true; desenhar();
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) { await sb.from('push_inscricoes').delete().eq('endpoint', sub.endpoint); await sub.unsubscribe(); }
+    pushTela.estado = 'inativo';
+    avisar('Avisos com o site fechado desativados neste aparelho.');
+  } catch { avisar('Não consegui desativar agora.'); }
+  finally { pushTela.ocupado = false; desenhar(); }
+};
+ACOES['push-teste'] = async () => {
+  pushTela.ocupado = true; desenhar();
+  try {
+    const { data, error } = await sb.functions.invoke('lembretes', { body: { teste: true } });
+    if (error) throw error;
+    avisar(data?.enviados ? 'Teste enviado! Deve chegar em alguns segundos.' : 'Nenhum aparelho recebeu. Tente desativar e ativar de novo.');
+  } catch { avisar('A função de avisos ainda não está publicada no Supabase.'); }
+  finally { pushTela.ocupado = false; desenhar(); }
+};

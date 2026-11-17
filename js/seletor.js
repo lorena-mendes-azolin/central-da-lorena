@@ -276,16 +276,61 @@ function abrirHora(inp, btn) {
   menu.className = 'hora-menu';
   const minutos = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
   if (m && !minutos.includes(m)) minutos.push(m), minutos.sort();
-  menu.innerHTML = `<div class="hora-colunas">
+  const pc = matchMedia('(pointer: fine)').matches;
+  menu.innerHTML = `${pc ? `<input type="text" class="hora-digitar" inputmode="numeric" maxlength="5" placeholder="hh:mm" value="${h && m ? `${h}:${m}` : ''}" aria-label="Digite a hora">` : ''}<div class="hora-colunas">
       <div class="hora-col"><span>Hora</span>${Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map((x) => `<button type="button" class="${x === h ? 'on' : ''}" data-h="${x}">${x}</button>`).join('')}</div>
       <div class="hora-col"><span>Min</span>${minutos.map((x) => `<button type="button" class="${x === m ? 'on' : ''}" data-m="${x}">${x}</button>`).join('')}</div>
     </div>
+    ${pc ? '<p class="dica-hora">Digite, ou role o mouse sobre a hora e os minutos</p>' : ''}
     <div class="cal-rodape"><button type="button" data-limpar>Limpar</button><button type="button" data-agora>Agora</button></div>`;
   (btn.closest('dialog') || document.body).appendChild(menu);
   btn.classList.add('aberto');
   calAberto = { inp, btn, menu, hora: h || '', min: m || '' };
   posicionarCalendario();
   menu.querySelectorAll('.on').forEach((b) => b.scrollIntoView({ block: 'center' }));
+  const campo = menu.querySelector('.hora-digitar');
+  const marcar = (deFora = false) => {
+    const c = calAberto;
+    menu.querySelectorAll('[data-h]').forEach((x) => x.classList.toggle('on', x.dataset.h === c.hora));
+    let bm = menu.querySelector(`[data-m="${c.min}"]`);
+    if (!bm && c.min) {
+      bm = document.createElement('button'); bm.type = 'button'; bm.dataset.m = c.min; bm.textContent = c.min;
+      const col = menu.querySelectorAll('.hora-col')[1];
+      const depois = [...col.querySelectorAll('[data-m]')].find((x) => x.dataset.m > c.min);
+      col.insertBefore(bm, depois || null);
+    }
+    menu.querySelectorAll('[data-m]').forEach((x) => x.classList.toggle('on', x === bm));
+    menu.querySelectorAll('.on').forEach((b) => b.scrollIntoView({ block: 'nearest' }));
+    if (c.hora && c.min) { inp.value = `${c.hora}:${c.min}`; rotuloData(inp); c.mudou = true; }
+    if (campo && (deFora || document.activeElement !== campo)) campo.value = c.hora && c.min ? `${c.hora}:${c.min}` : '';
+  };
+  if (campo) {
+    setTimeout(() => campo.focus(), 30);
+    campo.addEventListener('input', () => {
+      let v = campo.value.replace(/\D/g, '').slice(0, 4);
+      if (v.length >= 3) v = `${v.slice(0, 2)}:${v.slice(2)}`;
+      campo.value = v;
+      const mt = v.match(/^(\d{2}):(\d{2})$/);
+      if (mt && Number(mt[1]) < 24 && Number(mt[2]) < 60) { calAberto.hora = mt[1]; calAberto.min = mt[2]; marcar(); }
+    });
+    campo.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const c = calAberto;
+        if (c.hora && c.min) { c.mudou = false; inp.value = `${c.hora}:${c.min}`; rotuloData(inp); fecharMenuSelect(); inp.dispatchEvent(new Event('change', { bubbles: true })); }
+      }
+      if (e.key === 'Escape') fecharMenuSelect();
+    });
+  }
+  menu.querySelectorAll('.hora-col').forEach((col, k) => col.addEventListener('wheel', (e) => {
+    if (!pc) return;
+    e.preventDefault();
+    const c = calAberto;
+    const passo = e.deltaY > 0 ? 1 : -1;
+    if (k === 0) { c.hora = String(((Number(c.hora || 0) + passo) % 24 + 24) % 24).padStart(2, '0'); if (!c.min) c.min = '00'; }
+    else { const atual = Number(c.min || 0); const prox = passo > 0 ? Math.floor(atual / 5) * 5 + 5 : Math.ceil(atual / 5) * 5 - 5; c.min = String(((prox % 60) + 60) % 60).padStart(2, '0'); if (!c.hora) c.hora = String(new Date().getHours()).padStart(2, '0'); }
+    marcar(true);
+  }, { passive: false }));
   menu.addEventListener('click', (e) => {
     e.stopPropagation();
     const b = e.target.closest('button');

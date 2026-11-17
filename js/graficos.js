@@ -64,10 +64,11 @@ PAGINAS.graficos = {
     return `
     <div class="cab-pagina">
       <div><h1>Gráficos</h1><p>Como foram os ${periodo}.</p></div>
+      <div class="cab-acoes"><a class="btn sec" href="#retrospectiva">${ic('sparkle', 'p')} Retrospectiva</a>
       <div class="segmento">
         <button class="${n === 7 ? 'ativo' : ''}" data-acao="graf-periodo" data-d="7">7 dias</button>
         <button class="${n === 30 ? 'ativo' : ''}" data-acao="graf-periodo" data-d="30">30 dias</button>
-      </div>
+      </div></div>
     </div>
 
     <div class="grade g2">
@@ -115,6 +116,7 @@ PAGINAS.graficos = {
         <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('timer')}</span> Foco <small>${focos} ${focos === 1 ? 'ciclo' : 'ciclos'}</small></h2>
         ${colunas(dias, (d) => estado.diario[d]?.pomodoros || 0, (d, v) => `${dataCurta(d)} · ${v} ${v === 1 ? 'ciclo' : 'ciclos'} de foco`)}
       </section>
+      ${htmlGraficosModulos(dias)}
     </div>`;
   },
   depois() {

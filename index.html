@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Central da Lorena</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236c4cf1'/><text x='16' y='22' font-size='17' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>L</text></svg>">
+  <title>Central</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236c4cf1'/><stop offset='1' stop-color='%23f59ad8'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23g)'/><path d='M15 6l2.2 7.8L25 16l-7.8 2.2L15 26l-2.2-7.8L5 16l7.8-2.2z' fill='white'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -82,6 +82,7 @@
       <symbol id="i-cap" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></symbol>
       <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M6.5 17A2.5 2.5 0 0 0 4 19.5 2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
       <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
       <symbol id="i-cake" viewBox="0 0 24 24"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></symbol>
       <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
       <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></symbol>
@@ -109,8 +110,8 @@
 
   <aside class="lateral" id="lateral">
     <div class="perfil">
-      <span class="perfil-foto" id="perfil-foto">L</span>
-      <div class="perfil-texto"><b id="perfil-nome">Lorena</b><small id="perfil-sub">meu espaço</small></div>
+      <span class="perfil-foto" id="perfil-foto"></span>
+      <div class="perfil-texto"><b id="perfil-nome"></b><small id="perfil-sub">meu espaço</small></div>
     </div>
 
     <div class="nav-titulo"><span>Menu principal</span></div>
@@ -119,10 +120,15 @@
       <a href="#agenda" data-pagina="agenda" title="Agenda"><svg class="ic"><use href="#i-calendar"/></svg><span>Agenda</span><b class="bolinha" id="bolinha-agenda" hidden></b></a>
       <a href="#rotina" data-pagina="rotina" title="Rotina diária"><svg class="ic"><use href="#i-repeat"/></svg><span>Rotina diária</span></a>
       <a href="#bemestar" data-pagina="bemestar" title="Bem-estar"><svg class="ic"><use href="#i-heart"/></svg><span>Bem-estar</span></a>
-      <a href="#flashcards" data-pagina="flashcards" title="Flashcards"><svg class="ic"><use href="#i-layers"/></svg><span>Flashcards</span></a>
-      <a href="#financas" data-pagina="financas" title="Finanças"><svg class="ic"><use href="#i-money"/></svg><span>Finanças</span></a>
+      <a href="#flashcards" data-pagina="flashcards" data-modulo="flashcards" title="Flashcards"><svg class="ic"><use href="#i-layers"/></svg><span>Flashcards</span></a>
+      <a href="#financas" data-pagina="financas" data-modulo="financas" title="Finanças"><svg class="ic"><use href="#i-money"/></svg><span>Finanças</span></a>
       <a href="#graficos" data-pagina="graficos" title="Gráficos"><svg class="ic"><use href="#i-chart"/></svg><span>Gráficos</span></a>
-      <a href="#revisao" data-pagina="revisao" title="Revisão da semana"><svg class="ic"><use href="#i-review"/></svg><span>Revisão da semana</span></a>
+      <a href="#retrospectiva" data-pagina="retrospectiva" title="Retrospectiva"><svg class="ic"><use href="#i-sparkle"/></svg><span>Retrospectiva</span></a>
+      <a href="#revisao" data-pagina="revisao" data-modulo="revisao" title="Revisão da semana"><svg class="ic"><use href="#i-review"/></svg><span>Revisão da semana</span></a>
+      <a href="#treino" data-pagina="treino" data-modulo="treino" title="Treino" hidden><svg class="ic"><use href="#i-gym"/></svg><span>Treino</span></a>
+      <a href="#pets" data-pagina="pets" data-modulo="pets" title="Pets" hidden><svg class="ic"><use href="#i-paw"/></svg><span>Pets</span></a>
+      <a href="#apps" data-pagina="apps" data-modulo="apps" title="Apps de estudo" hidden><svg class="ic"><use href="#i-code"/></svg><span>Apps de estudo</span></a>
+      <a href="#modulos" data-pagina="modulos" title="Adicionar módulos" class="nav-modulos"><svg class="ic"><use href="#i-plus"/></svg><span>Adicionar módulos</span></a>
     </nav>
 
     <div class="nav-titulo">
@@ -189,6 +195,14 @@
   <script src="js/lixeira.js"></script>
   <script src="js/imagens.js"></script>
   <script src="js/historico.js"></script>
+  <script src="js/modulos.js"></script>
+  <script src="js/boasvindas.js"></script>
+  <script src="js/exercicios.js"></script>
+  <script src="js/treino.js"></script>
+  <script src="js/pets.js"></script>
+  <script src="js/apps.js"></script>
+  <script src="js/jejum.js"></script>
+  <script src="js/retrospectiva.js"></script>
   <script src="js/notificacoes.js"></script>
   <script src="js/configuracoes.js"></script>
   <script src="js/app.js"></script>

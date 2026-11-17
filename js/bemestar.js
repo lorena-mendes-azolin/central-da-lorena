@@ -52,7 +52,7 @@ PAGINAS.bemestar = {
 
     return `
     <div class="cab-pagina">
-      <div><h1>Bem-estar</h1><p>Diário, sono e água. Pequenos registros que mostram como você está.</p></div>
+      <div><h1>Bem-estar</h1><p>Diário, sono${temModulo('jejum') ? ', água e jejum' : ' e água'}. Pequenos registros que mostram como você está.</p></div>
     </div>
 
     <div class="grade g3">
@@ -153,7 +153,8 @@ PAGINAS.bemestar = {
         </div>
         </form>
       </section>
-    </div>`;
+    </div>
+    ${htmlJejum()}`;
   },
 };
 
