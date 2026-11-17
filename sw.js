@@ -1,4 +1,4 @@
-const CACHE = 'central-v4';
+const CACHE = 'central-v5';
 const ARQUIVOS = [
   './', './index.html', './login.html', './redefinir.html', './css/style.css', './manifest.webmanifest',
   './icons/icone-192.png', './icons/icone-512.png',

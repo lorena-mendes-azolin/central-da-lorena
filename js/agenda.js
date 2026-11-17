@@ -13,21 +13,39 @@ function visaoAgenda() {
   return estado.config.visaoAgenda || 'mes';
 }
 
+const eAniver = (t) => t.tipo === 'aniversario';
+function idadeAniver(t, data = t.data) {
+  return t.nasceu && data ? Number(data.slice(0, 4)) - t.nasceu : 0;
+}
+function avancarAniversarios() {
+  const hoje = hojeISO();
+  let mudou = false;
+  estado.tarefas.forEach((t) => {
+    if (!eAniver(t) || t.feito || !t.data || t.data >= hoje) return;
+    let d = t.data;
+    for (let i = 0; i < 200 && d < hoje; i++) d = proximaData(t, d);
+    t.data = d;
+    mudou = true;
+  });
+  if (mudou) salvar();
+}
+
 function htmlTarefa(t) {
   const hoje = hojeISO();
   const atrasado = !t.feito && t.data && t.data < hoje;
   const cor = AREAS[t.area] || AREAS.Pessoal;
   const partes = [];
+  if (eAniver(t) && idadeAniver(t) > 0) partes.push(`faz ${idadeAniver(t)} anos`);
   if (t.data) partes.push(`${dataCurta(t.data)} · ${quandoFalta(t.data)}`);
   else partes.push('sem data');
   if (t.hora) partes.push(`${ic('clock')} ${t.hora}`);
   if (t.lembrete >= 0 && !t.feito) partes.push(`${ic('bell')} ${LEMBRETES.find((l) => l.min === t.lembrete)?.nome.toLowerCase()}`);
-  if (t.repetir) partes.push(`${ic('repeat')} ${REPETICOES[t.repetir].toLowerCase()}`);
+  if (t.repetir && !eAniver(t)) partes.push(`${ic('repeat')} ${REPETICOES[t.repetir].toLowerCase()}`);
   const prio = PRIORIDADES[t.prioridade];
   return `<div class="item ${t.feito ? 'feito' : ''} ${atrasado ? 'atrasado' : ''}">
     <span class="barra-cor" style="background:${cor}"></span>
     <button class="check ${t.feito ? 'on' : ''}" data-acao="tarefa-toggle" data-id="${t.id}" aria-label="Concluir">${t.feito ? ic('check') : ''}</button>
-    <span class="txt">${prio ? `<span class="prio" style="color:${prio.cor}" title="Prioridade ${prio.nome.toLowerCase()}">${ic('flag', 'p')}</span>` : ''}${esc(t.titulo)}
+    <span class="txt">${eAniver(t) ? `<span class="aniver-ic" title="Aniversário">${ic('cake', 'p')}</span>` : ''}${prio ? `<span class="prio" style="color:${prio.cor}" title="Prioridade ${prio.nome.toLowerCase()}">${ic('flag', 'p')}</span>` : ''}${esc(t.titulo)}
       <span class="sub">${atrasado ? 'atrasada · ' : ''}${partes.join(' · ')}</span></span>
     ${atrasado ? `<button class="btn-mini" data-acao="tarefa-hoje" data-id="${t.id}" title="Passar para hoje">${ic('right', 'p')} Hoje</button>` : ''}
     <button class="acao-item" data-acao="tarefa-abrir" data-id="${t.id}" title="Editar">${ic('edit', 'p')}</button>
@@ -144,8 +162,8 @@ function tarefasDoDia(iso) {
 
 function htmlMiniTarefa(t) {
   const cor = AREAS[t.area] || AREAS.Pessoal;
-  return `<div class="mini-tarefa ${t.feito ? 'feito' : ''} ${t.repeticao ? 'repeticao' : ''} ${t.prioridade === 'alta' ? 'urgente' : ''}" style="border-color:${cor}" draggable="${!t.repeticao}"
-    data-arrastar-tarefa="${t.id}" data-acao="tarefa-abrir" data-id="${t.id}" title="${esc(t.titulo)}">${t.hora ? t.hora + ' ' : ''}${esc(t.titulo)}</div>`;
+  return `<div class="mini-tarefa ${eAniver(t) ? 'aniver' : ''} ${t.feito ? 'feito' : ''} ${t.repeticao ? 'repeticao' : ''} ${t.prioridade === 'alta' ? 'urgente' : ''}" style="border-color:${cor}" draggable="${!t.repeticao}"
+    data-arrastar-tarefa="${t.id}" data-acao="tarefa-abrir" data-id="${t.id}" title="${esc(t.titulo)}${eAniver(t) && idadeAniver(t) > 0 ? ` · faz ${idadeAniver(t)} anos` : ''}">${eAniver(t) ? ic('cake', 'p') + ' ' : ''}${t.hora ? t.hora + ' ' : ''}${esc(t.titulo)}</div>`;
 }
 
 function htmlMes() {
@@ -235,25 +253,27 @@ function abrirJanela(t) {
   agendaTela.editando = t?.id || null;
   const v = t || { titulo: '', data: agendaTela.ref, hora: '', duracao: 60, tipo: 'tarefa', area: 'Pessoal', lembrete: 15, notas: '' };
   const j = $('#janela-tarefa');
-  j.innerHTML = `<form data-form="tarefa-salvar" method="dialog">
-    <h2>${t ? 'Editar tarefa' : 'Nova tarefa'}
+  j.innerHTML = `<form data-form="tarefa-salvar" method="dialog" class="${eAniver(v) ? 'modo-aniver' : ''}">
+    <h2>${t ? (eAniver(v) ? 'Editar aniversário' : 'Editar tarefa') : 'Nova tarefa'}
       <button type="button" class="btn-icone" data-acao="fechar-janela" aria-label="Fechar">${ic('x')}</button></h2>
-    <label class="campo">O que é?<input type="text" name="titulo" id="j-titulo" value="${esc(v.titulo)}" maxlength="120" data-precisa></label>
+    <label class="campo"><span class="so-normal">O que é?</span><span class="so-aniver">De quem é o aniversário?</span><input type="text" name="titulo" id="j-titulo" value="${esc(v.titulo)}" maxlength="120" data-precisa></label>
     <div class="tipo-escolha">
       <label><input type="radio" name="tipo" value="tarefa" ${v.tipo === 'tarefa' ? 'checked' : ''}><span>${ic('check', 'p')} Tarefa</span></label>
       <label><input type="radio" name="tipo" value="compromisso" ${v.tipo === 'compromisso' ? 'checked' : ''}><span>${ic('calendar', 'p')} Compromisso</span></label>
+      <label><input type="radio" name="tipo" value="aniversario" ${eAniver(v) ? 'checked' : ''}><span>${ic('cake', 'p')} Aniversário</span></label>
     </div>
     <div class="linha2">
       <label class="campo">Data<input type="date" name="data" id="j-data" value="${v.data}"></label>
-      <label class="campo">Hora (opcional)<input type="time" name="hora" id="j-hora" value="${v.hora}"></label>
+      <label class="campo so-normal">Hora (opcional)<input type="time" name="hora" id="j-hora" value="${v.hora}"></label>
+      <label class="campo so-aniver">Ano em que nasceu (opcional)<input type="number" name="nasceu" min="1900" max="${new Date().getFullYear()}" value="${v.nasceu || ''}" inputmode="numeric"></label>
     </div>
     <div class="linha2">
-      <label class="campo">Duração
+      <label class="campo so-normal">Duração
         <select name="duracao" id="j-duracao">${DURACOES.map((d) => `<option value="${d}" ${Number(v.duracao) === d ? 'selected' : ''}>${d < 60 ? d + ' min' : d / 60 + (d === 60 ? ' hora' : ' horas')}</option>`).join('')}</select></label>
       <label class="campo">Área
         <select name="area" id="j-area">${Object.keys(AREAS).map((a) => `<option ${v.area === a ? 'selected' : ''}>${a}</option>`).join('')}</select></label>
     </div>
-    <div class="linha2">
+    <div class="linha2 so-normal">
       <label class="campo">Prioridade
         <select name="prioridade">${[['', 'Normal'], ['alta', 'Alta'], ['media', 'Média'], ['baixa', 'Baixa']].map(([id, n]) => `<option value="${id}" ${(v.prioridade || '') === id ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label class="campo">Repetir
@@ -267,8 +287,15 @@ function abrirJanela(t) {
       <button type="button" class="btn sec" data-acao="fechar-janela">Cancelar</button>
       <button type="submit" class="btn">${t ? 'Salvar' : 'Adicionar'}</button>
     </div>
-    <p class="dica" style="margin:0">Sem hora marcada, o aviso usa 8h do dia como referência.</p>
+    <p class="dica so-normal" style="margin:0">Sem hora marcada, o aviso usa 8h do dia como referência.</p>
+    <p class="dica so-aniver" style="margin:0">Repete todo ano sozinho. O aviso sai às 8h. Marque o ✓ quando já tiver dado parabéns.</p>
   </form>`;
+  j.querySelectorAll('input[name=tipo]').forEach((r) => r.addEventListener('change', () => {
+    const form = j.querySelector('form');
+    const aniver = r.value === 'aniversario';
+    form.classList.toggle('modo-aniver', aniver);
+    if (aniver && !t) { const l = form.querySelector('[name=lembrete]'); l.value = '1440'; rotuloSelect(l); }
+  }));
   j.showModal();
   melhorarSelects(j);
   melhorarDatas(j);
@@ -305,16 +332,21 @@ FORMS['tarefa-salvar'] = (d) => {
     prioridade: d.prioridade || '', repetir: d.repetir || '',
     diaFixo: d.data ? Number(d.data.slice(8)) : 0,
   };
+  if (dados.tipo === 'aniversario') {
+    if (!dados.data) { avisar('Escolha a data do aniversário.'); return; }
+    Object.assign(dados, { repetir: 'anual', hora: '', prioridade: '', nasceu: Number(d.nasceu) || 0 });
+  } else dados.nasceu = 0;
   if (dados.repetir && !dados.data) dados.data = hojeISO();
   const ed = estado.tarefas.find((t) => t.id === agendaTela.editando);
   if (ed) {
     Object.assign(ed, dados);
     Object.keys(estado.avisados).forEach((k) => { if (k.startsWith(ed.id + '|')) delete estado.avisados[k]; });
-    avisar('Tarefa atualizada.');
+    avisar(dados.tipo === 'aniversario' ? 'Aniversário atualizado.' : 'Tarefa atualizada.');
   } else {
     estado.tarefas.push({ id: novoId(), ...dados, feito: false });
-    avisar(dados.lembrete >= 0 && dados.data ? 'Tarefa adicionada, com aviso marcado.' : 'Tarefa adicionada.');
+    avisar(dados.tipo === 'aniversario' ? 'Aniversário salvo. Ele aparece todo ano na agenda.' : dados.lembrete >= 0 && dados.data ? 'Tarefa adicionada, com aviso marcado.' : 'Tarefa adicionada.');
   }
+  avancarAniversarios();
   if (dados.data) agendaTela.ref = dados.data;
   fecharJanela();
   salvar(); desenhar();

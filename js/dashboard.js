@@ -17,7 +17,7 @@ PAGINAS.dashboard = {
     const meta = estado.config.metaAgua;
 
     const proximas = [
-      ...estado.tarefas.filter((t) => !t.feito && t.data > hoje).map((t) => ({ titulo: t.titulo, data: t.data, cor: AREAS[t.area] || AREAS.Pessoal })),
+      ...estado.tarefas.filter((t) => !t.feito && t.data > hoje).map((t) => ({ titulo: t.tipo === 'aniversario' ? `Aniversário: ${t.titulo}${idadeAniver(t) > 0 ? ` (${idadeAniver(t)} anos)` : ''}` : t.titulo, data: t.data, cor: t.tipo === 'aniversario' ? '#f59ad8' : AREAS[t.area] || AREAS.Pessoal })),
       ...estado.listas.flatMap((l) => datasDaLista(l).filter((x) => x.data > hoje).map((x) => ({ ...x, cor: l.cor, lista: l.nome }))),
       ...datasDasContas().filter((x) => x.data >= hoje).map((x) => ({ ...x, lista: 'Finanças' })),
     ].sort((a, b) => a.data.localeCompare(b.data)).slice(0, 5);
@@ -192,10 +192,9 @@ PAGINAS.dashboard = {
     ${htmlPedirNotificacao()}
     ${htmlAvisoBackup()}
     ${(() => {
-      const dsem = agora.getDay();
-      if (dsem !== 0 && dsem !== 1) return '';
-      const semana = dsem === 0 ? segundaDaSemana(hoje) : somarDias(segundaDaSemana(hoje), -7);
-      if (estado.revisoes[semana]?.foco) return '';
+      if (agora.getDay() !== 0) return '';
+      const semana = segundaDaSemana(hoje);
+      if (estado.revisoes[semana]?.foco || estado.config.revisaoVista === semana) return '';
       return `<a class="alerta convite" href="#revisao" data-acao="rev-abrir" data-semana="${semana}">${ic('review')}<span><b>Hora da revisão da semana.</b> Veja o que fez, o que ficou para trás e escolha o foco da próxima.</span><span class="btn">Abrir</span></a>`;
     })()}
     ${dashTela.editando ? htmlPersonalizarDash() : ''}
@@ -301,7 +300,7 @@ ACOES.agua = (el) => {
   if (reg.agua === estado.config.metaAgua) avisar('Meta de água do dia concluída!');
 };
 
-ACOES['rev-abrir'] = (el) => { revTela.semana = el.dataset.semana === segundaDaSemana(hojeISO()) ? null : el.dataset.semana; location.hash = 'revisao'; };
+ACOES['rev-abrir'] = (el) => { estado.config.revisaoVista = el.dataset.semana; salvar(); revTela.semana = el.dataset.semana === segundaDaSemana(hojeISO()) ? null : el.dataset.semana; location.hash = 'revisao'; };
 
 ACOES['agua-mais'] = () => { const reg = registroDoDia(); reg.agua++; salvar(); desenhar(); if (reg.agua === estado.config.metaAgua) avisar('Meta de água do dia concluída!'); };
 ACOES['agua-menos'] = () => { const reg = registroDoDia(); reg.agua = Math.max(0, reg.agua - 1); salvar(); desenhar(); };

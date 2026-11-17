@@ -178,13 +178,14 @@ function aCadaSegundo() {
     if (linha) linha.style.top = ((a.getHours() - HORA_INICIO) + a.getMinutes() / 60) * ALTURA_HORA + 'px';
   }
 
-  if (hojeISO() !== diaAberto) { diaAberto = hojeISO(); desenhar(); resumoDoDia(); }
+  if (hojeISO() !== diaAberto) { diaAberto = hojeISO(); avancarAniversarios(); desenhar(); resumoDoDia(); }
 }
 
 async function iniciar() {
   const logada = await iniciarNuvem();
   if (!logada) return;
   limparAntigos();
+  avancarAniversarios();
   aplicarMenu();
   aplicarTema();
   $('#perfil-nome').textContent = estado.config.nome;

@@ -995,3 +995,9 @@ tr.fantasma-arraste { display: flex; align-items: center; }
 .historico-lista { max-height: 300px; }
 .historico-lista .item { gap: 10px; }
 @media (max-width: 640px) { .aviso-backup { flex-wrap: wrap; } .aviso-backup-botoes { width: 100%; justify-content: flex-end; } }
+form:not(.modo-aniver) .so-aniver { display: none !important; }
+form.modo-aniver .so-normal { display: none !important; }
+.aniver-ic { color: #f59ad8; margin-right: 6px; vertical-align: -2px; }
+.mini-tarefa.aniver { border-color: #f59ad8 !important; }
+.mini-tarefa .ic { width: 12px; height: 12px; vertical-align: -2px; }
+form.modo-aniver .linha2:has(> .so-normal) { grid-template-columns: 1fr; }
