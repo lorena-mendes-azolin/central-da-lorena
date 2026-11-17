@@ -190,6 +190,7 @@ PAGINAS.dashboard = {
       </div>
     </div>
     ${htmlPedirNotificacao()}
+    ${htmlAvisoBackup()}
     ${(() => {
       const dsem = agora.getDay();
       if (dsem !== 0 && dsem !== 1) return '';

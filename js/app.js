@@ -156,29 +156,9 @@ window.addEventListener('hashchange', () => {
   desenhar();
 });
 
-ACOES.backup = () => {
-  const blob = new Blob([JSON.stringify(estado, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `backup-central-${hojeISO()}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  avisar('Backup baixado. Guarde em um lugar seguro.');
-};
-
 $('#arquivo-backup').addEventListener('change', async (e) => {
   const arquivo = e.target.files[0];
-  if (!arquivo) return;
-  try {
-    const dados = JSON.parse(await arquivo.text());
-    if (!Array.isArray(dados.tarefas) || !Array.isArray(dados.listas)) throw new Error('arquivo inválido');
-    const anterior = estado;
-    estado = completar(dados);
-    salvar(); aplicarMenu(); desenhar();
-    avisar('Backup restaurado.', () => { estado = anterior; salvar(); aplicarMenu(); desenhar(); });
-  } catch {
-    avisar('Esse arquivo não parece um backup da Central.');
-  }
+  if (arquivo) await restaurarArquivo(arquivo);
   e.target.value = '';
 });
 

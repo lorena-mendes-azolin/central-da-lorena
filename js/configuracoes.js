@@ -90,11 +90,18 @@ PAGINAS.configuracoes = {
 
       <section class="card">
         <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('save')}</span> Backup</h2>
-        <p style="margin:0 0 12px">Guarde uma cópia dos seus dados em um arquivo.</p>
+        <p style="margin:0 0 6px">Baixa um arquivo com tudo, inclusive o diário. No computador ele vai para a pasta <b>Downloads</b>. No celular abre a opção de compartilhar, para você escolher o <b>Google Drive</b>.</p>
+        <p class="dica" style="margin:0 0 12px">${estado.config.ultimoBackup ? `Último backup: ${dataCurta(estado.config.ultimoBackup)}${diasDesdeBackup() ? ` (há ${diasDesdeBackup()} ${diasDesdeBackup() === 1 ? 'dia' : 'dias'})` : ' (hoje)'}.` : 'Você ainda não fez nenhum backup.'} O site te lembra a cada 7 dias.</p>
         <div class="form-linha" style="justify-content:flex-start">
           <button class="btn sec" data-acao="backup">${ic('save', 'p')} Fazer backup</button>
-          <button class="btn sec" data-acao="restaurar">${ic('upload', 'p')} Restaurar</button>
+          <button class="btn sec" data-acao="restaurar">${ic('upload', 'p')} Restaurar arquivo</button>
         </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-titulo"><span class="selo mini c-verde">${ic('clock')}</span> Histórico na nuvem</h2>
+        <p style="margin:0 0 12px">Todo dia em que você mexe no site, a nuvem guarda sozinha uma cópia de como estava antes. As cópias ficam 30 dias. Se algo sumir ou for apagado sem querer, volte para um dia anterior.</p>
+        ${htmlHistorico()}
       </section>
     </div>`;
   },

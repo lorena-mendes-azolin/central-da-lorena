@@ -1,9 +1,9 @@
-const CACHE = 'central-v3';
+const CACHE = 'central-v4';
 const ARQUIVOS = [
   './', './index.html', './login.html', './redefinir.html', './css/style.css', './manifest.webmanifest',
   './icons/icone-192.png', './icons/icone-512.png',
   ...['config', 'utils', 'seletor', 'dados', 'nuvem', 'dashboard', 'agenda', 'rotina', 'graficos', 'editor', 'listas', 'cursos',
-    'metas', 'colecoes', 'compras', 'diario', 'bemestar', 'flashcards', 'financas', 'revisao', 'lixeira', 'imagens', 'arrastar', 'notificacoes', 'configuracoes', 'app', 'login']
+    'metas', 'colecoes', 'compras', 'diario', 'bemestar', 'flashcards', 'financas', 'revisao', 'lixeira', 'imagens', 'arrastar', 'historico', 'notificacoes', 'configuracoes', 'app', 'login']
     .map((n) => `./js/${n}.js`),
 ];
 

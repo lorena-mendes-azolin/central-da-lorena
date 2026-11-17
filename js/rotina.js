@@ -40,7 +40,11 @@ function htmlLinhaHabito(h, dias, hoje) {
     ${dias.map((d) => {
       if (!valeNoDia(h, d)) return `<td><span class="nao-dia" title="Não é dia deste hábito"></span></td>`;
       const on = estado.diario[d]?.habitos.includes(h.id);
-      return `<td><button class="bola ${on ? 'on' : ''} ${d === hoje ? 'hoje' : ''}" data-acao="habito-dia" data-id="${h.id}" data-dia="${d}" aria-label="Marcar ${dataCurta(d)}">${on ? ic('check') : ''}</button></td>`;
+      const atr = on && feitoAtrasado(d, h.id);
+      const dica = atr ? `${dataCurta(d)}: feito atrasado. Clique se na verdade fez no dia certo.`
+        : on ? `${dataCurta(d)}: feito no dia. Clique para desmarcar.`
+        : d < hoje ? `${dataCurta(d)}: clique para marcar como feito atrasado` : `Marcar ${dataCurta(d)}`;
+      return `<td><button class="bola ${on ? 'on' : ''} ${atr ? 'atrasado' : ''} ${d === hoje ? 'hoje' : ''}" data-acao="habito-dia" data-id="${h.id}" data-dia="${d}" title="${dica}" aria-label="${dica}">${atr ? ic('clock') : on ? ic('check') : ''}</button></td>`;
     }).join('')}
     <td>${h.meta > 0 ? `<span class="meta-sem ${feitosNaSemana(h, hoje) >= h.meta ? 'ok' : ''}" title="Feitos nesta semana">${feitosNaSemana(h, hoje)}/${h.meta} sem.</span>` : ''}
       ${seq ? `<span class="fogo" title="${h.meta > 0 ? 'semanas seguidas batendo a meta' : 'dias seguidos'}">${ic('flame')} ${seq}${h.meta > 0 ? ' sem' : ''}</span>` : h.meta > 0 ? '' : '<span style="color:var(--fraco)">—</span>'}</td>
@@ -90,7 +94,7 @@ function htmlCalendarioRotina(hoje) {
     if (!futuro && lista.length) passados.push({ dia, pct });
     celulas.push(`<div class="cal-dia ${futuro ? 'futuro' : ''} ${dia === hoje ? 'hoje' : ''}"
       style="${pct ? `background:rgba(95,214,164,${0.15 + pct * 0.75});color:${pct > 0.6 ? '#10251c' : 'var(--texto)'}` : ''}"
-      data-dica="${dataCurta(dia)} · ${futuro ? 'ainda não chegou' : lista.length ? `${feitosNoDia(dia, lista)} de ${lista.length} hábitos (${Math.round(pct * 100)}%)` : 'sem hábitos neste dia'}">${d}</div>`);
+      data-dica="${dataCurta(dia)} · ${futuro ? 'ainda não chegou' : lista.length ? `${feitosNoDia(dia, lista)} de ${lista.length} hábitos (${Math.round(pct * 100)}%)${atrasadosNoDia(dia, lista) ? `, ${atrasadosNoDia(dia, lista)} ${atrasadosNoDia(dia, lista) === 1 ? 'atrasado' : 'atrasados'}` : ''}` : 'sem hábitos neste dia'}">${d}</div>`);
   }
 
   const completos = passados.filter((p) => p.pct === 1).length;
@@ -135,6 +139,7 @@ PAGINAS.rotina = {
     const feitosHoje = feitosNoDia(hoje);
     const maiorSeq = Math.max(0, ...estado.habitos.map(sequencia));
     const possiveis = dias.reduce((s, d) => s + habitosDoDia(d).length, 0);
+    const atrasadosSemana = dias.reduce((s, d) => s + atrasadosNoDia(d), 0);
     const pctSemana = possiveis ? Math.round((dias.reduce((s, d) => s + feitosNoDia(d), 0) / possiveis) * 100) : 0;
     const grupos = gruposHabito();
     if (rotinaTela.grupo !== 'todos' && !grupos.includes(rotinaTela.grupo)) rotinaTela.grupo = 'todos';
@@ -159,7 +164,7 @@ PAGINAS.rotina = {
       <div class="card stat"><span class="selo c-amarelo">${ic('flame')}</span>
         <div><b>${maiorSeq} ${maiorSeq === 1 ? 'dia' : 'dias'}</b><span>maior sequência atual</span></div></div>
       <div class="card stat"><span class="selo c-violeta">${ic('repeat')}</span>
-        <div><b>${pctSemana}%</b><span>da rotina nos últimos 7 dias</span></div></div>
+        <div><b>${pctSemana}%</b><span>da rotina nos últimos 7 dias${atrasadosSemana ? ` · ${atrasadosSemana} ${atrasadosSemana === 1 ? 'feito atrasado' : 'feitos atrasados'}` : ''}</span></div></div>
     </div>
 
     <section class="card" style="margin-bottom:16px">
@@ -197,6 +202,7 @@ PAGINAS.rotina = {
         </div>
         <button class="btn" type="submit">${ic('plus', 'p')} Adicionar</button>
       </form>
+      <p class="dica"><span class="legenda-bola"><span class="bola on mini">${ic('check')}</span> feito no dia</span> <span class="legenda-bola"><span class="bola on atrasado mini">${ic('clock')}</span> feito atrasado (marcado depois do dia)</span></p>
       <p class="dica">Sem dias marcados, o hábito vale todos os dias. Os de "vezes por semana" podem ser feitos em qualquer dia e contam na semana.</p>
     </section>
 
@@ -207,8 +213,20 @@ PAGINAS.rotina = {
 function marcarHabito(id, dia) {
   const reg = registroDoDia(dia);
   const on = reg.habitos.includes(id);
-  reg.habitos = on ? reg.habitos.filter((x) => x !== id) : [...reg.habitos, id];
+  const atr = (reg.atrasados || []).includes(id);
+  const passado = dia < hojeISO();
+  if (!on) {
+    reg.habitos = [...reg.habitos, id];
+    if (passado) reg.atrasados = [...(reg.atrasados || []).filter((x) => x !== id), id];
+  } else if (atr) {
+    reg.atrasados = reg.atrasados.filter((x) => x !== id);
+  } else {
+    reg.habitos = reg.habitos.filter((x) => x !== id);
+  }
+  if (reg.atrasados && !reg.atrasados.length) delete reg.atrasados;
   salvar(); desenhar();
+  if (!on && passado) avisar('Marcado como feito atrasado. Se fez no dia certo, clique de novo.');
+  else if (on && atr) avisar('Agora conta como feito no dia certo.');
   if (!on && dia === hojeISO() && feitosNoDia(dia) === habitosDoDia(dia).length) {
     tocarSom(true);
     avisar('Rotina de hoje completa!');

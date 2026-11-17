@@ -250,6 +250,13 @@ function feitosNoDia(iso, lista = habitosDoDia(iso)) {
   const r = estado.diario[iso];
   return r ? lista.filter((h) => valeNoDia(h, iso) && r.habitos.includes(h.id)).length : 0;
 }
+function feitoAtrasado(iso, id) {
+  return !!estado.diario[iso]?.atrasados?.includes(id);
+}
+function atrasadosNoDia(iso, lista = habitosDoDia(iso)) {
+  const r = estado.diario[iso];
+  return r?.atrasados ? lista.filter((h) => r.habitos.includes(h.id) && r.atrasados.includes(h.id)).length : 0;
+}
 function gruposHabito() {
   const g = [...(estado.config.gruposHabito || ['Geral'])];
   estado.habitos.forEach((h) => { if (!g.includes(h.grupo)) g.push(h.grupo); });

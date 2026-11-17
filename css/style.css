@@ -986,3 +986,12 @@ tr.fantasma-arraste { display: flex; align-items: center; }
 .crono-manual .dica { margin: 0; }
 .crono-manual-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .crono-manual-botoes { margin-top: auto; display: flex; justify-content: flex-end; gap: 8px; }
+.bola.on.atrasado { background: var(--amarelo); border-color: var(--amarelo); color: #2b2108; }
+.bola.mini { width: 18px; height: 18px; cursor: default; vertical-align: middle; border-width: 1.5px; }
+.bola.mini .ic { width: 10px; height: 10px; }
+.legenda-bola { display: inline-flex; align-items: center; gap: 6px; margin-right: 14px; }
+.aviso-backup { align-items: center; }
+.aviso-backup-botoes { display: flex; gap: 8px; margin-left: auto; flex-shrink: 0; }
+.historico-lista { max-height: 300px; }
+.historico-lista .item { gap: 10px; }
+@media (max-width: 640px) { .aviso-backup { flex-wrap: wrap; } .aviso-backup-botoes { width: 100%; justify-content: flex-end; } }
