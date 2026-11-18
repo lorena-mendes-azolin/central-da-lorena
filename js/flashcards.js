@@ -86,6 +86,7 @@ function htmlBaralho(b) {
       <label class="rotulo-select">Matéria
         <select data-mudar="flash-ref" data-id="${b.id}">${opcoesMaterias(b.ref)}</select></label>
       ${b.ref && acharRef(b.ref) ? `<a class="btn-mini" href="#lista-${b.ref.replace('/', '--')}">${ic('right', 'p')} Abrir ${esc(nomeMateria(b.ref))}</a>` : ''}
+      ${htmlVinculo('flash:' + b.id, 'Ao terminar uma revisão, marcar')}
     </div>
 
     <form class="nova-carta" data-form="flash-carta" data-id="${b.id}">
@@ -213,6 +214,7 @@ ACOES['flash-resposta'] = (el) => {
   }
   e.virada = false;
   salvar(); desenhar();
+  if (!e.fila.length) marcarVinculo(b.habito);
 };
 
 document.addEventListener('keydown', (e) => {

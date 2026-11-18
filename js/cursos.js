@@ -209,6 +209,13 @@ function htmlTarefaMateria(l, m, t, mostrarMateria = false) {
   </div>`;
 }
 
+function habitoDaMateria(ref) {
+  const [idL, idM] = String(ref).split('/');
+  const l = acharLista(idL);
+  const m = l?.materias?.find((x) => x.id === idM);
+  return m?.habito || l?.habito || '';
+}
+
 function paginaMateria(l, idMateria) {
   const m = l.materias.find((x) => x.id === idMateria);
   if (!m) return null;
@@ -225,6 +232,7 @@ function htmlMateria(l, m) {
 
   return `
   ${htmlVoltar(l)}
+  <div class="linha-vinculo">${htmlVinculo('ref:' + ref, `Ao concluir tarefa ou escrever no caderno ${l.rotulo === 'Matéria' ? 'desta matéria' : 'deste curso'}, marcar`, l.habito)}</div>
   <div class="materia-cab">
     <div class="textos">
       <input class="titulo-edit" value="${esc(m.nome)}" data-digitar="campo" data-ref="${ref}" data-campo="nome" aria-label="Nome" maxlength="80">
@@ -423,7 +431,7 @@ ACOES['tm-check'] = (el) => {
   t.feito = !t.feito;
   t.feitoEm = t.feito ? hojeISO() : '';
   salvar(); desenhar();
-  if (t.feito) { tocarSom(true); avisar('Tarefa concluída!'); }
+  if (t.feito) { tocarSom(true); avisar('Tarefa concluída!'); marcarVinculo(habitoDaMateria(el.dataset.ref)); }
 };
 
 ACOES['tm-del'] = (el) => {

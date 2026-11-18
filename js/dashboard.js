@@ -136,6 +136,7 @@ PAGINAS.dashboard = {
               ${todasMaterias().filter((g) => g.materias.length).map((g) => `<optgroup label="${esc(g.lista.nome)}">
                 ${g.materias.map((m) => `<option value="${g.lista.id}/${m.id}" ${estado.config.focoMateria === `${g.lista.id}/${m.id}` ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}</optgroup>`).join('')}
             </select></label>
+          ${htmlVinculo('foco', 'Ao terminar um foco, marcar')}
           <div class="foco-linha">${focoTela.tipo === 'pomodoro'
             ? `<div class="segmento">${[['Foco', 25, 'foco'], ['Pausa', 5, 'pausa'], ['Longa', 15, 'longa']].map(([n, m, id]) =>
                 `<button class="${pomo.modo === id ? 'ativo' : ''}" data-acao="pomo-modo" data-min="${m}" data-modo="${id}">${n} ${m}</button>`).join('')}</div>`
@@ -402,6 +403,7 @@ ACOES['crono-finalizar'] = () => {
   salvar(); desenhar();
   tocarSom(true);
   avisar(`${textoMinutos(min)} de estudo salvos${ref ? ` em ${nomeMateria(ref)}` : ''}.`);
+  marcarVinculo(estado.config.focoHabito);
 };
 
 ACOES['crono-manual'] = () => { focoTela.manual = !focoTela.manual; desenhar(); };
@@ -421,6 +423,7 @@ FORMS['crono-manual'] = (d) => {
   focoTela.manual = false;
   salvar(); desenhar();
   avisar(`${textoMinutos(min)} de estudo salvos${ref ? ` em ${nomeMateria(ref)}` : ''}${dia !== hojeISO() ? ` no dia ${paraData(dia).toLocaleDateString('pt-BR')}` : ''}.`);
+  marcarVinculo(estado.config.focoHabito, dia);
 };
 
 const pomo = { total: 25 * 60, resta: 25 * 60, rodando: false, fimEm: 0, modo: 'foco', estado: '' };
@@ -455,6 +458,7 @@ function passoPomodoro() {
         reg.estudo[ref] = (reg.estudo[ref] || 0) + Math.round(pomo.total / 60);
       }
       salvar();
+      marcarVinculo(estado.config.focoHabito);
       pomo.estado = 'hora da pausa';
       notificar('Ciclo de foco concluído', 'Hora de uma pausa.');
     } else {

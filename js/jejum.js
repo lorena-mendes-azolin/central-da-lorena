@@ -41,6 +41,7 @@ function htmlJejum() {
   <section class="card jejum-card" id="jejum">
     <h2 class="card-titulo"><span class="selo mini c-verde">${ic('timer')}</span> Jejum
       <a href="#graficos" style="margin-left:auto">Ver relatório</a></h2>
+    <div class="linha-vinculo">${htmlVinculo('jejum', 'Ao bater a meta do jejum, marcar')}</div>
     <div class="jejum-grade">
       <div class="jejum-anel-lado">
         <div class="anel-jejum">
@@ -151,7 +152,9 @@ ACOES['jj-salvar'] = () => {
   const j = dadosJejum();
   const c = { id: novoId(), inicio: j.ativo.inicio, fim: Date.now(), metaH: j.ativo.metaH, sentir: jejumTela.sentir || '', sinais: jejumTela.sinais, nota: ($('#jj-nota')?.value || '').trim() };
   j.ciclos.push(c);
+  const bateu = (c.fim - c.inicio) / 3600000 >= c.metaH;
   j.ativo = null;
+  if (bateu) setTimeout(() => marcarVinculo(j.habito), 0);
   jejumTela.encerrando = false;
   salvar(); desenhar();
   avisar(cicloCompleto(c) ? `Ciclo completo: ${fmtHoras(horasCiclo(c))}!` : `Ciclo salvo: ${fmtHoras(horasCiclo(c))} de ${c.metaH}h.`);

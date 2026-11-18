@@ -92,7 +92,7 @@ ACOES['col-ver'] = (el) => {
 };
 ACOES['col-fechar'] = () => $('#janela-colecao')?.close();
 ACOES['col-previa'] = (el) => buscarPreviaRef(el.dataset.ref, false, redesenharColecao, false);
-ACOES['col-status'] = (el) => { const i = acharRef(el.dataset.ref); i.feito = el.dataset.v === '1'; i.feitoEm = i.feito ? hojeISO() : ''; salvar(); desenhar(); redesenharColecao(); };
+ACOES['col-status'] = (el) => { const i = acharRef(el.dataset.ref); const antes = i.feito; i.feito = el.dataset.v === '1'; i.feitoEm = i.feito ? hojeISO() : ''; salvar(); desenhar(); redesenharColecao(); if (i.feito && !antes) marcarVinculo(listaDoRef(el.dataset.ref)?.habito); };
 MUDAR['col-link'] = (el) => {
   const i = acharRef(el.dataset.ref);
   const url = el.value.trim() ? corrigirLink(el.value) : '';
@@ -199,7 +199,7 @@ ACOES['col-check'] = (el) => {
   i.feito = !i.feito;
   i.feitoEm = i.feito ? hojeISO() : '';
   salvar(); desenhar(); redesenharColecao();
-  if (i.feito) tocarSom(true);
+  if (i.feito) { tocarSom(true); marcarVinculo(listaDoRef(el.dataset.ref)?.habito); }
 };
 
 ACOES['col-fav'] = (el) => { const i = acharRef(el.dataset.ref); i.favorito = !i.favorito; salvar(); desenhar(); redesenharColecao(); };

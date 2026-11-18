@@ -1509,3 +1509,16 @@ div.campo > .form-linha, div.campo > .lista-cidades { font-size: 15px; color: va
 .vinculo-pet label { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; font-size: 13px; color: var(--suave); white-space: nowrap; }
 .vinculo-pet .sel-btn, .vinculo-pet select { min-width: 200px; flex: 0 1 260px; }
 @media (max-width: 760px) { .vinculo-pet label { width: 100%; flex-wrap: wrap; white-space: normal; } .vinculo-pet .sel-btn { flex: 1 1 100%; } }
+
+/* Vincular a um hábito */
+.vinculo-hab { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--suave); flex-wrap: nowrap; max-width: 100%; }
+.vinculo-hab > .ic { flex: 0 0 auto; }
+.vinculo-hab > span { white-space: nowrap; flex: 0 0 auto; }
+.linha-materia { flex-wrap: wrap; row-gap: 10px; }
+.vinculo-hab .sel-btn, .vinculo-hab select { flex: 0 0 210px; width: 210px; height: 36px; font-size: 13px; }
+.vinculo-hab.ligado { color: var(--texto); }
+.vinculo-hab.ligado .sel-btn { border-color: var(--destaque); }
+.linha-vinculo { margin: 0 0 12px; }
+.lista-cab .vinculo-hab { margin-left: auto; }
+.foco-materia + .vinculo-hab { justify-content: center; margin: 8px auto 0; display: flex; flex-wrap: wrap; }
+@media (max-width: 760px) { .vinculo-hab { width: 100%; flex-wrap: wrap; } .vinculo-hab > span { white-space: normal; flex: 1 1 0; } .vinculo-hab .sel-btn, .vinculo-hab select { flex: 1 1 100%; width: auto; } .lista-cab .vinculo-hab { margin-left: 0; } }

@@ -124,6 +124,8 @@ DIGITAR.editor = (el) => {
     if (info) info.textContent = 'Editada ' + textoEditada(obj.editado);
   }
   salvar();
+  const pos = el.dataset.ref.indexOf('/nota/');
+  if (pos > 0 && typeof habitoDaMateria === 'function' && el.innerText.trim()) marcarVinculo(habitoDaMateria(el.dataset.ref.slice(0, pos)));
 };
 
 let faixaGuardada = null;

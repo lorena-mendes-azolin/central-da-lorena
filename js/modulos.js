@@ -72,6 +72,43 @@ function marcarHabitoAuto(id, dia = hojeISO()) {
   reg.habitos.push(id);
   return true;
 }
+// Vincular qualquer coisa a um hábito da Rotina (sempre opcional).
+// alvo: 'ref:<ref>' (listas, matérias, metas), 'flash:<id>', 'jejum' ou 'foco'.
+function alvoVinculo(alvo) {
+  if (alvo === 'jejum') return [dadosJejum(), 'habito'];
+  if (alvo === 'foco') return [estado.config, 'focoHabito'];
+  if (alvo.startsWith('flash:')) return [baralhos().find((b) => b.id === alvo.slice(6)), 'habito'];
+  if (alvo.startsWith('ref:')) return [acharRef(alvo.slice(4)), 'habito'];
+  return [null, 'habito'];
+}
+function htmlVinculo(alvo, texto, herdado = '') {
+  const [obj, campo] = alvoVinculo(alvo);
+  if (!obj) return '';
+  const atual = obj[campo] || '';
+  return `<label class="vinculo-hab ${atual ? 'ligado' : ''}" title="${esc(texto)}">${ic('repeat', 'p')}<span>${esc(texto)}</span>
+    <select data-mudar="vinc-hab" data-alvo="${esc(alvo)}" aria-label="Hábito vinculado">
+      <option value="">${herdado ? `Usar o da lista (${esc(nomeHabito(herdado))})` : 'Vincular a um hábito…'}</option>
+      ${estado.habitos.map((h) => `<option value="${h.id}" ${atual === h.id ? 'selected' : ''}>${esc(h.nome)}</option>`).join('')}
+    </select></label>`;
+}
+MUDAR['vinc-hab'] = (el) => {
+  const [obj, campo] = alvoVinculo(el.dataset.alvo);
+  if (!obj) return;
+  obj[campo] = el.value;
+  salvar(); desenhar();
+  avisar(el.value ? `Vinculado a "${nomeHabito(el.value)}".` : 'Vínculo removido.');
+};
+// Marca e avisa (uma vez por dia).
+function marcarVinculo(id, dia = hojeISO()) {
+  if (marcarHabitoAuto(id, dia)) {
+    salvar();
+    setTimeout(() => { avisar(`"${nomeHabito(id)}" marcado na Rotina.`); if (location.hash === '#rotina' || location.hash === '#dashboard' || !location.hash) desenhar(); }, 1400);
+    return true;
+  }
+  return false;
+}
+const listaDoRef = (ref) => acharLista(String(ref).split('/')[0]);
+
 const nomeHabito = (id) => estado.habitos.find((h) => h.id === id)?.nome || '';
 
 function blocosDosModulos() {

@@ -44,6 +44,7 @@ function htmlMeta(l, m) {
   const pct = progressoMeta(m);
   return `
   ${htmlVoltar(l)}
+  <div class="linha-vinculo">${htmlVinculo('ref:' + ref, 'Ao avançar nesta meta, marcar', l.habito)}</div>
   <div class="materia-cab">
     <div class="textos">
       <input class="titulo-edit" value="${esc(m.titulo)}" data-digitar="campo" data-ref="${ref}" data-campo="titulo" aria-label="Meta" maxlength="80">
@@ -126,9 +127,16 @@ FORMS['meta-deposito'] = (d, form) => {
   m.depositos.push({ id: novoId(), data: hojeISO(), valor: tirarDinheiro ? -v : v });
   avisar(tirarDinheiro ? `${dinheiro(v)} retirados.` : `${dinheiro(v)} guardados!`);
   if (!tirarDinheiro && alvoMeta(m) && guardadoMeta(m) >= alvoMeta(m)) { tocarSom(true); avisar('Você juntou todo o valor da meta!'); }
+  const guardou = !tirarDinheiro;
   tirarDinheiro = false;
   salvar(); desenhar();
+  if (guardou) marcarVinculo(habitoDaMeta(form.dataset.ref));
 };
+function habitoDaMeta(ref) {
+  const [idL, idM] = String(ref).split('/');
+  const l = acharLista(idL);
+  return (l?.metas || []).find((x) => x.id === idM)?.habito || l?.habito || '';
+}
 ACOES['deposito-del'] = (el) => removerComDesfazer(acharRef(el.dataset.ref).depositos, el.dataset.id, 'Registro');
 
 FORMS['meta-nova'] = (d, form) => {
@@ -156,7 +164,7 @@ ACOES['etapa-check'] = (el) => {
   e.feito = !e.feito;
   e.feitoEm = e.feito ? hojeISO() : '';
   salvar(); desenhar();
-  if (e.feito) tocarSom(true);
+  if (e.feito) { tocarSom(true); marcarVinculo(habitoDaMeta(el.dataset.ref)); }
 };
 
 ACOES['etapa-del'] = (el) => removerComDesfazer(acharRef(el.dataset.ref).etapas, el.dataset.id, 'Etapa');

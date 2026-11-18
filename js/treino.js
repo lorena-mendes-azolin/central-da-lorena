@@ -28,7 +28,7 @@ function duracaoItem(i) {
 const duracaoFicha = (f) => f.itens.reduce((s, i) => s + duracaoItem(i), 0);
 const textoCarga = (i, e) => (e?.tipo === 'tempo' ? `${i.series}× ${i.seg}s` : `${i.series}× ${i.reps}`);
 
-function itemDe(exId, extra = {}) {
+function itemTreino(exId, extra = {}) {
   const e = exercicioPorId(exId);
   const p = e?.padrao || { series: 3, reps: 12, descanso: 45 };
   return { id: novoId(), ex: exId, series: p.series, reps: p.reps || 12, seg: p.seg || 30, descanso: p.descanso, carga: '', ...extra };
@@ -372,7 +372,7 @@ ACOES['ex-apagar'] = (el) => {
 ACOES['ex-para-ficha'] = (el) => {
   const f = dadosTreino().fichas.find((x) => x.id === $('#ex-para-ficha').value);
   if (!f) return;
-  f.itens.push(itemDe(el.dataset.id));
+  f.itens.push(itemTreino(el.dataset.id));
   salvar(); fecharJanelaTreino(); desenhar();
   avisar(`Adicionado na ${f.nome}.`);
 };
@@ -434,7 +434,7 @@ ACOES['item-del'] = (el) => {
 ACOES['picker-abrir'] = (el) => { treinoTela.picker = el.dataset.id || null; desenhar(); };
 ACOES['item-add'] = (el) => {
   const f = dadosTreino().fichas.find((x) => x.id === el.dataset.f);
-  f.itens.push(itemDe(el.dataset.ex));
+  f.itens.push(itemTreino(el.dataset.ex));
   const rol = $('#picker-lista')?.scrollTop || 0;
   salvar(); desenhar();
   const l = $('#picker-lista'); if (l) l.scrollTop = rol;
@@ -570,15 +570,15 @@ function gerarPlano(w) {
     const pega = (g) => { const e = pool(g).find((x) => !usados.has(x.id)); if (e) usados.add(e.id); return e; };
     const itens = [];
     const aq = pool('aquecimento').slice(0, w.tempo >= 30 ? 2 : 1);
-    aq.forEach((e) => { usados.add(e.id); itens.push(ajustar(itemDe(e.id), e)); });
+    aq.forEach((e) => { usados.add(e.id); itens.push(ajustar(itemTreino(e.id), e)); });
     const finais = [];
-    if (w.objetivo !== 'mobilidade') pool('alongamento').filter((e) => !usados.has(e.id)).slice(0, w.tempo >= 30 ? 2 : 1).forEach((e) => { usados.add(e.id); finais.push(itemDe(e.id)); });
+    if (w.objetivo !== 'mobilidade') pool('alongamento').filter((e) => !usados.has(e.id)).slice(0, w.tempo >= 30 ? 2 : 1).forEach((e) => { usados.add(e.id); finais.push(itemTreino(e.id)); });
     const tempoFixo = [...itens, ...finais].reduce((s, i) => s + duracaoItem(i), 0);
     let usado = tempoFixo;
     for (const g of [...grupos, ...grupos]) {
       const e = pega(g);
       if (!e) continue;
-      const i = ajustar(itemDe(e.id), e);
+      const i = ajustar(itemTreino(e.id), e);
       if (usado + duracaoItem(i) > alvo * 1.05 && itens.length > aq.length + 2) break;
       itens.push(i);
       usado += duracaoItem(i);

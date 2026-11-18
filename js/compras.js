@@ -238,7 +238,7 @@ ACOES['compra-check'] = (el) => {
   const i = acharRef(el.dataset.ref);
   i.comprado = !i.comprado;
   salvar(); desenhar(); redesenharCompra();
-  if (i.comprado) tocarSom(true);
+  if (i.comprado) { tocarSom(true); marcarVinculo(listaDoRef(el.dataset.ref)?.habito); }
 };
 
 ACOES['compras-mostrar'] = () => { comprasTela.mostrarComprados = !comprasTela.mostrarComprados; desenhar(); };
