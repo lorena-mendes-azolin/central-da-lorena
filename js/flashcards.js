@@ -120,7 +120,7 @@ function htmlEstudo() {
   const c = b.cards.find((x) => x.id === e.fila[0]);
   const feitas = e.total - e.fila.length;
   return `<div class="estudo-topo">
-      <button class="btn-mini" data-acao="flash-sair">${ic('left', 'p')} Sair</button>
+      <button class="btn-mini" data-acao="flash-sair">${ic('left', 'p')} Voltar ao baralho</button>
       <b>${esc(b.nome)}</b>
       <span>${feitas} de ${e.total}</span>
     </div>

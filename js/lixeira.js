@@ -4,6 +4,7 @@ PAGINAS.lixeira = {
     const itens = estado.lixeira || [];
     const diasRestantes = (q) => Math.max(0, 30 - Math.floor((Date.now() - new Date(q).getTime()) / 86400000));
     return `
+    <a class="voltar" href="#configuracoes">${ic('left', 'p')} Configurações</a>
     <div class="cab-pagina">
       <div><h1>Lixeira</h1><p>O que você apaga fica aqui por 30 dias. Depois some de vez.</p></div>
       ${itens.length ? `<button class="btn sec" data-acao="lixeira-esvaziar">${ic('trash', 'p')} Esvaziar lixeira</button>` : ''}

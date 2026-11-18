@@ -209,7 +209,7 @@ PAGINAS.dashboard = {
     })()}
     ${dashTela.editando ? htmlPersonalizarDash() : ''}
     <div class="grade-dash">
-      ${(() => { Object.assign(blocos, blocosDosModulos()); return blocosDash().filter((b) => b.visivel && blocoDisponivel(b.id) && blocos[b.id]).map((b) => `<div class="bloco-dash tam-${BLOCOS_DASH[b.id].tam}">${blocos[b.id]}</div>`).join(''); })()}
+      ${(() => { Object.assign(blocos, blocosDosModulos()); const vis = blocosDash().filter((b) => b.visivel && blocoDisponivel(b.id) && blocos[b.id]); const extras = espacosDash(vis.map((b) => BLOCOS_DASH[b.id].tam)); return vis.map((b, k) => `<div class="bloco-dash tam-${BLOCOS_DASH[b.id].tam} ${extras[k]}">${blocos[b.id]}</div>`).join(''); })()}
     </div>`;
   },
 };
@@ -228,6 +228,22 @@ const BLOCOS_DASH = {
   apps: { nome: 'Apps de estudo', tam: 'um', modulo: 'apps' },
   listas: { nome: 'Minhas listas', tam: 'cheio' },
 };
+function espacosDash(tams) {
+  const classes = tams.map(() => []);
+  [4, 2].forEach((cols) => {
+    const larg = tams.map((t) => (t === 'cheio' ? cols : t === 'meio' ? Math.min(2, cols) : 1));
+    const span = [...larg];
+    let pos = 0, ultimo = -1;
+    larg.forEach((w, k) => {
+      if (pos && pos + w > cols) { span[ultimo] += cols - pos; pos = 0; }
+      pos += w; ultimo = k;
+      if (pos >= cols) pos = 0;
+    });
+    if (pos && ultimo >= 0) span[ultimo] += cols - pos;
+    span.forEach((v, k) => { if (v !== larg[k]) classes[k].push(`s${cols}-${v}`); });
+  });
+  return classes.map((c) => c.join(' '));
+}
 const blocoDisponivel = (id) => !BLOCOS_DASH[id].modulo || temModulo(BLOCOS_DASH[id].modulo);
 const dashTela = { editando: false };
 

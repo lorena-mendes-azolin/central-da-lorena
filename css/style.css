@@ -1188,14 +1188,25 @@ form.modo-aniver .linha2:has(> .so-normal) { grid-template-columns: 1fr; }
 .pet-avatar { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: rgba(247, 197, 107, .18); color: #f7c56b; }
 .pet-avatar .ic { width: 28px; height: 28px; }
 .semana-pet { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.dia-pet { display: grid; justify-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: var(--card-2); }
+.dia-pet { display: grid; justify-items: center; align-content: start; gap: 4px; padding: 10px 4px 8px; border-radius: 12px; background: var(--card-2); min-height: 92px; }
+.dia-pet b { font-size: 18px; line-height: 1; }
+.dia-pet.futuro { opacity: .5; }
+.dia-pet.feito { background: rgba(247, 197, 107, .1); }
+.min-pet { font-size: 11px; color: var(--suave); min-height: 14px; }
 .dia-pet.hoje { box-shadow: inset 0 0 0 1px var(--destaque); background: var(--destaque-bg); }
 .dia-pet small { font-weight: 700; color: var(--suave); font-size: 12px; }
 .pontos-pet { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 12px; }
 .pontos-pet i, .leg-pet i, .ponto-pet { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: 0 0 12px; }
 .leg-pet { display: inline-flex; align-items: center; gap: 5px; margin-right: 12px; }
-.registro-pet { margin-top: 6px; }
-.atalhos-pet { margin-top: 8px; }
+.leg-linha { margin: 10px 0 0; }
+.painel-pet { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; margin-top: 14px; border-radius: 14px; background: var(--card-2); }
+.registro-pet { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex: 1 1 380px; }
+@media (max-width: 760px) { .registro-pet .data-btn { flex: 1 1 140px; } }
+.registro-pet .sel-btn { flex: 0 0 150px; }
+.registro-pet .data-btn { flex: 0 1 200px; min-width: 0; }
+.registro-pet .com-unidade { flex: 0 0 auto; }
+.registro-pet > .btn { flex: 0 0 auto; }
+@media (max-width: 760px) { .painel-pet > .btn, .registro-pet > .btn { flex: 1 1 100%; justify-content: center; } .painel-pet .jj-ou { flex: 1 1 100%; text-align: center; } .dia-pet { min-height: 80px; padding: 8px 2px; } .dia-pet b { font-size: 15px; } }
 .grade-pet { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
 @media (max-width: 900px) { .grade-pet { grid-template-columns: minmax(0, 1fr); } }
 .grade-pet > .card { margin: 0; }
@@ -1259,8 +1270,6 @@ form.modo-aniver .linha2:has(> .so-normal) { grid-template-columns: 1fr; }
 .jejum-grade { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; }
 @media (max-width: 760px) { .jejum-grade { grid-template-columns: minmax(0, 1fr); justify-items: center; } .jejum-lado { width: 100%; } }
 .jejum-lado h3 { font-size: 14px; margin: 10px 0 8px; }
-.jj-comecei { flex-wrap: wrap; flex: 1 1 260px; }
-.jj-comecei > * { flex: 1 1 auto; }
 .jj-comecei .sel-btn, .jj-comecei .data-btn { min-width: 0; }
 .jj-manual { margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--card-2); }
 .jejum-stats { margin: 16px 0 10px; }
@@ -1426,3 +1435,51 @@ div.campo > .form-linha, div.campo > .lista-cidades { font-size: 15px; color: va
   .grade-dash .card.coluna .centro { padding: 6px 0; }
   .grade-dash .card.coluna > p.dica:last-child, .grade-dash .card.coluna > a:last-child { margin-top: 10px; }
 }
+.sel-menu.com-busca { display: flex; flex-direction: column; padding-top: 0; }
+.sel-busca { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; padding: 8px 8px 6px; background: var(--card); border-bottom: 1px solid var(--linha); margin-bottom: 4px; }
+.sel-busca .ic { color: var(--fraco); flex: 0 0 auto; }
+.sel-busca input { flex: 1; min-width: 0; padding: 7px 8px; font-size: 14px; }
+.sel-nada { margin: 6px 10px 10px; font-size: 13px; color: var(--fraco); }
+.sel-item[hidden], .sel-grupo[hidden] { display: none !important; }
+@media (min-width: 1451px) { .grade-dash .s4-2 { grid-column: span 2; } .grade-dash .s4-3 { grid-column: span 3; } .grade-dash .s4-4 { grid-column: 1 / -1; } }
+@media (min-width: 641px) and (max-width: 1450px) { .grade-dash .s2-2 { grid-column: 1 / -1; } }
+.grade-dash .lista-rolavel { max-height: 300px; }
+
+.jejum-grade { align-items: center; gap: 28px; }
+.jejum-anel-lado { display: grid; justify-items: center; }
+.jejum-lado { display: grid; gap: 14px; align-content: center; }
+.jj-bloco { display: grid; gap: 8px; }
+.jj-rotulo { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--fraco); }
+.jj-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border-radius: 14px; background: var(--card-2); }
+.jj-ou { color: var(--fraco); font-size: 13px; }
+.jj-comecei { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 320px; align-items: center; }
+.jj-comecei .sel-btn { flex: 0 0 110px; }
+.jj-comecei .data-btn { flex: 1 1 120px; min-width: 0; }
+.jj-comecei > .btn { flex: 0 0 auto; }
+.jj-link { justify-self: start; }
+.jejum-stats .stat-mini { display: grid; place-content: center; min-height: 64px; }
+@media (max-width: 760px) { .jj-ou { display: none; } .jj-acoes > .btn { flex: 1 1 100%; justify-content: center; } .jj-comecei > .btn { flex: 1 1 100%; } }
+.pagina-pet { display: grid; gap: 16px; }
+.pagina-pet > *, .pagina-pet .grade-pet { margin: 0 !important; }
+.grade-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.grade-auto > .card { margin: 0; }
+.grade-pet { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important; }
+.pet-personalizar { border-color: var(--destaque); }
+.rot-registro { font-weight: 700; color: var(--suave); }
+.lista-apps { display: grid; gap: 4px; padding: 10px; }
+.linha-app { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; }
+.linha-app:hover { background: var(--hover); }
+.abrir-linha-app { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-width: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; padding: 0; }
+.abrir-linha-app .nome-app { min-width: 0; }
+.abrir-linha-app .nome-app b, .abrir-linha-app .nome-app small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progresso-app { width: 120px; height: 8px; border-radius: 99px; background: var(--card-2); overflow: hidden; flex: 0 0 auto; }
+.progresso-app span { display: block; height: 100%; border-radius: inherit; transition: width .3s; }
+.conta-app { min-width: 44px; text-align: right; font-weight: 800; font-size: 14px; display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.linha-app.meta-ok .conta-app { color: var(--cor-app); }
+.linha-app .btn-redondo { width: 34px; height: 34px; font-size: 18px; flex: 0 0 34px; }
+@media (max-width: 640px) { .progresso-app { display: none; } }
+.janela-app { width: min(380px, calc(100vw - 20px)); padding: 0; overflow: visible; background: transparent; border: 0; }
+.janela-app .card-app { margin: 0; }
+.janela-app .fechar-dc { top: -14px; right: -10px; }
+.girando.mini { width: 18px; height: 18px; border-width: 2px; }
+.detalhe-compra .anexos { margin-top: 4px; }

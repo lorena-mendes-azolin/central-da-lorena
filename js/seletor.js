@@ -35,7 +35,10 @@ function abrirMenuSelect(sel, btn) {
       [...filho.children].forEach((op) => { html += itemMenu(op, sel); });
     } else html += itemMenu(filho, sel);
   });
-  menu.innerHTML = html;
+  const total = sel.querySelectorAll('option').length;
+  const comBusca = total > 7;
+  menu.innerHTML = comBusca ? `<div class="sel-busca">${ic('search', 'p')}<input type="search" placeholder="Pesquisar…" aria-label="Pesquisar"></div><div class="sel-itens">${html}</div><p class="sel-nada" hidden>Nada encontrado.</p>` : html;
+  if (comBusca) menu.classList.add('com-busca');
 
   (btn.closest('dialog') || document.body).appendChild(menu);
   const r = btn.getBoundingClientRect();
@@ -47,6 +50,26 @@ function abrirMenuSelect(sel, btn) {
   menu.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
   btn.classList.add('aberto');
   menuAberto = { sel, btn, menu };
+  const busca = menu.querySelector('.sel-busca input');
+  if (busca) {
+    if (matchMedia('(pointer: fine)').matches) setTimeout(() => busca.focus(), 20);
+    const sem = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    busca.addEventListener('click', (e) => e.stopPropagation());
+    busca.addEventListener('input', () => {
+      const q = sem(busca.value.trim());
+      let algum = false;
+      menu.querySelectorAll('.sel-item').forEach((b) => { const ok = !q || sem(b.textContent).includes(q); b.hidden = !ok; if (ok) algum = true; });
+      menu.querySelectorAll('.sel-grupo').forEach((g) => {
+        let prox = g.nextElementSibling, vis = false;
+        while (prox && !prox.classList.contains('sel-grupo')) { if (!prox.hidden) vis = true; prox = prox.nextElementSibling; }
+        g.hidden = !vis;
+      });
+      menu.querySelector('.sel-nada').hidden = algum;
+    });
+    busca.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); menu.querySelector('.sel-item:not([hidden])')?.click(); }
+    });
+  }
 
   menu.addEventListener('click', (e) => {
     const item = e.target.closest('[data-valor]');

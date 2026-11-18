@@ -117,6 +117,8 @@ function completar(dados) {
   final.listas = (final.listas || []).map(migrarLista);
   final.habitos = (final.habitos || []).map((h) => ({ grupo: 'Geral', dias: [], meta: 0, ...h }));
   final.financas = { ...base.financas, ...(dados.financas || {}) };
+  (final.pets?.lista || []).forEach((p) => { if (!p.mostrar) p.mostrar = ['brincadeira']; });
+  final.listas.filter((l) => l.tipo === 'cursos').forEach((l) => (l.materias || []).forEach((m) => migrarMateria(l, m)));
   if (!dados.config?.modulos) final.config.modulos = { flashcards: true, financas: true, revisao: true };
   if (dados.config && dados.config.boasVindas === undefined) {
     final.config.boasVindas = true;
@@ -132,6 +134,41 @@ function completar(dados) {
     final.config.temColecoes = true;
   }
   return final;
+}
+
+// A aba "Sobre" virou páginas do Caderno, e as notas A1/A2/AF viraram itens do modo "Do meu jeito".
+// Os ids são fixos para que dois aparelhos migrando ao mesmo tempo não dupliquem nada.
+function migrarMateria(l, m) {
+  m.notas = m.notas || [];
+  const secoes = m.secoes || ((m.descricao || (m.anexos || []).length) ? [{ id: 'sobre', titulo: 'Sobre', html: m.descricao || '', anexos: m.anexos || [] }] : []);
+  secoes.forEach((x) => {
+    const id = 'sec-' + x.id;
+    if (!(x.html || '').trim() && !(x.anexos || []).length && !(x.titulo || '').trim()) return;
+    if (!m.notas.some((n) => n.id === id)) m.notas.push({ id, titulo: x.titulo || 'Sobre', html: x.html || '', anexos: x.anexos || [], criado: '2026-11-17', editado: '2026-11-17T12:00:00.000Z' });
+  });
+  if (m.secoes !== undefined || m.descricao || m.anexos) { delete m.secoes; delete m.descricao; delete m.anexos; }
+  const usavaAv = m.notaModo === undefined ? l.rotulo === 'Matéria' : m.notaModo !== 'pontos';
+  if (usavaAv) {
+    const av = m.av || {};
+    const r = { p1: 1, p2: 1, ...(l.regra || {}) };
+    m.itensNota = m.itensNota || [];
+    const num = (v) => { const n = parseFloat(String(v ?? '').replace(',', '.')); return Number.isFinite(n) ? n : null; };
+    const vals = { a1: num(av.a1), a2: num(av.a2) };
+    const nomes = { a1: 'A1', a2: 'A2' };
+    const af = num(av.af);
+    if (af !== null) {
+      // A AF substitui a nota que mais ajudar, igual ao cálculo antigo
+      const troca = vals.a1 === null ? 'a1' : vals.a2 === null ? 'a2' : (af * r.p1 + vals.a2 * r.p2 >= vals.a1 * r.p1 + af * r.p2 ? 'a1' : 'a2');
+      if (vals[troca] === null || af > vals[troca]) { vals[troca] = af; nomes[troca] += ' (AF)'; }
+    }
+    [['a1', nomes.a1, r.p1], ['a2', nomes.a2, r.p2]].forEach(([k, nome, peso]) => {
+      const v = vals[k];
+      if (v === '' || v === undefined || v === null) return;
+      if (!m.itensNota.some((i) => i.id === 'av-' + k)) m.itensNota.push({ id: 'av-' + k, nome, peso: String(peso), nota: String(v) });
+    });
+    if (m.itensNota.some((i) => i.id && i.id.startsWith('av-'))) m.calcModo = 'media';
+  }
+  if (m.notaModo !== 'pontos') m.notaModo = 'pontos';
 }
 
 function migrarLista(l) {

@@ -68,17 +68,20 @@ function htmlJejum() {
             <button class="btn sec" data-acao="jj-cancelar">Cancelar</button>
           </div>
           <p class="dica">Se sentir tontura ou mal-estar, pare e coma. O jejum deve fazer bem.</p>` : `
-          <h3 style="margin-top:0">Escolha o protocolo</h3>
-          <div class="chips">${PROTOCOLOS_JEJUM.map((h) => `<button class="chip ${j.metaH === h ? 'ativo' : ''}" data-acao="jj-meta" data-h="${h}">${h}:${24 - h}</button>`).join('')}</div>
-          <div class="form-linha">
+          <div class="jj-bloco">
+            <span class="jj-rotulo">Protocolo</span>
+            <div class="chips">${PROTOCOLOS_JEJUM.map((h) => `<button class="chip ${j.metaH === h ? 'ativo' : ''}" data-acao="jj-meta" data-h="${h}">${h}:${24 - h}</button>`).join('')}</div>
+          </div>
+          <div class="jj-acoes">
             <button class="btn" data-acao="jj-comecar">${ic('play', 'p')} Comecei agora</button>
-            <form class="form-linha jj-comecei" data-form="jj-comecei">
+            <span class="jj-ou">ou</span>
+            <form class="jj-comecei" data-form="jj-comecei">
               <select name="dia" aria-label="Dia"><option value="${hojeISO()}">Hoje</option><option value="${ontem}">Ontem</option></select>
               <input type="time" name="hora" aria-label="Hora que começou">
-              <button class="btn sec">Comecei às…</button>
+              <button class="btn sec">Comecei nesse horário</button>
             </form>
           </div>
-          <a href="#" class="dica" data-acao="jj-manual">${jejumTela.manual ? 'Fechar' : 'Lançar um jejum que já terminou'}</a>
+          <a href="#" class="dica jj-link" data-acao="jj-manual">${jejumTela.manual ? 'Fechar' : 'Lançar um jejum que já terminou'}</a>
           ${jejumTela.manual ? `<form class="jj-manual" data-form="jj-manual">
             <div class="linha2">
               <label class="campo">Começou (dia)<input type="date" name="di" value="${ontem}" max="${hojeISO()}"></label>

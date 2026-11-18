@@ -25,7 +25,7 @@ function urlSegura(texto: string) {
   } catch { return null; }
 }
 
-async function buscar(url: URL, aceitar: string, limite: number) {
+async function buscar(url: URL, aceitar: string, limite: number, agente = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36') {
   let atual = url;
   for (let i = 0; i < 5; i++) {
     const ctrl = new AbortController();
@@ -33,7 +33,7 @@ async function buscar(url: URL, aceitar: string, limite: number) {
     const r = await fetch(atual, {
       redirect: 'manual', signal: ctrl.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
+        'User-Agent': agente,
         'Accept': aceitar, 'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.7',
       },
     }).finally(() => clearTimeout(t));
@@ -112,6 +112,14 @@ Deno.serve(async (req) => {
     html = new TextDecoder('utf-8').decode(r.bytes);
   } catch (e) {
     return json({ erro: `não consegui abrir a página (${(e as Error).message})` }, 200);
+  }
+
+  if (!/og:image/i.test(html)) {
+    try {
+      const r2 = await buscar(alvo, 'text/html,application/xhtml+xml', 1_500_000, 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)');
+      const h2 = new TextDecoder('utf-8').decode(r2.bytes);
+      if (/og:image/i.test(h2)) { html = h2; final = r2.final; }
+    } catch { }
   }
 
   const prod = produtoJsonLd(html);

@@ -1,6 +1,8 @@
 const petTela = { pet: null, criando: false };
 const ESPECIES = { cachorro: 'Cachorro', gato: 'Gato', passaro: 'Pássaro', peixe: 'Peixe', roedor: 'Roedor', reptil: 'Réptil', outro: 'Outro' };
 const ATIV_PET = { passeio: { nome: 'Passeio', cor: '#5fd6a4' }, brincadeira: { nome: 'Brincadeira', cor: '#f7c56b' }, banho: { nome: 'Banho', cor: '#8fd3ff' }, treino: { nome: 'Adestramento', cor: '#c49bff' } };
+const EXTRAS_PET = { passeio: 'Passeios', brincadeira: 'Brincadeiras', banho: 'Banhos', treino: 'Adestramento', juntos: 'Tempo juntos', peso: 'Peso', registros: 'Últimos registros' };
+const mostraPet = (p, k) => (p.mostrar || []).includes(k);
 const CUIDADOS_PET = ['Vacina', 'Vermífugo', 'Antipulgas', 'Banho e tosa', 'Veterinário', 'Remédio', 'Comprar ração', 'Cortar unhas'];
 
 function dadosPets() {
@@ -35,7 +37,7 @@ PAGINAS.pets = {
     </div>
     ${petTela.criando || !d.lista.length ? htmlFormPet() : ''}
     ${d.lista.length > 1 ? `<div class="chips">${d.lista.map((x) => `<button class="chip ${x.id === p.id ? 'ativo' : ''}" data-acao="pet-ver" data-id="${x.id}">${esc(x.nome)}</button>`).join('')}</div>` : ''}
-    ${p ? htmlPet(p) : ''}`;
+    ${p ? `<div class="pagina-pet">${htmlPet(p)}</div>` : ''}`;
   },
 };
 
@@ -82,40 +84,52 @@ function htmlPet(p) {
   const ultimoPeso = pesos[pesos.length - 1];
   const dif = pesos.length > 1 ? ultimoPeso.kg - pesos[pesos.length - 2].kg : 0;
   const dHoje = paraData(hoje).getDay();
+  const tiposAtivos = Object.keys(ATIV_PET).filter((k) => mostraPet(p, k));
 
   return `
   <section class="card pet-topo">
     <span class="pet-avatar">${ic('paw')}</span>
     <div><h2>${esc(p.nome)}</h2><p class="dica" style="margin:0">${ESPECIES[p.especie] || ''}${p.raca ? ` · ${esc(p.raca)}` : ''}${p.nasc ? ` · ${idadePet(p.nasc)}` : ''}${ultimoPeso ? ` · ${fmtNum(ultimoPeso.kg, 2)} kg` : ''}</p></div>
     <span class="espaco"></span>
+    <button class="btn-mini ${petTela.personalizando ? 'ativo' : ''}" data-acao="pet-personalizar">${ic('eye', 'p')} O que acompanhar</button>
     <button class="btn-mini" data-acao="pet-editar" data-id="${p.id}">${ic('edit', 'p')} Editar</button>
     <button class="acao-item apagar" data-acao="pet-del" data-id="${p.id}" title="Excluir pet">${ic('trash', 'p')}</button>
   </section>
+  ${petTela.personalizando ? `<section class="card pet-personalizar">
+    <p style="margin:0 0 10px">Cardápio e Cuidados aparecem sempre. Escolha o que mais faz sentido para ${esc(p.nome)}:</p>
+    <div class="chips">${Object.entries(EXTRAS_PET).map(([k, n]) => `<button class="chip ${mostraPet(p, k) ? 'ativo' : ''}" data-acao="pet-mostrar" data-k="${k}">${mostraPet(p, k) ? ic('check', 'p') + ' ' : ''}${n}</button>`).join('')}</div>
+  </section>` : ''}
 
-  <div class="grade g3">
-    <div class="card stat"><span class="selo c-verde">${ic('paw')}</span><div><b>${nPasseio}/${p.meta ?? 7}</b><span>passeios na semana</span></div></div>
-    <div class="card stat"><span class="selo c-amarelo">${ic('star')}</span><div><b>${nBrincar}/${p.metaBrincar ?? 5}</b><span>brincadeiras na semana</span></div></div>
-    <div class="card stat"><span class="selo c-violeta">${ic('clock')}</span><div><b>${textoMinutos(minSemana)}</b><span>juntos nesta semana</span></div></div>
-  </div>
+  ${(() => {
+    const st = [
+      mostraPet(p, 'passeio') && `<div class="card stat"><span class="selo c-verde">${ic('paw')}</span><div><b>${nPasseio}/${p.meta ?? 7}</b><span>passeios na semana</span></div></div>`,
+      mostraPet(p, 'brincadeira') && `<div class="card stat"><span class="selo c-amarelo">${ic('star')}</span><div><b>${nBrincar}/${p.metaBrincar ?? 5}</b><span>brincadeiras na semana</span></div></div>`,
+      mostraPet(p, 'juntos') && `<div class="card stat"><span class="selo c-violeta">${ic('clock')}</span><div><b>${textoMinutos(minSemana)}</b><span>juntos nesta semana</span></div></div>`,
+    ].filter(Boolean);
+    return st.length ? `<div class="grade-auto">${st.join('')}</div>` : '';
+  })()}
 
-  <section class="card">
+  ${tiposAtivos.length ? `<section class="card">
     <h2 class="card-titulo"><span class="selo mini c-verde">${ic('calendar')}</span> Esta semana</h2>
-    <div class="semana-pet">${dias.map((dia) => { const a = ativ.filter((x) => x.data === dia); return `<div class="dia-pet ${dia === hoje ? 'hoje' : ''}">
+    <div class="semana-pet">${dias.map((dia) => { const a = ativ.filter((x) => x.data === dia); const min = a.reduce((t, x) => t + (x.min || 0), 0); return `<div class="dia-pet ${dia === hoje ? 'hoje' : ''} ${a.length ? 'feito' : ''} ${dia > hoje ? 'futuro' : ''}">
       <small>${DIAS_SEMANA[paraData(dia).getDay()]}</small>
-      <div class="pontos-pet">${a.map((x) => `<i style="background:${ATIV_PET[x.tipo]?.cor}" title="${ATIV_PET[x.tipo]?.nome}${x.min ? ` · ${x.min} min` : ''}"></i>`).join('') || '<span class="fraco">—</span>'}</div>
+      <b>${paraData(dia).getDate()}</b>
+      <div class="pontos-pet">${a.map((x) => `<i style="background:${ATIV_PET[x.tipo]?.cor}" title="${ATIV_PET[x.tipo]?.nome}${x.min ? ` · ${x.min} min` : ''}"></i>`).join('')}</div>
+      <span class="min-pet">${a.length ? (min ? min + ' min' : a.length + 'x') : ''}</span>
     </div>`; }).join('')}</div>
-    <p class="dica">${Object.entries(ATIV_PET).map(([, a]) => `<span class="leg-pet"><i style="background:${a.cor}"></i>${a.nome}</span>`).join(' ')}</p>
-    <form class="form-linha registro-pet" data-form="pet-ativ">
-      <select name="tipo" aria-label="O que fizeram">${Object.entries(ATIV_PET).map(([id, a]) => `<option value="${id}">${a.nome}</option>`).join('')}</select>
-      <input type="date" name="data" value="${hoje}" max="${hoje}" aria-label="Dia">
-      <span class="com-unidade"><input type="number" name="min" min="0" max="600" value="20" aria-label="Minutos"><i>min</i></span>
-      <button class="btn">${ic('plus', 'p')} Registrar</button>
-    </form>
-    <div class="form-linha atalhos-pet">
-      <button class="btn sec" data-acao="pet-rapido" data-t="passeio">${ic('paw', 'p')} Passeei agora</button>
-      <button class="btn sec" data-acao="pet-rapido" data-t="brincadeira">${ic('star', 'p')} Brincamos agora</button>
+    ${tiposAtivos.length > 1 ? `<p class="dica leg-linha">${tiposAtivos.map((id) => `<span class="leg-pet"><i style="background:${ATIV_PET[id].cor}"></i>${ATIV_PET[id].nome}</span>`).join(' ')}</p>` : ''}
+    <div class="painel-pet">
+      ${mostraPet(p, 'passeio') ? `<button class="btn" data-acao="pet-rapido" data-t="passeio">${ic('paw', 'p')} Passeei agora</button>` : ''}
+      ${mostraPet(p, 'brincadeira') ? `<button class="btn" data-acao="pet-rapido" data-t="brincadeira">${ic('star', 'p')} Brincou agora</button>` : ''}
+      ${mostraPet(p, 'passeio') || mostraPet(p, 'brincadeira') ? '<span class="jj-ou">ou registrar outro dia</span>' : ''}
+      <form class="registro-pet" data-form="pet-ativ">
+        ${tiposAtivos.length > 1 ? `<select name="tipo" aria-label="O que fizeram">${tiposAtivos.map((id) => `<option value="${id}">${ATIV_PET[id].nome}</option>`).join('')}</select>` : `<input type="hidden" name="tipo" value="${tiposAtivos[0]}">`}
+        <input type="date" name="data" value="${hoje}" max="${hoje}" aria-label="Dia">
+        <span class="com-unidade"><input type="number" name="min" min="0" max="600" value="20" aria-label="Minutos"><i>min</i></span>
+        <button class="btn sec">${ic('plus', 'p')} Registrar</button>
+      </form>
     </div>
-  </section>
+  </section>` : ''}
 
   <div class="grade-pet">
     <section class="card">
@@ -156,8 +170,8 @@ function htmlPet(p) {
     </section>
   </div>
 
-  <div class="grade-pet">
-    <section class="card">
+  ${mostraPet(p, 'peso') || mostraPet(p, 'registros') ? `<div class="grade-pet">
+    ${mostraPet(p, 'peso') ? `<section class="card">
       <h2 class="card-titulo"><span class="selo mini c-azul">${ic('scale')}</span> Peso</h2>
       ${ultimoPeso ? `<p class="peso-pet"><b>${fmtNum(ultimoPeso.kg, 2)} kg</b> <span class="dica">em ${dataCurta(ultimoPeso.data)}${dif ? ` · ${dif > 0 ? '+' : ''}${fmtNum(dif, 2)} kg desde a última pesagem` : ''}</span></p>` : '<p class="vazio">Sem pesagens ainda.</p>'}
       ${pesos.length > 1 ? `<div class="barras-km peso-barras">${pesos.slice(-10).map((x) => { const mx = Math.max(...pesos.slice(-10).map((y) => y.kg)); return `<div class="barra-km" title="${fmtNum(x.kg, 2)} kg"><em>${fmtNum(x.kg, 1)}</em><span style="height:${Math.round((x.kg / mx) * 100)}%"></span><small>${diaCurto(x.data)}</small></div>`; }).join('')}</div>` : ''}
@@ -166,16 +180,25 @@ function htmlPet(p) {
         <span class="com-unidade"><input type="text" inputmode="decimal" name="kg" placeholder="0,0" aria-label="Peso" data-precisa><i>kg</i></span>
         <button class="btn sec">Salvar peso</button>
       </form>
-    </section>
-    <section class="card">
+    </section>` : ''}
+    ${mostraPet(p, 'registros') ? `<section class="card">
       <h2 class="card-titulo"><span class="selo mini c-verde">${ic('list')}</span> Últimos registros</h2>
       <div class="lista-rolavel" style="max-height:260px">${[...ativ].sort((a, b) => b.data.localeCompare(a.data)).slice(0, 40).map((a) => `<div class="item">
         <i class="ponto-pet" style="background:${ATIV_PET[a.tipo]?.cor}"></i>
         <span class="txt">${ATIV_PET[a.tipo]?.nome}<span class="sub">${dataCurta(a.data)}${a.min ? ` · ${a.min} min` : ''}</span></span>
         <button class="acao-item apagar" data-acao="pet-ativ-del" data-id="${a.id}">${ic('trash', 'p')}</button></div>`).join('') || '<p class="vazio">Nenhum registro ainda.</p>'}</div>
-    </section>
-  </div>`;
+    </section>` : ''}
+  </div>` : ''}`;
 }
+
+ACOES['pet-personalizar'] = () => { petTela.personalizando = !petTela.personalizando; desenhar(); };
+ACOES['pet-mostrar'] = (el) => {
+  const p = petAtual();
+  const m = new Set(p.mostrar || []);
+  m.has(el.dataset.k) ? m.delete(el.dataset.k) : m.add(el.dataset.k);
+  p.mostrar = [...m];
+  salvar(); desenhar();
+};
 
 ACOES['pet-novo'] = () => { petTela.criando = !petTela.criando; petTela.editando = null; desenhar(); };
 ACOES['pet-cancelar'] = () => { petTela.criando = false; petTela.editando = null; desenhar(); };
@@ -186,7 +209,7 @@ FORMS['pet-salvar'] = (d) => {
   const dados = { nome: d.nome, especie: d.especie, raca: d.raca, nasc: d.nasc, meta: Number(d.meta) || 0, metaBrincar: Number(d.metaBrincar) || 0, habPasseio: d.habPasseio || '', habBrincar: d.habBrincar || '' };
   let p = d.id && lista.find((x) => x.id === d.id);
   if (p) Object.assign(p, dados);
-  else { p = { id: novoId(), ...dados, cardapio: {}, refeicoes: [], pesos: [] }; lista.push(p); }
+  else { p = { id: novoId(), ...dados, cardapio: {}, refeicoes: [], pesos: [], mostrar: [] }; lista.push(p); }
   petTela.pet = p.id; petTela.criando = false; petTela.editando = null;
   salvar(); desenhar();
   avisar(`${p.nome} salvo.`);

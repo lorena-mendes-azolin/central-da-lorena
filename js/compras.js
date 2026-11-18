@@ -90,7 +90,7 @@ const linkCompra = (i) => i.link || (i.anexos || []).find((a) => a.tipo === 'lin
 FORMS['compra-nova'] = (d, form) => {
   const l = acharLista(form.dataset.lista);
   const link = ehLink(d.titulo) ? corrigirLink(d.titulo) : '';
-  const item = { id: novoId(), titulo: link ? 'Buscando produto…' : d.titulo, prazo: form.dataset.prazo, valor: d.valor || '', comprado: false, notas: '', anexos: [], cat: comprasTela.cat === 'todas' ? '' : comprasTela.cat, link, foto: '' };
+  const item = { id: novoId(), titulo: link ? BUSCANDO : d.titulo, prazo: form.dataset.prazo, valor: d.valor || '', comprado: false, notas: '', anexos: [], cat: comprasTela.cat === 'todas' ? '' : comprasTela.cat, link, foto: '' };
   l.itens.unshift(item);
   salvar(); desenhar();
   $('#compra-' + form.dataset.prazo)?.focus();
@@ -98,42 +98,44 @@ FORMS['compra-nova'] = (d, form) => {
 };
 
 const previaTela = { buscando: new Set() };
-async function buscarPrevia(listaId, itemId, novo = false) {
-  const l = acharLista(listaId);
-  const i = l?.itens.find((x) => x.id === itemId);
+const BUSCANDO = 'Buscando…';
+async function buscarPreviaRef(ref, novo, redesenhar, comPreco) {
+  const i = acharRef(ref);
   const url = i && linkCompra(i);
   if (!url) return;
+  const fim = () => { salvar(); desenhar(); redesenhar(); };
   if (!usuario) {
-    if (i.titulo === 'Buscando produto…') i.titulo = dominio(url);
-    salvar(); desenhar(); redesenharCompra();
+    if (i.titulo === BUSCANDO || i.titulo === 'Buscando produto…') i.titulo = dominio(url);
+    fim();
     avisar('Para puxar a foto do link, entre com a sua conta (precisa da nuvem).');
     return;
   }
-  previaTela.buscando.add(itemId);
-  redesenharCompra();
+  previaTela.buscando.add(i.id);
+  redesenhar();
   let r = null;
   try {
     const { data, error } = await sb.functions.invoke('previa-link', { body: { url } });
     if (error) throw error;
     r = data;
   } catch { r = { erro: 'sem conexão' }; }
-  previaTela.buscando.delete(itemId);
-  const atual = acharLista(listaId)?.itens.find((x) => x.id === itemId);
+  previaTela.buscando.delete(i.id);
+  const atual = acharRef(ref);
   if (!atual) return;
   if (r?.erro || (!r?.foto && !r?.titulo)) {
-    if (atual.titulo === 'Buscando produto…') atual.titulo = dominio(url);
-    salvar(); desenhar(); redesenharCompra();
-    avisar('Essa loja não deixou ler a página. Você pode colocar a foto e o valor à mão em "Ver detalhes".');
+    if (atual.titulo === BUSCANDO || atual.titulo === 'Buscando produto…') atual.titulo = dominio(url);
+    fim();
+    avisar('Esse site não deixou ler a página. Você pode colocar a foto à mão em "Ver detalhes".');
     return;
   }
   if (r.foto) atual.foto = r.foto;
-  if (r.titulo && (novo || !atual.titulo || atual.titulo === 'Buscando produto…' || ehLink(atual.titulo))) atual.titulo = r.titulo;
-  if (r.preco && (!atual.valor || novo)) atual.valor = Number(r.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (r.titulo && (novo || !atual.titulo || atual.titulo === BUSCANDO || atual.titulo === 'Buscando produto…' || ehLink(atual.titulo))) atual.titulo = r.titulo;
+  if (comPreco && r.preco && (!atual.valor || novo)) atual.valor = Number(r.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (r.loja) atual.loja = r.loja;
   if (r.url) atual.link = r.url;
-  salvar(); desenhar(); redesenharCompra();
-  avisar(r.foto ? 'Foto e informações do produto adicionadas.' : 'Peguei o nome do produto, mas a loja não mostrou a foto.');
+  fim();
+  avisar(r.foto ? 'Foto e informações adicionadas. Dá para editar tudo em "Ver detalhes".' : 'Peguei o nome, mas o site não mostrou a foto.');
 }
+const buscarPrevia = (listaId, itemId, novo = false) => buscarPreviaRef(`${listaId}/${itemId}`, novo, redesenharCompra, true);
 
 const compraAberta = { lista: '', id: '' };
 function htmlDetalheCompra() {

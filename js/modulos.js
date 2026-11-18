@@ -86,7 +86,7 @@ function blocosDosModulos() {
       <div class="centro bloco-mod">
         ${t.ativo ? `<p><b>Treino em andamento</b></p><a class="btn" href="#treino">${ic('play', 'p')} Continuar</a>`
           : feito.length ? `<span class="selo c-verde grande">${ic('check')}</span><p><b>Treino feito!</b><br><span class="dica">${feito.map((s) => `${esc(s.nome)} · ${fmtDur(s.dur)}`).join('<br>')}</span></p>`
-          : !t.fichas.length ? `<p class="dica">Você ainda não montou seu treino.</p><a class="btn" href="#treino" data-acao="treino-wizard">${ic('sparkle', 'p')} Monte seu treino</a>`
+          : !t.fichas.length ? `<p class="dica">Você ainda não montou seu treino.</p><a class="btn" href="#treino" data-acao="treino-wizard-ir">${ic('sparkle', 'p')} Monte seu treino</a>`
           : fs.length ? `${fs.map((f) => `<p><b>${esc(f.nome)}</b><br><span class="dica">${f.itens.length} exercícios · ~${fmtDur(duracaoFicha(f))}</span></p>
             <button class="btn" data-acao="treino-iniciar" data-id="${f.id}">${ic('play', 'p')} Começar</button>`).join('')}`
           : `<span class="selo c-azul grande">${ic('moon')}</span><p><b>Dia de descanso</b><br><span class="dica">Aproveite para alongar.</span></p>`}
@@ -117,11 +117,16 @@ function blocosDosModulos() {
       <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('paw')}</span> Pets <a href="#pets">Abrir</a></h2>
       ${d.lista.length ? `<div class="lista-rolavel">${d.lista.map((p) => {
         const sem = d.atividades.filter((a) => a.petId === p.id && a.data >= seg);
-        const pas = sem.filter((a) => a.tipo === 'passeio').length;
-        const hojeP = d.atividades.some((a) => a.petId === p.id && a.data === hoje && a.tipo === 'passeio');
+        const tipo = mostraPet(p, 'passeio') ? 'passeio' : mostraPet(p, 'brincadeira') ? 'brincadeira' : '';
+        const cardHoje = p.cardapio?.[paraData(hoje).getDay()] ? `hoje: ${esc(p.cardapio[paraData(hoje).getDay()])}` : '';
+        if (!tipo) return `<div class="item"><span class="txt">${esc(p.nome)}<span class="sub">${cardHoje || 'Sem atividades acompanhadas'}</span></span></div>`;
+        const n = sem.filter((a) => a.tipo === tipo).length;
+        const meta = tipo === 'passeio' ? (p.meta ?? 7) : (p.metaBrincar ?? 5);
+        const feitoHoje = d.atividades.some((a) => a.petId === p.id && a.data === hoje && a.tipo === tipo);
+        const rot = tipo === 'passeio' ? ['passeios', 'Passeou', 'Passeei'] : ['brincadeiras', 'Brincou', 'Brincou agora'];
         return `<div class="item">
-          <span class="txt">${esc(p.nome)}<span class="sub">${pas}/${p.meta ?? 7} passeios na semana${p.cardapio?.[paraData(hoje).getDay()] ? ` · hoje: ${esc(p.cardapio[paraData(hoje).getDay()])}` : ''}</span></span>
-          <button class="btn-mini ${hojeP ? 'ativo' : ''}" data-acao="pet-rapido" data-t="passeio" data-pet="${p.id}">${ic(hojeP ? 'check' : 'paw', 'p')} ${hojeP ? 'Passeou' : 'Passeei'}</button></div>`;
+          <span class="txt">${esc(p.nome)}<span class="sub">${n}/${meta} ${rot[0]} na semana${cardHoje ? ' · ' + cardHoje : ''}</span></span>
+          <button class="btn-mini ${feitoHoje ? 'ativo' : ''}" data-acao="pet-rapido" data-t="${tipo}" data-pet="${p.id}">${ic(feitoHoje ? 'check' : (tipo === 'passeio' ? 'paw' : 'star'), 'p')} ${feitoHoje ? rot[1] : rot[2]}</button></div>`;
       }).join('')}</div>` : `<div class="centro bloco-mod"><p class="dica">Nenhum pet cadastrado.</p><a class="btn" href="#pets">${ic('plus', 'p')} Adicionar pet</a></div>`}
     </section>`;
   }
@@ -139,3 +144,11 @@ function blocosDosModulos() {
   }
   return b;
 }
+
+ACOES['treino-wizard-ir'] = () => {
+  treinoTela.aba = 'hoje';
+  treinoTela.previa = null;
+  treinoTela.wizard = { passo: 1, objetivo: 'condicionamento', nivel: 1, dias: [1, 3, 5], tempo: 30, equip: ['nenhum', 'cadeira', 'parede'], foco: [] };
+  location.hash = 'treino';
+  setTimeout(() => $('.wizard-treino')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+};

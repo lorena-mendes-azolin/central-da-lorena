@@ -12,7 +12,7 @@ function palavras(rotulo) {
 function regraNotas(l) { return { media: 6, p1: 1, p2: 1, ...(l.regra || {}) }; }
 const fmtNota = (n) => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
 
-const modoLivre = (l, m) => (m.notaModo === undefined ? l.rotulo !== 'Matéria' : m.notaModo === 'pontos');
+const modoLivre = () => true; // só existe o modo "Do meu jeito"
 
 // "Média": cada item tem nota de 0 a 10 e um peso
 function calcMediaItens(l, m) {
@@ -180,7 +180,7 @@ function htmlCartaoMateria(l, m) {
   const total = m.tarefas.length;
   const feitas = m.tarefas.filter((t) => t.feito).length;
   const prox = m.tarefas.filter((t) => !t.feito && t.data).sort((a, b) => a.data.localeCompare(b.data))[0];
-  const capa = secoesDe(m).flatMap((x) => x.anexos || []).find((a) => a.tipo === 'imagem');
+  const capa = (m.notas || []).flatMap((x) => x.anexos || []).find((a) => a.tipo === 'imagem');
   const notas = calcNotas(l, m);
   const minutos = minutosEstudo(`${l.id}/${m.id}`);
   return `<a class="card cartao-materia" href="#lista-${l.id}--${m.id}" ${ordem(l.id + '|materias', m.id, true)} data-pegar>
@@ -217,7 +217,7 @@ function paginaMateria(l, idMateria) {
 
 function htmlMateria(l, m) {
   const ref = `${l.id}/${m.id}`;
-  const aba = cursosTela.aba;
+  const aba = ['tarefas', 'caderno', 'notas'].includes(cursosTela.aba) ? cursosTela.aba : 'tarefas';
   const tarefas = m.tarefas.filter((t) => cursosTela.mostrarFeitas || !t.feito)
     .sort((a, b) => Number(a.feito) - Number(b.feito) || (a.data || '9999').localeCompare(b.data || '9999'));
   const feitas = m.tarefas.filter((t) => t.feito).length;
@@ -240,7 +240,6 @@ function htmlMateria(l, m) {
       <button class="${aba === 'tarefas' ? 'ativo' : ''}" data-acao="materia-aba" data-a="tarefas">${ic('check', 'p')} Tarefas e provas</button>
       <button class="${aba === 'caderno' ? 'ativo' : ''}" data-acao="materia-aba" data-a="caderno">${ic('notebook', 'p')} Caderno de aulas</button>
       <button class="${aba === 'notas' ? 'ativo' : ''}" data-acao="materia-aba" data-a="notas">${ic('star', 'p')} Notas e estudo</button>
-      <button class="${aba === 'sobre' ? 'ativo' : ''}" data-acao="materia-aba" data-a="sobre">${ic('note', 'p')} Sobre, links e imagens</button>
     </div>
     <span class="espaco"></span>
     <button class="btn-mini" data-acao="flash-da-materia" data-ref="${ref}">${ic('layers', 'p')} Flashcards${nCartas ? ` (${nCartas})` : ''}</button>
@@ -251,7 +250,6 @@ function htmlMateria(l, m) {
 
   ${aba === 'notas' ? htmlNotasEstudo(l, m, ref) : ''}
 
-  ${aba === 'sobre' ? htmlSecoes(m, ref) : ''}
 
   ${aba === 'tarefas' ? `<section class="card">
     <form class="form-linha" data-form="tm-nova" data-ref="${ref}" style="margin-bottom:12px">
@@ -265,73 +263,6 @@ function htmlMateria(l, m) {
   </section>` : ''}`;
 }
 
-// Seções da aba "Sobre": cada uma com título, texto, links e imagens
-function secoesDe(m) {
-  if (!m.secoes) {
-    m.secoes = [];
-    if (m.descricao || (m.anexos || []).length) m.secoes.push({ id: novoId(), titulo: 'Sobre', html: m.descricao || '', anexos: m.anexos || [] });
-  }
-  return m.secoes;
-}
-
-const secaoAberta = {};
-
-function htmlSecoes(m, ref) {
-  const secoes = secoesDe(m);
-  const aberta = secoes.find((x) => x.id === secaoAberta[ref]) || secoes[0];
-  const i = aberta ? secoes.indexOf(aberta) : -1;
-  return `<div class="caderno">
-    <aside class="paginas">
-      <button class="btn" data-acao="secao-nova" data-ref="${ref}" style="margin-bottom:6px">${ic('plus', 'p')} Nova seção</button>
-      ${secoes.map((x) => `<button class="pg ${aberta && x.id === aberta.id ? 'ativo' : ''}" data-acao="secao-abrir" data-ref="${ref}" data-id="${x.id}" ${ordem(ref + '|secoes', x.id)} data-pegar>
-        ${ic('note', 'p')}<span id="sec-${x.id}">${esc(x.titulo || 'Sem título')}</span>${(x.anexos || []).length ? `<small>${ic('link', 'p')}${x.anexos.length}</small>` : ''}</button>`).join('')
-        || '<p class="vazio" style="padding:4px 8px">Nenhuma seção ainda.</p>'}
-    </aside>
-    ${aberta ? `<article class="folha">
-      <input class="folha-titulo" value="${esc(aberta.titulo)}" placeholder="Título da seção" data-digitar="secao-titulo" data-ref="${ref}/secao/${aberta.id}" data-id="${aberta.id}" maxlength="60" aria-label="Título da seção">
-      <div class="folha-info">
-        <button class="btn-mini" data-acao="secao-mover" data-ref="${ref}" data-id="${aberta.id}" data-n="-1" ${i === 0 ? 'disabled' : ''}>${ic('left', 'p rot90')} Subir</button>
-        <button class="btn-mini" data-acao="secao-mover" data-ref="${ref}" data-id="${aberta.id}" data-n="1" ${i === secoes.length - 1 ? 'disabled' : ''}>${ic('right', 'p rot90')} Descer</button>
-        <button class="btn-mini" data-acao="secao-del" data-ref="${ref}" data-id="${aberta.id}" style="margin-left:auto">${ic('trash', 'p')} Excluir seção</button>
-      </div>
-      ${htmlEditor(`${ref}/secao/${aberta.id}`, 'html', aberta.html, 'Escreva aqui…')}
-      <h3 class="sub-titulo">${ic('image', 'p')} Links e imagens</h3>
-      ${htmlAnexos(aberta, `${ref}/secao/${aberta.id}`)}
-    </article>` : `<article class="folha vazia">
-      <div><p style="font-size:17px;font-weight:700;margin:0 0 6px">Nenhuma seção</p>
-      <p class="vazio" style="margin:0 0 14px">Crie seções separadas, como Professor, Avaliação, Materiais e Links úteis.</p>
-      <button class="btn" data-acao="secao-nova" data-ref="${ref}">${ic('plus', 'p')} Criar a primeira seção</button></div>
-    </article>`}
-  </div>`;
-}
-
-ACOES['secao-abrir'] = (el) => { secaoAberta[el.dataset.ref] = el.dataset.id; desenhar(); };
-DIGITAR['secao-titulo'] = (el) => {
-  const x = acharRef(el.dataset.ref);
-  x.titulo = el.value;
-  salvar();
-  const nome = $('#sec-' + el.dataset.id);
-  if (nome) nome.textContent = el.value || 'Sem título';
-};
-
-ACOES['secao-nova'] = (el) => {
-  const m = acharRef(el.dataset.ref);
-  const x = { id: novoId(), titulo: '', html: '', anexos: [] };
-  secoesDe(m).push(x);
-  secaoAberta[el.dataset.ref] = x.id;
-  salvar(); desenhar();
-  $('.folha-titulo')?.focus();
-};
-ACOES['secao-del'] = (el) => { delete secaoAberta[el.dataset.ref]; removerComDesfazer(secoesDe(acharRef(el.dataset.ref)), el.dataset.id, 'Seção'); };
-ACOES['secao-mover'] = (el) => {
-  const lista = secoesDe(acharRef(el.dataset.ref));
-  const i = lista.findIndex((x) => x.id === el.dataset.id);
-  const j = i + Number(el.dataset.n);
-  if (j < 0 || j >= lista.length) return;
-  [lista[i], lista[j]] = [lista[j], lista[i]];
-  salvar(); desenhar();
-};
-
 function htmlNotasEstudo(l, m, ref) {
   const r = regraNotas(l);
   const av = m.av || {};
@@ -344,10 +275,6 @@ function htmlNotasEstudo(l, m, ref) {
   return `<div class="grade g2">
     <section class="card">
       <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('star')}</span> Notas</h2>
-      <div class="segmento" style="margin-bottom:14px">
-        <button class="${!pontos ? 'ativo' : ''}" data-acao="nota-modo" data-ref="${ref}" data-m="">A1, A2 e AF</button>
-        <button class="${pontos ? 'ativo' : ''}" data-acao="nota-modo" data-ref="${ref}" data-m="pontos">Do meu jeito</button>
-      </div>
       ${pontos ? `<div class="calc-modo">
         <span>Como a nota é calculada:</span>
         <div class="segmento">

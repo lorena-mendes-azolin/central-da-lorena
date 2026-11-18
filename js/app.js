@@ -11,7 +11,11 @@ function paginaAtual() {
 function desenhar() {
   const pag = paginaAtual();
   document.body.classList.toggle('sem-menu', pag.nome === 'boasvindas');
+  const seletorRolagem = '.lista-rolavel, .tabela-rolavel, .picker-lista, .historico-lista';
+  const rolagens = desenhar.ultima === pag.nome ? $$(`#conteudo ${seletorRolagem}`).map((e) => e.scrollTop) : [];
+  desenhar.ultima = pag.nome;
   $('#conteudo').innerHTML = pag.desenhar();
+  if (rolagens.length) $$(`#conteudo ${seletorRolagem}`).forEach((e, k) => { if (rolagens[k]) e.scrollTop = rolagens[k]; });
   if (pag.depois) pag.depois();
   desenharMenu();
   atualizarCaminho();
@@ -24,6 +28,8 @@ function desenhar() {
   fecharMenuSelect();
   melhorarSelects();
   melhorarDatas();
+  if (typeof redesenharCompra === 'function') redesenharCompra();
+  if (typeof redesenharColecao === 'function') redesenharColecao();
 }
 
 function digitando() {

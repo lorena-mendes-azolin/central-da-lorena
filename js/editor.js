@@ -207,7 +207,7 @@ function htmlCaderno(dono, refBase, textoVazio = 'Crie uma página para cada aul
     <aside class="paginas">
       <button class="btn" data-acao="pagina-nova" data-ref="${refBase}" style="margin-bottom:6px">${ic('plus', 'p')} Nova página</button>
       ${dono.notas.map((n) => `<button class="pg ${aberta && n.id === aberta.id ? 'ativo' : ''}" data-acao="pagina-abrir" data-ref="${refBase}" data-id="${n.id}" ${ordem(refBase + '|notas', n.id)} data-pegar>
-        ${ic('note', 'p')}<span id="pg-${n.id}">${esc(n.titulo || 'Sem título')}</span><small>${n.criado.slice(8)}/${n.criado.slice(5, 7)}</small></button>`).join('')
+        ${ic('note', 'p')}<span id="pg-${n.id}">${esc(n.titulo || 'Sem título')}</span>${(n.anexos || []).length ? `<small>${ic('link', 'p')}${n.anexos.length}</small>` : ''}<small>${n.criado.slice(8)}/${n.criado.slice(5, 7)}</small></button>`).join('')
         || '<p class="vazio" style="padding:4px 8px">Nenhuma página ainda.</p>'}
     </aside>
     ${aberta ? `<article class="folha">
@@ -217,6 +217,8 @@ function htmlCaderno(dono, refBase, textoVazio = 'Crie uma página para cada aul
         <button class="btn-mini" data-acao="pagina-del" data-ref="${refBase}" data-id="${aberta.id}" style="margin-left:auto">${ic('trash', 'p')} Excluir página</button>
       </div>
       ${htmlEditor(`${refBase}/nota/${aberta.id}`, 'html', aberta.html, 'Comece a escrever… o que você aprendeu hoje?')}
+      <h3 class="sub-titulo">${ic('image', 'p')} Links e imagens</h3>
+      ${htmlAnexos(aberta, `${refBase}/nota/${aberta.id}`)}
     </article>` : `<article class="folha vazia">
       <div><p style="font-size:17px;font-weight:700;margin:0 0 6px">Caderno vazio</p>
       <p class="vazio" style="margin:0 0 14px">${textoVazio}</p>

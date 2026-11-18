@@ -40,7 +40,7 @@ PAGINAS.apps = {
     </div>
     ${appsTela.criando ? htmlFormApp(appsTela.criando) : ''}
     ${!lista.length && !appsTela.criando ? htmlSugestoesApp() : ''}
-    <div class="grade-apps">${lista.map(htmlCardApp).join('')}</div>
+    ${lista.length ? `<section class="card lista-apps">${lista.map(htmlLinhaApp).join('')}</section>` : ''}
     ${lista.length ? htmlSemanaApps(lista) : ''}`;
   },
 };
@@ -86,7 +86,46 @@ function htmlFormApp(a) {
   </form>`;
 }
 
-function htmlCardApp(a) {
+function htmlLinhaApp(a) {
+  const n = feitosApp(hojeISO(), a.id);
+  const meta = a.meta || 1;
+  const ok = n >= meta;
+  return `<div class="linha-app ${ok ? 'meta-ok' : ''}" style="--cor-app:${a.cor}" ${ordem('|appsEstudo.lista', a.id)}>
+    ${alca()}
+    <button class="abrir-linha-app" data-acao="app-abrir" data-id="${a.id}">
+      <span class="avatar-app" style="background:${a.cor}26;color:${a.cor}">${esc(a.nome[0] || '?')}</span>
+      <span class="nome-app"><b>${esc(a.nome)}</b><small>${esc(a.assunto || (a.ref ? nomeMateria(a.ref) : ''))}</small></span>
+    </button>
+    <span class="progresso-app" title="${n} de ${meta} ${esc(a.unidade || 'lições')} hoje"><span style="width:${Math.min(100, Math.round((n / meta) * 100))}%;background:${a.cor}"></span></span>
+    <span class="conta-app">${ok ? ic('check', 'p') : ''}${n}/${meta}</span>
+    <button class="btn-redondo" data-acao="app-mais" data-id="${a.id}" data-v="1" aria-label="Mais uma" style="background:${a.cor};color:#13122a;border:0">+</button>
+    <button class="acao-item" data-acao="app-abrir" data-id="${a.id}" aria-label="Abrir detalhes">${ic('right', 'p')}</button>
+  </div>`;
+}
+
+const appAberto = { id: '' };
+function redesenharApp() {
+  const j = $('#janela-app');
+  const a = dadosApps().find((x) => x.id === appAberto.id);
+  if (!j?.open || !a) return;
+  j.innerHTML = `<button type="button" class="btn-icone fechar-dc" data-acao="app-fechar" aria-label="Fechar">${ic('x')}</button>${htmlCardApp(a, true)}`;
+}
+ACOES['app-abrir'] = (el) => {
+  appAberto.id = el.dataset.id;
+  let j = $('#janela-app');
+  if (!j) {
+    j = document.createElement('dialog');
+    j.id = 'janela-app';
+    j.className = 'janela janela-app';
+    j.addEventListener('click', (e) => { if (e.target === j) j.close(); });
+    document.body.appendChild(j);
+  }
+  if (!j.open) j.showModal();
+  redesenharApp();
+};
+ACOES['app-fechar'] = () => $('#janela-app')?.close();
+
+function htmlCardApp(a, naJanela = false) {
   const hoje = hojeISO();
   const n = feitosApp(hoje, a.id);
   const meta = a.meta || 1;
@@ -94,9 +133,8 @@ function htmlCardApp(a) {
   const seq = sequenciaApp(a);
   const dias = Array.from({ length: 7 }, (_, k) => somarDias(hoje, k - 6));
   const maxDia = Math.max(meta, ...dias.map((d) => feitosApp(d, a.id)));
-  return `<section class="card card-app ${n >= meta ? 'meta-ok' : ''}" style="--cor-app:${a.cor}" ${ordem('|appsEstudo.lista', a.id)}>
+  return `<section class="card card-app ${n >= meta ? 'meta-ok' : ''}" style="--cor-app:${a.cor}">
     <div class="topo-app">
-      ${alca()}
       <span class="avatar-app" style="background:${a.cor}26;color:${a.cor}">${esc(a.nome[0] || '?')}</span>
       <div class="nome-app"><b>${esc(a.nome)}</b><small>${esc(a.assunto || (a.ref ? nomeMateria(a.ref) : ''))}</small></div>
       <span class="espaco"></span>
@@ -137,7 +175,7 @@ function htmlSemanaApps(lista) {
 ACOES['app-novo'] = () => { appsTela.criando = appsTela.criando ? null : {}; desenhar(); };
 ACOES['app-cancelar'] = () => { appsTela.criando = null; desenhar(); };
 ACOES['app-sugestao'] = (el) => { appsTela.criando = { ...SUGESTOES_APP.find((s) => s.nome === el.dataset.nome), meta: 3 }; desenhar(); };
-ACOES['app-editar'] = (el) => { appsTela.criando = { ...dadosApps().find((a) => a.id === el.dataset.id) }; desenhar(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+ACOES['app-editar'] = (el) => { $('#janela-app')?.close(); appsTela.criando = { ...dadosApps().find((a) => a.id === el.dataset.id) }; desenhar(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 FORMS['app-salvar'] = (d) => {
   if (d.link && !/^https?:\/\//.test(d.link)) d.link = `https://${d.link}`;
   const lista = dadosApps();
@@ -149,6 +187,7 @@ FORMS['app-salvar'] = (d) => {
   avisar(`${dados.nome} salvo.`);
 };
 ACOES['app-del'] = (el) => {
+  $('#janela-app')?.close();
   const lista = dadosApps();
   const a = lista.find((x) => x.id === el.dataset.id);
   if (!confirmarDuasVezes(`app-${a.id}`, `Clique de novo para remover ${a.nome}.`)) return;
@@ -170,7 +209,7 @@ ACOES['app-mais'] = (el) => {
   }
   let marcou = false;
   if (antes < (a.meta || 1) && reg.apps[a.id] >= (a.meta || 1)) marcou = marcarHabitoAuto(a.habito);
-  salvar(); desenhar();
+  salvar(); desenhar(); redesenharApp();
   if (antes < (a.meta || 1) && reg.apps[a.id] >= (a.meta || 1)) { tocarSom(true); avisar(`Meta do ${a.nome} batida hoje!${marcou ? ` "${nomeHabito(a.habito)}" marcado na Rotina.` : ''}`); }
 };
 

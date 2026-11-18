@@ -72,6 +72,7 @@ PAGINAS.bemestar = {
             <span>${dia === hoje ? 'Hoje' : dia === somarDias(hoje, -1) ? 'Ontem' : dataCurta(dia)}</span>
             <button class="acao-item" data-acao="bem-dia" data-d="1" aria-label="Próximo dia" ${dia >= hoje ? 'disabled' : ''}>${ic('right', 'p')}</button>
           </span></h2>
+        ${dia !== hoje ? `<button class="voltar" data-acao="bem-ir" data-dia="${hoje}" style="background:none;border:0;padding:0;cursor:pointer">${ic('left', 'p')} Voltar para hoje</button>` : ''}
         <span class="rotulo-mini">3 coisas boas do dia</span>
         <div class="coisas-boas">
           ${[0, 1, 2].map((i) => `<label><span>${i + 1}</span><input type="text" value="${esc(diarioDia.bom[i] || '')}" maxlength="140" data-digitar="bem-bom" data-dia="${dia}" data-i="${i}" aria-label="Coisa boa ${i + 1}"></label>`).join('')}
