@@ -53,47 +53,28 @@ function htmlCompras(l) {
       return `<section class="card">
         <h2 class="card-titulo"><span class="selo mini ${g.cor}">${ic(g.icone)}</span> ${g.nome} <small>${total ? 'total ' + dinheiro(total) : g.desc}</small></h2>
         <form class="form-linha" data-form="compra-nova" data-lista="${l.id}" data-prazo="${id}" style="margin-bottom:10px">
-          <input type="text" name="titulo" id="compra-${id}" placeholder="${filtro === 'todas' ? 'Adicionar item' : 'Adicionar em ' + esc(filtro)}" maxlength="100" data-precisa style="flex:3 1 160px">
+          <input type="text" name="titulo" id="compra-${id}" placeholder="${filtro === 'todas' ? 'Adicionar item ou colar link' : 'Adicionar em ' + esc(filtro)}" maxlength="100" data-precisa style="flex:3 1 160px">
           <input type="text" name="valor" placeholder="R$ (opcional)" inputmode="decimal" style="flex:1 1 90px" aria-label="Valor">
           <button class="btn" type="submit">${ic('plus', 'p')}</button>
         </form>
         <div class="lista-compras">
         ${itens.map((i) => {
           const ref = `${l.id}/${i.id}`;
-          const aberto = comprasTela.abertos.has(i.id);
-          const img = (i.anexos || []).find((a) => a.tipo === 'imagem');
-          const link = (i.anexos || []).find((a) => a.tipo === 'link');
-          const temDetalhe = i.notas || i.anexos?.length || i.mes;
-          return `<div class="item-colecao ${i.comprado ? 'feito' : ''}" ${ordem(l.id + '|itens', i.id)}>
+          const foto = fotoCompra(i);
+          const link = linkCompra(i);
+          return `<div class="item-colecao item-compra ${i.comprado ? 'feito' : ''}" ${ordem(l.id + '|itens', i.id)}>
             <div class="ic-linha">
               ${alca()}
               <button class="check ${i.comprado ? 'on' : ''}" data-acao="compra-check" data-ref="${ref}" aria-label="Comprado">${i.comprado ? ic('check') : ''}</button>
-              ${img ? `<img class="miniatura" src="${img.url}" alt="" data-acao="ver-imagem" data-src="${img.url}">` : ''}
+              <button class="miniatura-compra ${foto ? '' : 'vazia'}" data-acao="compra-ver" data-lista="${l.id}" data-id="${i.id}" aria-label="Ver detalhes">${foto ? `<img src="${esc(foto)}" alt="" loading="lazy">` : ic(link ? 'link' : 'cart', 'p')}</button>
               <input class="inline inline-t" value="${esc(i.titulo)}" data-digitar="campo" data-ref="${ref}" data-campo="titulo" aria-label="Item">
               ${i.cat && filtro === 'todas' ? `<span class="tag">${esc(i.cat)}</span>` : ''}
               ${i.mes ? `<span class="tag" title="Quando comprar">${ic('calendar', 'p')} ${mesCurto(i.mes)}</span>` : ''}
-              ${link ? `<a class="acao-item" href="${esc(link.url)}" target="_blank" rel="noopener" title="Abrir link">${ic('link', 'p')}</a>` : ''}
+              ${link ? `<a class="acao-item" href="${esc(link)}" target="_blank" rel="noopener" title="Abrir na loja">${ic('link', 'p')}</a>` : ''}
               <input class="inline valor-edit" value="${esc(i.valor)}" placeholder="R$" data-mudar="campo" data-ref="${ref}" data-campo="valor" data-redesenhar="1" aria-label="Valor">
-              <button class="btn-mini ${aberto ? 'ativo' : ''} ${temDetalhe ? 'tem' : ''}" data-acao="compra-abrir" data-id="${i.id}">${aberto ? 'Fechar' : 'Detalhes'}</button>
+              <button class="btn-mini ${i.notas || link || foto || i.mes ? 'tem' : ''}" data-acao="compra-ver" data-lista="${l.id}" data-id="${i.id}">Ver detalhes</button>
               <button class="acao-item apagar" data-acao="compra-del" data-lista="${l.id}" data-id="${i.id}" title="Apagar">${ic('trash', 'p')}</button>
             </div>
-            ${aberto ? `<div class="ic-extra detalhes-compra">
-              <div class="dc-linha">
-                <label class="campo">Quando comprar (mês)
-                  <input type="month" value="${i.mes || ''}" data-mudar="campo" data-ref="${ref}" data-campo="mes" data-redesenhar="1"></label>
-                <label class="campo">Categoria
-                  <select data-mudar="campo" data-ref="${ref}" data-campo="cat" data-redesenhar="1">
-                    <option value="" ${!i.cat ? 'selected' : ''}>Sem categoria</option>
-                    ${cats.map((c) => `<option ${i.cat === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
-                  </select></label>
-                <label class="campo">Valor
-                  <input type="text" value="${esc(i.valor)}" inputmode="decimal" placeholder="R$" data-mudar="campo" data-ref="${ref}" data-campo="valor" data-redesenhar="1"></label>
-              </div>
-              <label class="campo">Notas
-                <textarea data-digitar="campo" data-ref="${ref}" data-campo="notas">${esc(i.notas || '')}</textarea></label>
-              <span class="rotulo-mini">Link da loja e fotos</span>
-              ${htmlAnexos(i, ref)}
-            </div>` : ''}
           </div>`;
         }).join('') || '<p class="vazio">Nada por aqui.</p>'}
         </div>
@@ -102,27 +83,164 @@ function htmlCompras(l) {
   </div>`;
 }
 
+const ehLink = (t) => /^(https?:\/\/|www\.)\S+$/i.test((t || '').trim()) || /^[\w-]+(\.[\w-]+)+\/\S*$/.test((t || '').trim());
+const fotoCompra = (i) => i.foto || (i.anexos || []).find((a) => a.tipo === 'imagem')?.url || '';
+const linkCompra = (i) => i.link || (i.anexos || []).find((a) => a.tipo === 'link')?.url || '';
+
 FORMS['compra-nova'] = (d, form) => {
   const l = acharLista(form.dataset.lista);
-  l.itens.unshift({ id: novoId(), titulo: d.titulo, prazo: form.dataset.prazo, valor: d.valor || '', comprado: false, notas: '', anexos: [], cat: comprasTela.cat === 'todas' ? '' : comprasTela.cat });
+  const link = ehLink(d.titulo) ? corrigirLink(d.titulo) : '';
+  const item = { id: novoId(), titulo: link ? 'Buscando produto…' : d.titulo, prazo: form.dataset.prazo, valor: d.valor || '', comprado: false, notas: '', anexos: [], cat: comprasTela.cat === 'todas' ? '' : comprasTela.cat, link, foto: '' };
+  l.itens.unshift(item);
   salvar(); desenhar();
   $('#compra-' + form.dataset.prazo)?.focus();
+  if (link) buscarPrevia(l.id, item.id, true);
 };
+
+const previaTela = { buscando: new Set() };
+async function buscarPrevia(listaId, itemId, novo = false) {
+  const l = acharLista(listaId);
+  const i = l?.itens.find((x) => x.id === itemId);
+  const url = i && linkCompra(i);
+  if (!url) return;
+  if (!usuario) {
+    if (i.titulo === 'Buscando produto…') i.titulo = dominio(url);
+    salvar(); desenhar(); redesenharCompra();
+    avisar('Para puxar a foto do link, entre com a sua conta (precisa da nuvem).');
+    return;
+  }
+  previaTela.buscando.add(itemId);
+  redesenharCompra();
+  let r = null;
+  try {
+    const { data, error } = await sb.functions.invoke('previa-link', { body: { url } });
+    if (error) throw error;
+    r = data;
+  } catch { r = { erro: 'sem conexão' }; }
+  previaTela.buscando.delete(itemId);
+  const atual = acharLista(listaId)?.itens.find((x) => x.id === itemId);
+  if (!atual) return;
+  if (r?.erro || (!r?.foto && !r?.titulo)) {
+    if (atual.titulo === 'Buscando produto…') atual.titulo = dominio(url);
+    salvar(); desenhar(); redesenharCompra();
+    avisar('Essa loja não deixou ler a página. Você pode colocar a foto e o valor à mão em "Ver detalhes".');
+    return;
+  }
+  if (r.foto) atual.foto = r.foto;
+  if (r.titulo && (novo || !atual.titulo || atual.titulo === 'Buscando produto…' || ehLink(atual.titulo))) atual.titulo = r.titulo;
+  if (r.preco && (!atual.valor || novo)) atual.valor = Number(r.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (r.loja) atual.loja = r.loja;
+  if (r.url) atual.link = r.url;
+  salvar(); desenhar(); redesenharCompra();
+  avisar(r.foto ? 'Foto e informações do produto adicionadas.' : 'Peguei o nome do produto, mas a loja não mostrou a foto.');
+}
+
+const compraAberta = { lista: '', id: '' };
+function htmlDetalheCompra() {
+  const l = acharLista(compraAberta.lista);
+  const i = l?.itens.find((x) => x.id === compraAberta.id);
+  if (!i) return '';
+  const ref = `${l.id}/${i.id}`;
+  const foto = fotoCompra(i);
+  const link = linkCompra(i);
+  const fotos = [i.foto, ...(i.anexos || []).filter((a) => a.tipo === 'imagem').map((a) => a.url)].filter(Boolean);
+  const buscando = previaTela.buscando.has(i.id);
+  const cats = catsCompra(l);
+  return `<div class="detalhe-compra">
+    <button type="button" class="btn-icone fechar-dc" data-acao="compra-fechar" aria-label="Fechar">${ic('x')}</button>
+    <div class="dc-foto ${foto ? '' : 'vazia'}">
+      ${buscando ? `<div class="dc-carregando"><span class="girando"></span>Buscando foto e preço…</div>` : foto ? `<img src="${esc(foto)}" alt="" data-acao="ver-imagem" data-src="${esc(foto)}">` : `<div class="dc-sem-foto">${ic('image')}<span>Sem foto ainda</span></div>`}
+      <label class="btn-mini dc-trocar">${ic('image', 'p')} ${foto ? 'Trocar foto' : 'Colocar foto'}<input type="file" accept="image/*" data-mudar="compra-foto" data-ref="${ref}" hidden></label>
+    </div>
+    ${fotos.length > 1 ? `<div class="dc-galeria">${fotos.map((f) => `<button class="${f === foto ? 'on' : ''}" data-acao="compra-foto-principal" data-ref="${ref}" data-src="${esc(f)}"><img src="${esc(f)}" alt=""></button>`).join('')}</div>` : ''}
+    <div class="dc-corpo">
+      ${i.loja || link ? `<span class="dc-loja">${ic('cart', 'p')} ${esc(i.loja || dominio(link))}</span>` : ''}
+      <textarea class="dc-titulo" rows="2" data-digitar="campo" data-ref="${ref}" data-campo="titulo" aria-label="Nome do produto">${esc(i.titulo)}</textarea>
+      <div class="dc-preco"><span>R$</span><input type="text" inputmode="decimal" value="${esc(String(i.valor || '').replace(/^R\$\s*/, ''))}" placeholder="0,00" data-mudar="campo" data-ref="${ref}" data-campo="valor" data-redesenhar="1" aria-label="Valor"></div>
+      <div class="dc-link">
+        <input type="url" value="${esc(link)}" placeholder="Cole o link do produto" data-mudar="compra-link" data-ref="${ref}" aria-label="Link do produto">
+        ${link ? `<button class="btn-mini" data-acao="compra-previa" data-lista="${l.id}" data-id="${i.id}" ${buscando ? 'disabled' : ''}>${ic('reset', 'p')} Atualizar foto e preço</button>` : ''}
+      </div>
+      ${link ? `<a class="btn dc-abrir" href="${esc(link)}" target="_blank" rel="noopener">${ic('right', 'p')} Abrir na loja</a>` : ''}
+      <div class="dc-grade">
+        <div class="campo"><span>Quando comprar</span>
+          <div class="segmento">${Object.entries(GRUPOS_COMPRA).map(([id, g]) => `<button class="${i.prazo === id ? 'ativo' : ''}" data-acao="compra-prazo" data-ref="${ref}" data-v="${id}">${g.nome}</button>`).join('')}</div></div>
+        <label class="campo">Mês (opcional)<input type="month" value="${i.mes || ''}" data-mudar="campo" data-ref="${ref}" data-campo="mes" data-redesenhar="1"></label>
+      </div>
+      <div class="campo"><span>Categoria</span>
+        <div class="chips">${['', ...cats].map((c) => `<button class="chip ${(i.cat || '') === c ? 'ativo' : ''}" data-acao="compra-cat-item" data-ref="${ref}" data-v="${esc(c)}">${c ? esc(c) : 'Sem categoria'}</button>`).join('')}</div></div>
+      <label class="campo">Notas<textarea rows="3" data-digitar="campo" data-ref="${ref}" data-campo="notas" placeholder="Tamanho, cor, onde está mais barato…">${esc(i.notas || '')}</textarea></label>
+      <div class="dc-rodape">
+        <button class="btn sec perigo-texto" data-acao="compra-del-dc" data-lista="${l.id}" data-id="${i.id}">${ic('trash', 'p')} Excluir</button>
+        <span class="espaco"></span>
+        <button class="btn ${i.comprado ? 'sec' : ''}" data-acao="compra-check" data-ref="${ref}">${ic('check', 'p')} ${i.comprado ? 'Desmarcar comprado' : 'Marcar como comprado'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function janelaCompra() {
+  let j = $('#janela-compra');
+  if (!j) {
+    j = document.createElement('dialog');
+    j.id = 'janela-compra';
+    j.className = 'janela janela-compra';
+    j.addEventListener('close', () => { compraAberta.id = ''; });
+    j.addEventListener('click', (e) => { if (e.target === j) j.close(); });
+    document.body.appendChild(j);
+  }
+  return j;
+}
+function redesenharCompra() {
+  const j = $('#janela-compra');
+  if (!j?.open || !compraAberta.id) return;
+  const foco = document.activeElement && j.contains(document.activeElement) ? document.activeElement : null;
+  if (foco && (foco.tagName === 'TEXTAREA' || (foco.tagName === 'INPUT' && foco.type !== 'file'))) return;
+  const rolagem = j.scrollTop;
+  j.innerHTML = htmlDetalheCompra();
+  melhorarSelects(j); melhorarDatas(j);
+  j.scrollTop = rolagem;
+}
+ACOES['compra-ver'] = (el) => {
+  compraAberta.lista = el.dataset.lista; compraAberta.id = el.dataset.id;
+  const j = janelaCompra();
+  j.innerHTML = htmlDetalheCompra();
+  if (!j.open) j.showModal();
+  melhorarSelects(j); melhorarDatas(j);
+  j.scrollTop = 0;
+};
+ACOES['compra-fechar'] = () => $('#janela-compra')?.close();
+ACOES['compra-previa'] = (el) => buscarPrevia(el.dataset.lista, el.dataset.id);
+MUDAR['compra-link'] = (el) => {
+  const i = acharRef(el.dataset.ref);
+  const url = el.value.trim() ? corrigirLink(el.value) : '';
+  const mudou = url !== (i.link || '');
+  i.link = url;
+  salvar(); desenhar();
+  const [lid, iid] = el.dataset.ref.split('/');
+  if (url && mudou) buscarPrevia(lid, iid); else redesenharCompra();
+};
+MUDAR['compra-foto'] = async (el) => {
+  const i = acharRef(el.dataset.ref);
+  const arq = el.files[0];
+  if (!arq) return;
+  try { i.foto = await lerImagem(arq); salvar(); desenhar(); redesenharCompra(); }
+  catch { avisar('Não consegui abrir essa imagem.'); }
+};
+ACOES['compra-foto-principal'] = (el) => { const i = acharRef(el.dataset.ref); i.foto = el.dataset.src; salvar(); desenhar(); redesenharCompra(); };
+ACOES['compra-prazo'] = (el) => { const i = acharRef(el.dataset.ref); i.prazo = el.dataset.v; salvar(); desenhar(); redesenharCompra(); };
+ACOES['compra-cat-item'] = (el) => { const i = acharRef(el.dataset.ref); i.cat = el.dataset.v; salvar(); desenhar(); redesenharCompra(); };
+ACOES['compra-del-dc'] = (el) => { $('#janela-compra')?.close(); removerComDesfazer(acharLista(el.dataset.lista).itens, el.dataset.id, 'Item'); };
 
 ACOES['compra-check'] = (el) => {
   const i = acharRef(el.dataset.ref);
   i.comprado = !i.comprado;
-  salvar(); desenhar();
+  salvar(); desenhar(); redesenharCompra();
   if (i.comprado) tocarSom(true);
 };
 
 ACOES['compras-mostrar'] = () => { comprasTela.mostrarComprados = !comprasTela.mostrarComprados; desenhar(); };
 
-ACOES['compra-abrir'] = (el) => {
-  const id = el.dataset.id;
-  comprasTela.abertos.has(id) ? comprasTela.abertos.delete(id) : comprasTela.abertos.add(id);
-  desenhar();
-};
 
 ACOES['compra-del'] = (el) => removerComDesfazer(acharLista(el.dataset.lista).itens, el.dataset.id, 'Item');
 

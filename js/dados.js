@@ -192,16 +192,27 @@ function carregar() {
 let estado = carregar();
 
 let timerSalvar;
+function gravarLocal() {
+  timerSalvar = null;
+  try {
+    localStorage.setItem(CHAVE, JSON.stringify(estado));
+  } catch (e) {
+    avisar('Não consegui salvar. Faça um backup!');
+  }
+  if (typeof salvarNuvem === 'function') salvarNuvem();
+}
+
 function salvar() {
+  if (typeof marcarPendente === 'function') marcarPendente();
   clearTimeout(timerSalvar);
-  timerSalvar = setTimeout(() => {
-    try {
-      localStorage.setItem(CHAVE, JSON.stringify(estado));
-    } catch (e) {
-      avisar('Não consegui salvar. Faça um backup!');
-    }
-    if (typeof salvarNuvem === 'function') salvarNuvem();
-  }, 250);
+  timerSalvar = setTimeout(gravarLocal, 250);
+}
+
+const timerSalvarPendente = () => Boolean(timerSalvar);
+function descarregarSalvar() {
+  if (!timerSalvar) return;
+  clearTimeout(timerSalvar);
+  gravarLocal();
 }
 
 function registroDoDia(iso = hojeISO()) {

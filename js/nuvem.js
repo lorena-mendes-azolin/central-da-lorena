@@ -47,6 +47,14 @@ async function iniciarNuvem() {
   sb.auth.onAuthStateChange((evento) => { if (evento === 'SIGNED_OUT') location.href = 'login.html'; });
   window.addEventListener('focus', verificarOutroAparelho);
   ouvirOutrosAparelhos();
+  const enviarJa = () => {
+    if (!pendenteNuvem && !timerSalvarPendente()) return;
+    descarregarSalvar();
+    clearTimeout(timerNuvem);
+    enviarDados();
+  };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') enviarJa(); });
+  window.addEventListener('pagehide', enviarJa);
   setInterval(() => { if (document.visibilityState === 'visible') verificarOutroAparelho(); }, 20000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') verificarOutroAparelho(); });
   window.addEventListener('online', () => { statusNuvem('salvando'); enviarDados(); });
@@ -59,6 +67,8 @@ let partesOk = null;
 const versoesPartes = {};
 const enviadoPartes = {};
 let enviadoPrincipal = '';
+let basePrincipal;
+const basePartes = {};
 
 const ehFaltaTabela = (e) => /central_partes|42P01|PGRST205|does not exist/.test(`${e?.code} ${e?.message}`);
 
@@ -142,6 +152,7 @@ async function baixarDados(soSeMudou = false) {
       remoto[k] = partes[k].dados;
       versoesPartes[k] = partes[k].atualizado_em;
       enviadoPartes[k] = JSON.stringify(partes[k].dados);
+      basePartes[k] = JSON.parse(JSON.stringify(partes[k].dados ?? null));
     } else if (partesOk && k in remoto) {
       precisaMigrar = true;
       delete versoesPartes[k];
@@ -149,6 +160,7 @@ async function baixarDados(soSeMudou = false) {
     }
   });
   enviadoPrincipal = data && !precisaMigrar ? JSON.stringify(data.dados) : '';
+  basePrincipal = data ? JSON.parse(JSON.stringify(data.dados)) : undefined;
   const tinhaPendente = !soSeMudou && localStorage.getItem(CHAVE_PENDENTE) === usuario.id;
   if (tinhaPendente) {
     const apagados = new Set([...(estado.lixeira || []), ...(remoto.lixeira || [])].map((x) => x.id));
@@ -169,6 +181,12 @@ async function baixarDados(soSeMudou = false) {
 function donoLocalProprio() { return localStorage.getItem(CHAVE + '-dono') === usuario.id && estado.config.boasVindas; }
 
 const mesmaVersao = (a, b) => Boolean(a && b) && new Date(a).getTime() === new Date(b).getTime();
+
+function marcarPendente() {
+  if (!NUVEM_ATIVA || !usuario) return;
+  pendenteNuvem = true;
+  statusNuvem(navigator.onLine ? 'salvando' : 'offline');
+}
 
 function salvarNuvem() {
   if (!NUVEM_ATIVA || !usuario) return;
@@ -192,13 +210,15 @@ async function enviarParte(chave, valor, agora, apagados, tentativas = 0) {
     const r = await sb.from('central_partes').select('dados, atualizado_em').eq('user_id', usuario.id).eq('chave', chave).maybeSingle();
     if (r.error) return { erro: r.error };
     if (r.data) {
-      estado[chave] = mesclar(estado[chave], r.data.dados, apagados);
+      estado[chave] = mesclar(estado[chave], r.data.dados, apagados, basePartes[chave]);
+      basePartes[chave] = JSON.parse(JSON.stringify(r.data.dados ?? null));
       versoesPartes[chave] = r.data.atualizado_em;
     } else delete versoesPartes[chave];
     return { conflito: true, ...(await enviarParte(chave, estado[chave], agora, apagados, tentativas + 1)) };
   }
   versoesPartes[chave] = resp.data[0].atualizado_em;
   enviadoPartes[chave] = JSON.stringify(valor ?? null);
+  basePartes[chave] = JSON.parse(enviadoPartes[chave]);
   return { ok: true };
 }
 
@@ -248,7 +268,10 @@ async function enviarDados() {
         const apagados = new Set([...(estado.lixeira || []), ...(data.dados.lixeira || [])].map((x) => x.id));
         const remoto = { ...data.dados };
         if (partesOk) PARTES.forEach((k) => delete remoto[k]);
-        estado = completar(mesclar(estado, remoto, apagados));
+        const local = partesOk ? separarEstado(estado) : { principal: estado, partes: {} };
+        const junto = mesclar(local.principal, remoto, apagados, basePrincipal);
+        estado = completar({ ...junto, ...local.partes });
+        basePrincipal = JSON.parse(JSON.stringify(data.dados));
         versaoNuvem = data.atualizado_em;
         localStorage.setItem(CHAVE, JSON.stringify(estado));
         desenharSeguro();
@@ -260,6 +283,7 @@ async function enviarDados() {
     }
     versaoNuvem = resp.data[0].atualizado_em;
     enviadoPrincipal = jsonPrincipal;
+    basePrincipal = JSON.parse(jsonPrincipal);
   }
   try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch { }
   if (houveConflito) { desenharSeguro(); avisar('Juntei com as mudanças feitas em outro aparelho.'); }
@@ -282,22 +306,44 @@ function eListaComId(a) {
   return Array.isArray(a) && a.every((x) => x && typeof x === 'object' && 'id' in x);
 }
 
-function mesclar(local, remoto, apagados) {
+const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+function mesclar(local, remoto, apagados, base) {
+  const temBase = base !== undefined;
+  if (temBase) {
+    if (igual(local, base)) return remoto === undefined ? local : remoto;
+    if (igual(remoto, base)) return local;
+  }
   if (Array.isArray(local) && Array.isArray(remoto)) {
     if (!(eListaComId(local) && eListaComId(remoto)) || (!local.length && !remoto.length)) return local;
-    const saida = local.filter((x) => !apagados.has(x.id) || remoto.some((r) => r.id === x.id))
-      .map((x) => {
-        const r = remoto.find((y) => y.id === x.id);
-        return r ? mesclar(x, r, apagados) : x;
-      });
+    const mapaBase = new Map((Array.isArray(base) ? base : []).filter((x) => x && x.id !== undefined).map((x) => [x.id, x]));
+    const mapaRemoto = new Map(remoto.map((x) => [x.id, x]));
+    const idsLocais = new Set(local.map((x) => x.id));
+    const saida = [];
+    local.forEach((x) => {
+      const r = mapaRemoto.get(x.id);
+      const b = mapaBase.get(x.id);
+      if (r) saida.push(mesclar(x, r, apagados, temBase ? b : undefined));
+      else if (temBase && b && igual(x, b)) return;
+      else if (!apagados.has(x.id) || !temBase) saida.push(x);
+    });
     remoto.forEach((r, i) => {
-      if (!local.some((x) => x.id === r.id) && !apagados.has(r.id)) saida.splice(Math.min(i, saida.length), 0, r);
+      if (idsLocais.has(r.id) || apagados.has(r.id)) return;
+      const b = mapaBase.get(r.id);
+      if (temBase && b && igual(r, b)) return;
+      saida.splice(Math.min(i, saida.length), 0, r);
     });
     return saida;
   }
   if (local && remoto && typeof local === 'object' && typeof remoto === 'object' && !Array.isArray(local) && !Array.isArray(remoto)) {
-    const saida = { ...remoto, ...local };
-    Object.keys(remoto).forEach((k) => { if (k in local) saida[k] = mesclar(local[k], remoto[k], apagados); });
+    const b = base && typeof base === 'object' && !Array.isArray(base) ? base : (temBase ? {} : undefined);
+    const saida = {};
+    new Set([...Object.keys(remoto), ...Object.keys(local)]).forEach((k) => {
+      const noL = k in local, noR = k in remoto;
+      if (noL && noR) saida[k] = mesclar(local[k], remoto[k], apagados, b ? b[k] : undefined);
+      else if (noL) { if (!(b && k in b && igual(local[k], b[k]))) saida[k] = local[k]; }
+      else if (!(b && k in b && igual(remoto[k], b[k]))) saida[k] = remoto[k];
+    });
     return saida;
   }
   return local === undefined ? remoto : local;
