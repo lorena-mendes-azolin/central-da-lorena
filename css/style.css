@@ -1483,3 +1483,23 @@ div.campo > .form-linha, div.campo > .lista-cidades { font-size: 15px; color: va
 .janela-app .fechar-dc { top: -14px; right: -10px; }
 .girando.mini { width: 18px; height: 18px; border-width: 2px; }
 .detalhe-compra .anexos { margin-top: 4px; }
+
+/* Liberar espaço */
+.barra-espaco { height: 10px; border-radius: 99px; background: var(--card-2); overflow: hidden; }
+.barra-espaco i { display: block; height: 100%; border-radius: 99px; background: var(--destaque, #8b7cf6); }
+.barra-espaco.cheia i { background: #f07c7c; }
+.lista-limpeza { display: grid; gap: 8px; }
+.item-limpeza { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 14px; background: var(--card-2); border: 1px solid transparent; }
+.item-limpeza.on { border-color: var(--destaque, #8b7cf6); }
+.item-limpeza.vazio { opacity: .55; }
+.item-limpeza .check { flex: 0 0 auto; margin-top: 2px; }
+.txt-limpeza { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.txt-limpeza small { color: var(--suave); line-height: 1.4; }
+.tam-limpeza { flex: 0 0 auto; font-weight: 700; font-size: 13px; color: var(--suave); padding-top: 2px; }
+.mini-seg { margin-top: 8px; width: fit-content; max-width: 100%; flex-wrap: wrap; }
+.mini-seg button { font-size: 12px; padding: 6px 10px; }
+.pagina-limpeza { display: grid; gap: 16px; }
+.pagina-limpeza > .card { margin: 0; }
+.rodape-limpeza { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; position: sticky; bottom: 12px; z-index: 5; }
+.opcao-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--suave); cursor: pointer; }
+@media (max-width: 760px) { .rodape-limpeza { position: static; } .item-limpeza .selo { display: none; } .rodape-limpeza .btn { flex: 1 1 100%; justify-content: center; } }

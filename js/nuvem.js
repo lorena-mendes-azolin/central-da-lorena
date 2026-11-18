@@ -165,12 +165,12 @@ async function baixarDados(soSeMudou = false) {
   if (tinhaPendente) {
     const apagados = new Set([...(estado.lixeira || []), ...(remoto.lixeira || [])].map((x) => x.id));
     estado = completar(mesclar(estado, remoto, apagados));
-    localStorage.setItem(CHAVE, JSON.stringify(estado));
+    gravarLocalSeguro();
     salvarNuvem();
     return;
   }
   estado = completar(remoto);
-  localStorage.setItem(CHAVE, JSON.stringify(estado));
+  gravarLocalSeguro();
   if (precisaMigrar) salvarNuvem();
   if (soSeMudou) {
     desenharSeguro();
@@ -273,7 +273,7 @@ async function enviarDados() {
         estado = completar({ ...junto, ...local.partes });
         basePrincipal = JSON.parse(JSON.stringify(data.dados));
         versaoNuvem = data.atualizado_em;
-        localStorage.setItem(CHAVE, JSON.stringify(estado));
+        gravarLocalSeguro();
         desenharSeguro();
         if (conflitosSeguidos === 1) avisar('Juntei com as mudanças feitas em outro aparelho.');
       } else {
@@ -308,13 +308,25 @@ function eListaComId(a) {
 
 const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-function mesclar(local, remoto, apagados, base) {
+// Lista de valores simples sem repetição (ex.: hábitos marcados no dia, dias da semana).
+const eConjunto = (a) => Array.isArray(a) && a.every((x) => (typeof x === 'string' && x !== '') || typeof x === 'number') && new Set(a).size === a.length;
+const vazioPadrao = (v) => v === '' || v === 0 || v === false || v === null || (Array.isArray(v) && !v.length);
+
+function mesclar(local, remoto, apagados, base, chave) {
   const temBase = base !== undefined;
   if (temBase) {
     if (igual(local, base)) return remoto === undefined ? local : remoto;
     if (igual(remoto, base)) return local;
   }
   if (Array.isArray(local) && Array.isArray(remoto)) {
+    // Conjuntos (como os hábitos marcados): junta o que cada aparelho marcou e desmarcou.
+    if (chave !== 'bom' && eConjunto(local) && eConjunto(remoto) && (!temBase || eConjunto(base) || Array.isArray(base))) {
+      const b = new Set(Array.isArray(base) ? base : []);
+      const tirados = new Set([...b].filter((x) => !local.includes(x) || !remoto.includes(x)));
+      const saida = [...local.filter((x) => !tirados.has(x))];
+      remoto.forEach((x) => { if (!tirados.has(x) && !saida.includes(x)) saida.push(x); });
+      return saida;
+    }
     if (!(eListaComId(local) && eListaComId(remoto)) || (!local.length && !remoto.length)) return local;
     const mapaBase = new Map((Array.isArray(base) ? base : []).filter((x) => x && x.id !== undefined).map((x) => [x.id, x]));
     const mapaRemoto = new Map(remoto.map((x) => [x.id, x]));
@@ -340,13 +352,16 @@ function mesclar(local, remoto, apagados, base) {
     const saida = {};
     new Set([...Object.keys(remoto), ...Object.keys(local)]).forEach((k) => {
       const noL = k in local, noR = k in remoto;
-      if (noL && noR) saida[k] = mesclar(local[k], remoto[k], apagados, b ? b[k] : undefined);
+      if (noL && noR) saida[k] = mesclar(local[k], remoto[k], apagados, b ? b[k] : undefined, k);
       else if (noL) { if (!(b && k in b && igual(local[k], b[k]))) saida[k] = local[k]; }
       else if (!(b && k in b && igual(remoto[k], b[k]))) saida[k] = remoto[k];
     });
     return saida;
   }
-  return local === undefined ? remoto : local;
+  if (local === undefined) return remoto;
+  // Sem saber quem mudou: um valor vazio padrão (0, '', []) não apaga o que o outro aparelho preencheu.
+  if (!temBase && vazioPadrao(local) && remoto !== undefined && !vazioPadrao(remoto)) return remoto;
+  return local;
 }
 
 async function sair() {

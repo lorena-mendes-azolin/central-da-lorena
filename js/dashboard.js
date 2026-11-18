@@ -191,6 +191,7 @@ PAGINAS.dashboard = {
     </div>
     ${htmlPedirNotificacao()}
     ${htmlAvisoBackup()}
+    ${htmlAvisoEspaco()}
     ${estado.treino?.ativo ? `<a class="alerta convite" href="#treino">${ic('gym')}<span><b>Treino em andamento.</b> Toque para voltar de onde parou.</span><span class="btn">Voltar</span></a>` : ''}
     ${temModulo('jejum') && estado.jejum?.ativo ? `<a class="alerta convite" href="#bemestar">${ic('timer')}<span><b>Jejum em andamento:</b> ${fmtHoras((Date.now() - estado.jejum.ativo.inicio) / 3600000)} de ${estado.jejum.ativo.metaH}h.</span><span class="btn">Ver</span></a>` : ''}
     ${(() => {

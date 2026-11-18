@@ -231,11 +231,8 @@ let estado = carregar();
 let timerSalvar;
 function gravarLocal() {
   timerSalvar = null;
-  try {
-    localStorage.setItem(CHAVE, JSON.stringify(estado));
-  } catch (e) {
-    avisar('Não consegui salvar. Faça um backup!');
-  }
+  if (typeof gravarLocalSeguro === 'function') gravarLocalSeguro();
+  else try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch { }
   if (typeof salvarNuvem === 'function') salvarNuvem();
 }
 
