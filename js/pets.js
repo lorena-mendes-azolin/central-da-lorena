@@ -129,6 +129,8 @@ function htmlPet(p) {
         <button class="btn sec">${ic('plus', 'p')} Registrar</button>
       </form>
     </div>
+    <div class="vinculo-pet">${['brincadeira', 'passeio'].filter((t) => mostraPet(p, t)).map((t) => `<label>${ic('repeat', 'p')} Ao registrar ${t === 'passeio' ? 'passeio' : 'brincadeira'}, marcar o hábito
+      <select data-mudar="pet-hab" data-t="${t}" aria-label="Hábito vinculado">${opcoesHabitos((t === 'passeio' ? p.habPasseio : p.habBrincar) || '')}</select></label>`).join('')}</div>
   </section>` : ''}
 
   <div class="grade-pet">
@@ -191,6 +193,12 @@ function htmlPet(p) {
   </div>` : ''}`;
 }
 
+MUDAR['pet-hab'] = (el) => {
+  const p = petAtual();
+  p[el.dataset.t === 'passeio' ? 'habPasseio' : 'habBrincar'] = el.value;
+  salvar();
+  avisar(el.value ? `Ao registrar, "${nomeHabito(el.value)}" será marcado na Rotina.` : 'Não vai mais marcar hábito.');
+};
 ACOES['pet-personalizar'] = () => { petTela.personalizando = !petTela.personalizando; desenhar(); };
 ACOES['pet-mostrar'] = (el) => {
   const p = petAtual();

@@ -1503,3 +1503,9 @@ div.campo > .form-linha, div.campo > .lista-cidades { font-size: 15px; color: va
 .rodape-limpeza { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; position: sticky; bottom: 12px; z-index: 5; }
 .opcao-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--suave); cursor: pointer; }
 @media (max-width: 760px) { .rodape-limpeza { position: static; } .item-limpeza .selo { display: none; } .rodape-limpeza .btn { flex: 1 1 100%; justify-content: center; } }
+
+.vinculo-pet { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 10px; }
+.vinculo-pet:empty { display: none; }
+.vinculo-pet label { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; font-size: 13px; color: var(--suave); white-space: nowrap; }
+.vinculo-pet .sel-btn, .vinculo-pet select { min-width: 200px; flex: 0 1 260px; }
+@media (max-width: 760px) { .vinculo-pet label { width: 100%; flex-wrap: wrap; white-space: normal; } .vinculo-pet .sel-btn { flex: 1 1 100%; } }
