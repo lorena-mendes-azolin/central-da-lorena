@@ -1522,3 +1522,28 @@ div.campo > .form-linha, div.campo > .lista-cidades { font-size: 15px; color: va
 .lista-cab .vinculo-hab { margin-left: auto; }
 .foco-materia + .vinculo-hab { justify-content: center; margin: 8px auto 0; display: flex; flex-wrap: wrap; }
 @media (max-width: 760px) { .vinculo-hab { width: 100%; flex-wrap: wrap; } .vinculo-hab > span { white-space: normal; flex: 1 1 0; } .vinculo-hab .sel-btn, .vinculo-hab select { flex: 1 1 100%; width: auto; } .lista-cab .vinculo-hab { margin-left: 0; } }
+
+/* Finanças: 5 cards e lançamentos pendentes */
+.fin-stats { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.fin-stats .stat b { white-space: nowrap; }
+.fin-stats .stat small { display: block; font-size: 12px; color: var(--fraco); font-weight: 600; margin-top: 1px; }
+.fin-stats .stat small i { font-style: normal; font-weight: 800; color: var(--suave); }
+.form-gasto > .btn[type=submit] { flex: 1 1 140px; justify-content: center; }
+@media (max-width: 480px) {
+  form[data-form="lanc-salvar"] .rodape-janela > .btn { flex: 1 1 0; justify-content: center; }
+  form[data-form="lanc-salvar"] .rodape-janela > .perigo { flex-basis: 100%; order: 3; margin-right: 0; }
+}
+@media (max-width: 1250px) { .fin-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .fin-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fin-stats > :first-child { grid-column: 1 / -1; }
+  .fin-stats .stat small { font-size: 11px; }
+}
+.item.lanc.pendente > b { opacity: .7; }
+.item.lanc .sub .situacao { font-size: 11px; padding: 1px 7px; }
+.form-gasto [data-mudar="fin-situacao"] + .sel-btn { flex: 1 1 130px; }
+
+.item.lanc .txt.clicavel { cursor: pointer; }
+.item.lanc .txt.clicavel:hover { color: var(--destaque-2); }
+.janela form:not(.escopo-todos) .campo-todos { display: none; }
+.janela .linha-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
