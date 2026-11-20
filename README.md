@@ -1,4 +1,4 @@
-# Central da Lorena
+# Central
 
 Site de organização pessoal que reúne agenda, rotina de hábitos, estudos, metas, finanças e muito mais em um só lugar. Feito com **HTML, CSS e JavaScript puro** e **Supabase**.
 
