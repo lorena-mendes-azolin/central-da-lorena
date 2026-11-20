@@ -1,5 +1,5 @@
 const INTERVALOS = [0, 1, 2, 4, 8, 16];
-const flashTela = { baralho: null, estudo: null, criando: false };
+const flashTela = { baralho: null, estudo: null, criando: false, aba: 'baralhos' };
 
 function baralhos() {
   estado.flashcards = estado.flashcards || { baralhos: [] };
@@ -35,6 +35,7 @@ PAGINAS.flashcards = {
   titulo: 'Flashcards',
   desenhar() {
     const lista = baralhos();
+    if (flashTela.aba === 'simulados') return htmlSimulados();
     if (flashTela.estudo) return htmlEstudo();
     const b = lista.find((x) => x.id === flashTela.baralho) || lista[0];
     if (b) flashTela.baralho = b.id;
@@ -48,7 +49,7 @@ PAGINAS.flashcards = {
     return `
     <div class="cab-pagina">
       <div><h1>Flashcards</h1><p>${totalRev ? `${totalRev} ${totalRev === 1 ? 'carta para revisar' : 'cartas para revisar'} hoje.` : 'Crie cartas com pergunta e resposta e revise um pouquinho por dia.'}</p></div>
-      <div class="cab-acoes"><button class="btn" data-acao="flash-novo">${ic('plus', 'p')} Novo baralho</button></div>
+      <div class="cab-acoes">${htmlAbasFlash()}<button class="btn" data-acao="flash-novo">${ic('plus', 'p')} Novo baralho</button></div>
     </div>
 
     ${flashTela.criando ? `<form class="card form-linha" data-form="flash-baralho" style="margin-bottom:16px">
@@ -71,6 +72,14 @@ PAGINAS.flashcards = {
     </div>`}`;
   },
 };
+
+function htmlAbasFlash() {
+  return `<div class="segmento">
+    <button class="${flashTela.aba !== 'simulados' ? 'ativo' : ''}" data-acao="flash-aba" data-a="baralhos">${ic('layers', 'p')} Baralhos</button>
+    <button class="${flashTela.aba === 'simulados' ? 'ativo' : ''}" data-acao="flash-aba" data-a="simulados">${ic('review', 'p')} Simulados</button>
+  </div>`;
+}
+ACOES['flash-aba'] = (el) => { flashTela.aba = el.dataset.a; window.scrollTo(0, 0); desenhar(); };
 
 function htmlBaralho(b) {
   const rev = paraRevisar(b).length;
@@ -126,15 +135,28 @@ function htmlEstudo() {
       <span>${feitas} de ${e.total}</span>
     </div>
     <div class="prog" style="margin-bottom:18px"><i style="width:${(feitas / e.total) * 100}%"></i></div>
-    <section class="card estudo ${e.virada ? 'virada' : ''}" data-acao="${e.virada ? '' : 'flash-virar'}">
-      <small>${e.virada ? 'Resposta' : 'Pergunta'}</small>
-      <div class="frente">${esc(c.frente).replace(/\n/g, '<br>')}</div>
-      ${e.virada ? `<div class="verso">${esc(c.verso || '(sem resposta)').replace(/\n/g, '<br>')}</div>` : '<p class="dica">Clique ou aperte espaço para ver a resposta</p>'}
-    </section>
-    ${e.virada ? `<div class="botoes estudo-botoes">
+    <div class="flip ${e.virada ? 'virada' : ''}" data-acao="flash-virar">
+      <div class="flip-dentro">
+        <section class="card estudo face-frente" aria-hidden="${e.virada}">
+          <small>Pergunta</small>
+          <div class="frente">${esc(c.frente).replace(/\n/g, '<br>')}</div>
+          <p class="dica">Clique ou aperte espaço para ver a resposta</p>
+        </section>
+        <section class="card estudo face-verso" aria-hidden="${!e.virada}">
+          <small>Resposta</small>
+          <div class="pergunta-mini">${esc(c.frente).replace(/\n/g, '<br>')}</div>
+          <div class="verso">${esc(c.verso || '(sem resposta)').replace(/\n/g, '<br>')}</div>
+        </section>
+      </div>
+    </div>
+    <div id="estudo-botoes">${e.virada ? htmlBotoesEstudo() : ''}</div>`;
+}
+
+function htmlBotoesEstudo() {
+  return `<div class="botoes estudo-botoes">
       <button class="btn perigo" data-acao="flash-resposta" data-ok="0">${ic('x', 'p')} Errei <kbd>1</kbd></button>
       <button class="btn" data-acao="flash-resposta" data-ok="1">${ic('check', 'p')} Acertei <kbd>2</kbd></button>
-    </div>` : ''}`;
+    </div>`;
 }
 
 ACOES['flash-novo'] = () => { flashTela.criando = !flashTela.criando; desenhar(); $('#flash-nome')?.focus(); };
@@ -194,7 +216,20 @@ ACOES['flash-estudar'] = (el) => {
   flashTela.estudo = { baralho: b.id, fila, total: fila.length, virada: false, acertos: 0, erros: 0 };
   desenhar();
 };
-ACOES['flash-virar'] = () => { if (flashTela.estudo) { flashTela.estudo.virada = true; desenhar(); } };
+// Vira o card sem redesenhar a página, para a animação de girar aparecer.
+ACOES['flash-virar'] = () => {
+  const e = flashTela.estudo;
+  if (!e || e.virada) return;
+  e.virada = true;
+  const flip = $('#conteudo .flip');
+  const lugar = $('#estudo-botoes');
+  if (!flip || !lugar) { desenhar(); return; }
+  flip.classList.add('virada');
+  flip.dataset.acao = '';
+  $('.face-frente', flip).setAttribute('aria-hidden', 'true');
+  $('.face-verso', flip).setAttribute('aria-hidden', 'false');
+  lugar.innerHTML = htmlBotoesEstudo();
+};
 ACOES['flash-sair'] = () => { flashTela.estudo = null; desenhar(); };
 
 ACOES['flash-resposta'] = (el) => {
@@ -218,7 +253,7 @@ ACOES['flash-resposta'] = (el) => {
 };
 
 document.addEventListener('keydown', (e) => {
-  if (!flashTela.estudo || location.hash !== '#flashcards' || e.target.matches('input, textarea')) return;
+  if (!flashTela.estudo || flashTela.aba === 'simulados' || location.hash !== '#flashcards' || e.target.matches('input, textarea')) return;
   if (e.key === ' ' && !flashTela.estudo.virada) { e.preventDefault(); ACOES['flash-virar'](); }
   if (flashTela.estudo.virada && (e.key === '1' || e.key === '2')) ACOES['flash-resposta']({ dataset: { ok: e.key === '2' ? '1' : '0' } });
 });

@@ -61,6 +61,12 @@ com explicações simples e diretas.
 - `lembretes`: Web Push, roda a cada minuto via pg_cron; `verify_jwt` false.
 - `previa-link`: lê título/imagem/preço de um link (Compras e Lista das listas), copia a imagem para o storage;
   confere o usuário pelo token e bloqueia endereços internos (SSRF). `verify_jwt` false.
+- `simulado`: gera simulado de múltipla escolha de UM caderno com o Gemini. Caderno até 100 mil letras, dividido em
+  partes de até 40 mil (em paralelo); em cada parte: gera → segunda chamada responde às cegas e descarta o que não
+  bate → confere se o trecho citado existe no caderno. Usa a chave do próprio usuário
+  (tabela `ia_chaves`, RLS por dono) ou a do site (segredo `GEMINI_API_KEY`) com limite diário em `simulado_uso`
+  (`SIMULADO_LIMITE`, padrão 5). Modelo em `GEMINI_MODELO` (padrão `gemini-flash-latest`). `verify_jwt` false.
+  SQL em `supabase/simulado.sql`. Tela em `js/simulado.js` (aba Simulados dos Flashcards; dados em `estado.flashcards.simulados`).
 
 ## Como testar
 

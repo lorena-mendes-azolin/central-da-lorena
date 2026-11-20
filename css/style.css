@@ -1589,3 +1589,93 @@ textarea.titulo-quebra { display: block; resize: none; overflow: hidden; field-s
   .item-tm .acao-item.apagar { margin-left: auto; }
 }
 .nav-add[hidden] { display: none; }
+
+/* ---------- Flashcards: card que gira ---------- */
+.flip { max-width: 680px; margin: 0 auto 18px; perspective: 1400px; cursor: pointer; }
+.flip.virada { cursor: default; }
+.flip-dentro { display: grid; transform-style: preserve-3d; transition: transform .6s cubic-bezier(.3, .7, .3, 1); }
+.flip.virada .flip-dentro { transform: rotateY(180deg); }
+.flip .card.estudo { grid-area: 1 / 1; margin: 0; max-width: none; -webkit-backface-visibility: hidden; backface-visibility: hidden; cursor: inherit; }
+.flip .face-verso { transform: rotateY(180deg); border-color: var(--destaque); }
+.flip .pergunta-mini { font-size: 14px; color: var(--fraco); font-weight: 700; line-height: 1.4; }
+.flip .face-verso .verso { font-size: 19px; color: var(--texto); }
+#estudo-botoes:empty { display: none; }
+
+/* ---------- Simulados ---------- */
+.sim-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+.sim-salvos { display: grid; gap: 3px; max-height: 520px; }
+.sim-nota { background: var(--card-2) !important; color: var(--suave) !important; }
+.sim-nota.boa { background: rgba(95, 214, 164, .18) !important; color: var(--verde) !important; }
+.sim-conta { margin-left: auto; font-size: 12px; color: var(--fraco); font-weight: 700; }
+.sim-conta.ruim { color: var(--vermelho); }
+.sim-paginas { display: grid; gap: 2px; max-height: 260px; }
+.sim-pagina { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: var(--texto); padding: 7px 8px; border-radius: 9px; cursor: pointer; text-align: left; font: inherit; font-size: 14px; }
+.sim-pagina:hover { background: var(--hover); }
+.sim-pagina > span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.sim-pagina small { color: var(--fraco); font-size: 12px; white-space: nowrap; }
+.sim-aviso { color: var(--amarelo); }
+.sim-linha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.sim-linha .espaco { flex: 1; }
+.sim-carregando { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: var(--card-2); font-size: 14px; color: var(--suave); }
+.sim-carregando .girando { flex: 0 0 26px; width: 26px; height: 26px; }
+.sim-layout .alerta { margin: 14px 0 0; }
+.sim-status { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sim-status .ic { color: var(--verde); }
+.sim-link { background: none; border: 0; padding: 0; color: var(--destaque-2); font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
+.sim-chave { margin-top: 14px; padding: 14px; border-radius: 12px; border: 1px solid var(--linha); background: var(--card-2); font-size: 14px; }
+.sim-chave ol { margin: 8px 0 12px; padding-left: 20px; color: var(--suave); line-height: 1.6; }
+.sim-chave a { color: var(--destaque-2); }
+.sim-chave input { flex: 1 1 220px; }
+
+.sim-questao { max-width: 760px; margin: 0 auto 18px; padding: 24px; }
+.sim-enunciado { font-size: clamp(17px, 2.2vw, 20px); font-weight: 800; line-height: 1.45; margin: 0 0 18px; }
+.sim-alternativas { display: grid; gap: 8px; }
+.sim-alt { display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left; font: inherit; font-size: 15px; line-height: 1.45; color: var(--texto); background: var(--card-2); border: 1px solid var(--linha); border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: border-color .15s, background .15s; }
+.sim-alt:hover:not(:disabled) { border-color: var(--destaque); }
+.sim-alt:disabled { cursor: default; }
+.sim-alt kbd { margin: 1px 0 0; flex: 0 0 auto; font-weight: 800; }
+.sim-alt.certa { border-color: var(--verde); background: rgba(95, 214, 164, .12); }
+.sim-alt.errada { border-color: var(--vermelho); background: rgba(255, 122, 143, .12); }
+.sim-alt.apagada { opacity: .55; }
+.sim-resultado { display: flex; align-items: center; gap: 8px; font-weight: 800; margin: 16px 0 0; }
+.sim-resultado.boa { color: var(--verde); }
+.sim-resultado.ruim { color: var(--vermelho); }
+.sim-porque { margin-top: 12px; padding: 14px; border-radius: 12px; background: var(--card-2); font-size: 14px; line-height: 1.55; }
+.sim-porque p { margin: 4px 0 0; color: var(--suave); }
+.sim-porque small { display: flex; align-items: center; gap: 6px; color: var(--fraco); font-weight: 700; font-size: 12px; }
+.sim-trecho, .sim-complemento { margin-top: 12px; }
+.sim-trecho blockquote { margin: 6px 0 0; padding: 8px 12px; border-left: 3px solid var(--destaque); background: var(--destaque-bg); border-radius: 0 8px 8px 0; color: var(--texto); }
+.sim-complemento p { border-left: 3px solid var(--amarelo); padding-left: 10px; }
+.sim-pagina-fonte { margin-top: 10px; }
+.sim-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.sim-acoes .espaco { flex: 1; }
+
+.sim-lista { display: grid; gap: 8px; }
+.sim-item { border: 1px solid var(--linha); border-radius: 12px; padding: 0 14px; background: var(--card-2); }
+.sim-item summary { display: flex; gap: 8px; padding: 12px 0; cursor: pointer; font-weight: 600; line-height: 1.4; list-style: none; }
+.sim-item summary::-webkit-details-marker { display: none; }
+.sim-item summary span { flex: 1; }
+.sim-item summary em { font-style: normal; font-size: 11px; font-weight: 800; color: var(--vermelho); background: rgba(255, 122, 143, .14); border-radius: 999px; padding: 2px 8px; align-self: center; }
+.sim-item.problema summary span { color: var(--fraco); text-decoration: line-through; }
+.sim-item[open] { padding-bottom: 14px; }
+.sim-gabarito { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; color: var(--suave); }
+.sim-gabarito li { padding: 6px 8px; border-radius: 8px; }
+.sim-gabarito li.certa { color: var(--texto); background: rgba(95, 214, 164, .12); font-weight: 700; }
+.sim-gabarito kbd { margin: 0 6px 0 0; }
+@media (max-width: 640px) {
+  .sim-questao { padding: 16px; }
+  .cab-acoes .segmento button { padding: 6px 10px; }
+}
+
+/* ---------- Pets no celular ---------- */
+@media (max-width: 760px) {
+  .registro-pet .data-btn { flex: 1 1 140px; }
+}
+@media (max-width: 640px) {
+  .pet-topo { flex-wrap: wrap; gap: 10px 12px; }
+  .pet-topo > div { flex: 1 1 0; min-width: 0; }
+  .pet-topo h2 { overflow-wrap: anywhere; }
+  .pet-topo .espaco { flex: 1 1 100%; height: 0; }
+  .pet-topo .apagar { margin-left: auto; }
+}

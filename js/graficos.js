@@ -169,9 +169,17 @@ PAGINAS.graficos = {
 
       let html = [1, 2, 3, 4, 5].map((n) => `<line x1="${esq}" x2="${W - dir}" y1="${y(n)}" y2="${y(n)}" stroke="#312f57" stroke-width="1"/>`).join('');
 
+      // Liga todos os registros em ordem: linha cheia entre dias seguidos, tracejada quando pulou dias sem registro.
+      if (pontos.length > 1) {
+        const base = H - baixo;
+        const area = `M${x(pontos[0].i)},${base} ` + pontos.map((p) => `L${x(p.i)},${y(p.nota)}`).join(' ') + ` L${x(pontos[pontos.length - 1].i)},${base} Z`;
+        html += `<defs><linearGradient id="humor-sombra" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7c56b" stop-opacity=".22"/><stop offset="1" stop-color="#f7c56b" stop-opacity="0"/></linearGradient></defs>
+          <path d="${area}" fill="url(#humor-sombra)"/>`;
+      }
       for (let k = 1; k < pontos.length; k++) {
         const a = pontos[k - 1], b = pontos[k];
-        if (b.i - a.i === 1) html += `<line x1="${x(a.i)}" y1="${y(a.nota)}" x2="${x(b.i)}" y2="${y(b.nota)}" stroke="#f7c56b" stroke-width="2" stroke-linecap="round"/>`;
+        const pulou = b.i - a.i > 1;
+        html += `<line x1="${x(a.i)}" y1="${y(a.nota)}" x2="${x(b.i)}" y2="${y(b.nota)}" stroke="#f7c56b" stroke-width="2.5" stroke-linecap="round" ${pulou ? 'stroke-dasharray="4 6" stroke-opacity=".6"' : ''}/>`;
       }
       html += pontos.map((p) => {
         const nome = HUMORES.find((h) => NOTA_HUMOR[h.id] === p.nota).nome;
