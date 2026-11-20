@@ -1,5 +1,5 @@
 const finTela = { mes: hojeISO().slice(0, 7), aba: 'mes', tipo: 'saida', editandoCats: false, repetir: '', cat: '', situacao: '' };
-const REPETE_GASTO = { '': 'Não repete', mensal: 'Todo mês', varios: 'Mais de uma vez no mês', semanal: 'Toda semana', parcelas: 'Parcelado' };
+const REPETE_GASTO = { '': 'Não repete', mensal: 'Todo mês', promo: 'Todo mês, com promoção', varios: 'Mais de uma vez no mês', semanal: 'Toda semana', parcelas: 'Parcelado' };
 
 const fin = () => estado.financas;
 const catGasto = (id) => fin().categorias.find((c) => c.id === id) || { id: 'outros', nome: 'Outros', cor: '#a5a3c8' };
@@ -19,6 +19,11 @@ const ultimoDiaMes = (ym) => { const [a, m] = ym.split('-').map(Number); return 
 const diaNoMes = (ym, dia) => `${ym}-${String(Math.min(dia, ultimoDiaMes(ym))).padStart(2, '0')}`;
 const mesesEntre = (a, b) => { const [y1, m1] = a.split('-').map(Number); const [y2, m2] = b.split('-').map(Number); return (y2 - y1) * 12 + (m2 - m1); };
 
+// Promoção (só em "Todo mês"): r.promo = { valor, meses, de: 'AAAA-MM' }. r.valor é o valor depois da promoção.
+const fimPromo = (r) => (r.promo ? somarMes(r.promo.de, r.promo.meses - 1) : null);
+const emPromo = (r, ym) => !!r.promo && ym >= r.promo.de && ym <= fimPromo(r);
+const valorRegraNoMes = (r, ym) => (emPromo(r, ym) ? r.promo.valor : r.valor);
+
 function ocorrenciasNoMes(r, ym) {
   const iniYm = r.inicio.slice(0, 7);
   if (ym < iniYm || (r.fim && ym > r.fim)) return [];
@@ -32,7 +37,8 @@ function ocorrenciasNoMes(r, ym) {
   }
   return datas.filter((d) => d >= r.inicio && !(r.pulados || []).includes(d)).map((d) => ({
     id: `${r.id}|${d}`, regra: r.id, desc: r.freq === 'parcelas' ? `${r.desc} (${k + 1}/${r.parcelas})` : r.desc,
-    valor: r.valor, tipo: r.tipo, cat: r.cat, data: d, pago: (r.pagos || []).includes(d),
+    valor: valorRegraNoMes(r, ym), tipo: r.tipo, cat: r.cat, data: d, pago: (r.pagos || []).includes(d),
+    promo: emPromo(r, ym), promoAcaba: emPromo(r, ym) && ym === fimPromo(r),
   }));
 }
 
@@ -59,8 +65,14 @@ function situacaoLanc(l) {
   return { txt: 'Pendente', classe: '' };
 }
 
-function textoRegra(r) {
-  if (r.freq === 'mensal') return `todo dia ${Number(r.inicio.slice(8))}`;
+function textoRegra(r, ym) {
+  if (r.freq === 'mensal') {
+    const base = `todo dia ${Number(r.inicio.slice(8))}`;
+    if (!r.promo) return base;
+    const fim = fimPromo(r);
+    if (ym && ym > fim) return `${base} · promoção acabou em ${mesCurto(fim)}`;
+    return `${base} · promoção até ${mesCurto(fim)}, depois ${dinheiro(r.valor)}`;
+  }
   if (r.freq === 'varios') return `dias ${r.dias.join(', ')} de cada mês`;
   if (r.freq === 'semanal') return `toda ${DIAS_SEMANA[paraData(r.inicio).getDay()].toLowerCase()}`;
   const fimYm = somarMes(r.inicio.slice(0, 7), r.parcelas - 1);
@@ -145,12 +157,14 @@ PAGINAS.financas = {
             <button type="button" class="${finTela.tipo === 'entrada' ? 'ativo' : ''}" data-acao="fin-tipo" data-t="entrada">Entrada</button>
           </div>
           <input type="text" name="desc" placeholder="${finTela.tipo === 'entrada' ? 'De onde veio' : 'Com o que gastou'}" maxlength="80" data-precisa id="gasto-desc">
-          <input type="text" name="valor" placeholder="R$" inputmode="decimal" style="max-width:130px" aria-label="Valor">
+          <input type="text" name="valor" placeholder="${finTela.repetir === 'promo' ? 'R$ na promoção' : 'R$'}" inputmode="decimal" style="max-width:130px" aria-label="${finTela.repetir === 'promo' ? 'Valor na promoção' : 'Valor'}">
           ${finTela.tipo === 'saida' ? `<select name="cat" aria-label="Categoria">${fin().categorias.map((c) => `<option value="${c.id}" ${finTela.cat === c.id ? 'selected' : ''}>${esc(nomeCat(c))}</option>`).join('')}</select>` : ''}
           <input type="date" name="data" value="${ym === hojeISO().slice(0, 7) ? hojeISO() : ym + '-01'}" aria-label="Data" style="max-width:160px">
           <select name="repetir" data-mudar="fin-repetir" aria-label="Repetição">${Object.entries(REPETE_GASTO).map(([id, n]) => `<option value="${id}" ${finTela.repetir === id ? 'selected' : ''}>${n}</option>`).join('')}</select>
           ${finTela.repetir === 'parcelas' ? `<label class="rotulo-select">Parcelas<input type="number" name="parcelas" min="2" max="72" value="10" style="width:76px"></label>` : ''}
           ${finTela.repetir === 'varios' ? `<label class="rotulo-select">Dias do mês<input type="text" name="dias" placeholder="5, 20" style="width:110px"></label>` : ''}
+          ${finTela.repetir === 'promo' ? `<label class="rotulo-select">Por<input type="number" name="promoMeses" min="1" max="36" value="3" style="width:66px">meses</label>
+          <input type="text" name="valorDepois" placeholder="Depois passa a R$" inputmode="decimal" aria-label="Valor depois da promoção">` : ''}
           <select name="situacao" data-mudar="fin-situacao" aria-label="Situação">
             <option value="pago" ${situacaoPadrao === 'pago' ? 'selected' : ''}>${finTela.tipo === 'entrada' ? 'Já recebi' : 'Já paguei'}</option>
             <option value="pendente" ${situacaoPadrao === 'pendente' ? 'selected' : ''}>${finTela.tipo === 'entrada' ? 'A receber' : 'Pendente'}</option>
@@ -159,6 +173,7 @@ PAGINAS.financas = {
         </form>
         ${finTela.repetir === 'parcelas' ? '<p class="dica" style="margin:6px 0 0">Coloque o valor de cada parcela. A primeira cai na data escolhida e as outras no mesmo dia dos meses seguintes.</p>' : ''}
         ${finTela.repetir === 'varios' ? '<p class="dica" style="margin:6px 0 0">Ex.: salário dia 5 e dia 20. Separe os dias por vírgula.</p>' : ''}
+        ${finTela.repetir === 'promo' ? '<p class="dica" style="margin:6px 0 0">Coloque o valor da promoção, por quantos meses ela vale (contando a partir da data escolhida) e quanto passa a custar depois. O valor troca sozinho e você recebe um aviso no último mês da promoção.</p>' : ''}
         ${finTela.repetir ? '<p class="dica" style="margin:6px 0 0">A situação vale só para a primeira vez. As próximas entram como pendentes: é só marcar o quadradinho quando pagar.</p>' : ''}
 
         <h3 class="sub-titulo">Lançamentos do mês</h3>
@@ -172,7 +187,7 @@ PAGINAS.financas = {
               return `<div class="item lanc ${ok ? '' : 'pendente'}">
                 <button class="check ${ok ? 'on' : ''}" data-acao="lanc-pagar" data-id="${l.id}" title="${ok ? `Marcar como não ${quem}` : `Marcar como ${quem}`}">${ok ? ic('check') : ''}</button>
                 <span class="barra-cor" style="background:${l.tipo === 'entrada' ? 'var(--verde)' : c.cor}"></span>
-                <span class="txt clicavel" data-acao="lanc-editar" data-id="${l.id}" title="Editar">${esc(l.desc || nomeCat(c))}<span class="sub">${l.tipo === 'entrada' ? 'entrada' : esc(nomeCat(c))}${l.conta ? ' · conta fixa' : ''}${l.regra ? ` · ${ic('repeat', 'p')} ${regraDe(l)?.freq === 'parcelas' ? 'parcela' : 'repete'}` : ''}${sit ? ` <span class="situacao ${sit.classe}">${sit.txt}</span>` : ''}</span></span>
+                <span class="txt clicavel" data-acao="lanc-editar" data-id="${l.id}" title="Editar">${esc(l.desc || nomeCat(c))}<span class="sub">${l.tipo === 'entrada' ? 'entrada' : esc(nomeCat(c))}${l.conta ? ' · conta fixa' : ''}${l.regra ? ` · ${ic('repeat', 'p')} ${regraDe(l)?.freq === 'parcelas' ? 'parcela' : 'repete'}` : ''}${l.promo && !l.promoAcaba ? ' · promoção' : ''}${l.promoAcaba ? ` <span class="situacao atencao" data-dica="Mês que vem passa a ${dinheiro(regraDe(l)?.valor || 0)}">Última da promoção</span>` : ''}${sit ? ` <span class="situacao ${sit.classe}">${sit.txt}</span>` : ''}</span></span>
                 <b class="${l.tipo === 'entrada' ? 'valor-entrada' : ''}">${l.tipo === 'entrada' ? '+' : '−'} ${dinheiro(l.valor)}</b>
                 <button class="acao-item" data-acao="lanc-editar" data-id="${l.id}" title="Editar">${ic('edit', 'p')}</button>
                 <button class="acao-item apagar" data-acao="gasto-del" data-id="${l.id}" title="${l.regra ? 'Tirar só deste mês' : 'Apagar'}">${ic('trash', 'p')}</button>
@@ -210,8 +225,8 @@ PAGINAS.financas = {
           <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('repeat')}</span> Repetições e parcelas</h2>
           <div class="fin-rolavel">${regras.map((r) => `<div class="item">
             <span class="barra-cor" style="background:${r.tipo === 'entrada' ? 'var(--verde)' : catGasto(r.cat).cor}"></span>
-            <span class="txt">${esc(r.desc)}<span class="sub">${textoRegra(r)}</span></span>
-            <b class="${r.tipo === 'entrada' ? 'valor-entrada' : ''}">${dinheiro(r.valor)}</b>
+            <span class="txt">${esc(r.desc)}<span class="sub">${textoRegra(r, ym)}</span></span>
+            <b class="${r.tipo === 'entrada' ? 'valor-entrada' : ''}">${dinheiro(valorRegraNoMes(r, ym))}</b>
             <button class="acao-item" data-acao="regra-editar" data-id="${r.id}" title="Editar todas">${ic('edit', 'p')}</button>
             <button class="acao-item apagar" data-acao="regra-del" data-id="${r.id}" title="Parar de repetir">${ic('trash', 'p')}</button>
           </div>`).join('') || '<p class="vazio">Ao adicionar um lançamento, escolha "Todo mês", "Toda semana" ou "Parcelado" para ele aparecer aqui.</p>'}</div>
@@ -320,13 +335,23 @@ FORMS['gasto-novo'] = (d) => {
   if (!valor) { avisar('Coloque o valor.'); return; }
   const base = { desc: d.desc, valor, tipo: finTela.tipo, cat: finTela.tipo === 'entrada' ? '' : d.cat || 'outros' };
   const data = d.data || hojeISO();
-  const freq = d.repetir || '';
   const pago = d.situacao !== 'pendente';
+  let freq = d.repetir || '';
+  let promo = null;
+  if (freq === 'promo') {
+    const depois = valorNumero(d.valorDepois);
+    const meses = Math.min(36, Math.max(1, Number(d.promoMeses) || 0));
+    if (!depois) { avisar('Coloque quanto a conta passa a custar depois da promoção.'); return; }
+    promo = { valor, meses, de: data.slice(0, 7) };
+    base.valor = depois;
+    freq = 'mensal';
+  }
   if (d.cat) finTela.cat = d.cat;
   if (!freq) {
     fin().lancamentos.push({ id: novoId(), ...base, data, pago });
   } else {
     const r = { id: novoId(), ...base, freq, inicio: data, pulados: [], pagos: [] };
+    if (promo) r.promo = promo;
     if (freq === 'parcelas') r.parcelas = Math.min(72, Math.max(2, Number(d.parcelas) || 2));
     if (freq === 'varios') {
       r.dias = [...new Set((d.dias || '').split(/[,; ]+/).map(Number).filter((x) => x >= 1 && x <= 31))].sort((a, b) => a - b);
@@ -336,7 +361,9 @@ FORMS['gasto-novo'] = (d) => {
     if (pago) r.pagos = ocorrenciasNoMes(r, data.slice(0, 7)).slice(0, 1).map((o) => o.data);
     fin().recorrentes = fin().recorrentes || [];
     fin().recorrentes.push(r);
-    avisar(freq === 'parcelas' ? `Parcelado em ${r.parcelas}x de ${dinheiro(valor)} (total ${dinheiro(valor * r.parcelas)}).` : `Vai repetir ${textoRegra(r)}.`);
+    avisar(freq === 'parcelas' ? `Parcelado em ${r.parcelas}x de ${dinheiro(valor)} (total ${dinheiro(valor * r.parcelas)}).`
+      : promo ? `${dinheiro(promo.valor)} por ${promo.meses} ${promo.meses === 1 ? 'mês' : 'meses'}, depois ${dinheiro(r.valor)}.`
+      : `Vai repetir ${textoRegra(r)}.`);
   }
   finTela.repetir = '';
   finTela.situacao = '';
@@ -449,6 +476,16 @@ function verificarContas() {
     const nome = l.desc || nomeCat(catGasto(l.cat));
     notificar(n === 0 ? `Vence hoje: ${nome}` : `Vence em ${n} ${n === 1 ? 'dia' : 'dias'}: ${nome}`, dinheiro(l.valor));
   });
+  // Promoção no último mês: avisa uma vez que o valor vai mudar
+  (fin().recorrentes || []).forEach((r) => {
+    if (!r.promo || fimPromo(r) !== ym || (r.fim && r.fim <= ym)) return;
+    const chave = `promo|${r.id}|${ym}`;
+    if (estado.avisados[chave]) return;
+    estado.avisados[chave] = true;
+    salvar();
+    notificar(`Promoção acaba este mês: ${r.desc || nomeCat(catGasto(r.cat))}`,
+      `A partir de ${nomeMes(somarMes(ym, 1)).toLowerCase()} passa a ${dinheiro(r.valor)} (hoje ${dinheiro(r.promo.valor)}).`);
+  });
 }
 
 // ---------- Editar lançamento (avulso, ou repetição/parcela: só este ou todos) ----------
@@ -480,7 +517,12 @@ function abrirEdicaoLanc(id, soTodos = false) {
           <option value="pendente" ${estaPago(l) ? '' : 'selected'}>${entrada ? 'A receber' : 'Pendente'}</option>
         </select></label>`}
       ${r?.freq === 'parcelas' ? `<label class="campo campo-todos">Nº de parcelas<input type="number" name="parcelas" min="2" max="72" value="${r.parcelas}"></label>` : ''}
+      ${r?.freq === 'mensal' ? `<label class="campo campo-todos">Valor na promoção<input type="text" name="promoValor" value="${r.promo ? String(r.promo.valor).replace('.', ',') : ''}" placeholder="Sem promoção" inputmode="decimal"></label>
+      <label class="campo campo-todos">Meses de promoção<input type="number" name="promoMeses" min="0" max="36" value="${r.promo ? r.promo.meses : ''}" placeholder="0"></label>` : ''}
 `;
+  // Com promoção, em "todas" o campo Valor é o valor de depois da promoção
+  const valorTodos = r?.promo ? r.valor : l.valor;
+  const rotuloValor = (todos) => (todos && r?.freq === 'mensal' ? 'Valor depois da promoção' : 'Valor');
   const j = $('#janela-tarefa');
   j.innerHTML = `<form data-form="lanc-salvar" method="dialog" class="${soTodos ? 'escopo-todos' : ''}">
     <h2>Editar ${entrada ? 'entrada' : 'gasto'} <button type="button" class="btn-icone" data-acao="fechar-janela" aria-label="Fechar">${ic('x')}</button></h2>
@@ -490,12 +532,12 @@ function abrirEdicaoLanc(id, soTodos = false) {
     </div>` : `<input type="hidden" name="escopo" value="${r ? 'todos' : 'este'}">`}
     <label class="campo">Descrição<input type="text" name="desc" value="${esc(r && soTodos ? r.desc : l.desc)}" maxlength="80"></label>
     <div class="linha2">
-      <label class="campo">Valor<input type="text" name="valor" value="${String(l.valor).replace('.', ',')}" inputmode="decimal"></label>
+      <label class="campo"><span class="rotulo-valor">${r?.promo ? rotuloValor(soTodos) : 'Valor'}</span><input type="text" name="valor" value="${String(soTodos ? valorTodos : l.valor).replace('.', ',')}" inputmode="decimal"></label>
       ${entrada ? `<label class="campo">Data<input type="date" name="data" value="${l.data}"></label>` : `<label class="campo">Categoria
         <select name="cat">${fin().categorias.map((c) => `<option value="${c.id}" ${l.cat === c.id ? 'selected' : ''}>${esc(nomeCat(c))}</option>`).join('')}</select></label>`}
     </div>
     ${linhaExtra.trim() ? `<div class="linha-auto">${linhaExtra}</div>` : ''}
-    ${r ? `<p class="dica" style="margin:0">${soTodos ? 'Vale para todas as vezes, inclusive os meses que já passaram.' : '"Só este" muda apenas este mês. "Todas" muda descrição, valor, categoria e dia em todos os meses (a situação continua valendo só para este).'}</p>` : ''}
+    ${r ? `<p class="dica" style="margin:0">${soTodos ? 'Vale para todas as vezes, inclusive os meses que já passaram.' : '"Só este" muda apenas este mês. "Todas" muda descrição, valor, categoria e dia em todos os meses (a situação continua valendo só para este).'}${r.freq === 'mensal' ? `<span class="campo-todos"> Promoção: ${r.promo ? 'o campo Valor é quanto fica depois dela; deixe os meses em 0 para tirar.' : 'preencha o valor e os meses (começa neste mês); aí o campo Valor vira o valor de depois.'}</span>` : ''}</p>` : ''}
     <div class="rodape-janela">
       ${soTodos ? '' : `<button type="button" class="btn perigo" data-acao="lanc-excluir" data-id="${id}">${ic('trash', 'p')} ${r ? 'Tirar deste mês' : 'Excluir'}</button>`}
       <button type="button" class="btn sec" data-acao="fechar-janela">Cancelar</button>
@@ -507,6 +549,12 @@ function abrirEdicaoLanc(id, soTodos = false) {
     const campo = j.querySelector('[name=desc]');
     if (rad.value === 'todos' && campo.value === l.desc) campo.value = r.desc;
     if (rad.value === 'este' && campo.value === r.desc) campo.value = l.desc;
+    if (r.promo) {
+      const val = j.querySelector('[name=valor]');
+      const de = String(rad.value === 'todos' ? l.valor : valorTodos).replace('.', ',');
+      if (val.value === de) val.value = String(rad.value === 'todos' ? valorTodos : l.valor).replace('.', ',');
+      j.querySelector('.rotulo-valor').textContent = rotuloValor(rad.value === 'todos');
+    }
     j.querySelector('form').classList.toggle('escopo-todos', rad.value === 'todos');
   }));
   j.showModal();
@@ -555,6 +603,12 @@ FORMS['lanc-salvar'] = (d) => {
       }
     }
     if (r.freq === 'parcelas' && d.parcelas) r.parcelas = Math.min(72, Math.max(2, Number(d.parcelas) || r.parcelas));
+    if (r.freq === 'mensal') {
+      const pv = valorNumero(d.promoValor || '');
+      const pm = Math.min(36, Math.max(0, Number(d.promoMeses) || 0));
+      if (pv && pm) r.promo = { valor: pv, meses: pm, de: r.promo?.de || l.data.slice(0, 7) };
+      else delete r.promo;
+    }
     if (pago !== null) {
       const dataOcc = desloc && r.freq !== 'varios' ? somarDias(l.data, desloc) : novo.data;
       r.pagos = (r.pagos || []).filter((x) => x !== dataOcc);
