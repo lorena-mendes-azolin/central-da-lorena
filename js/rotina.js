@@ -100,9 +100,8 @@ function htmlCalendarioRotina(hoje) {
   const completos = passados.filter((p) => p.pct === 1).length;
   const media = passados.length ? Math.round((passados.reduce((s, p) => s + p.pct, 0) / passados.length) * 100) : 0;
 
-  const porSemana = {};
-  passados.forEach((p) => { const w = paraData(p.dia).getDay(); (porSemana[w] = porSemana[w] || []).push(p.pct); });
-  const melhor = Object.entries(porSemana).map(([w, v]) => [w, v.reduce((a, b) => a + b, 0) / v.length]).sort((a, b) => b[1] - a[1])[0];
+  // Melhor dia: hábitos + tarefas, pela porcentagem feita em cada dia (não pela quantidade)
+  const melhor = melhorDiaSemana(Array.from({ length: nDias }, (_, k) => iso(k + 1)));
   const nomeMes = base.toLocaleDateString('pt-BR', { month: 'long' }).replace(/^./, (c) => c.toUpperCase()) + ' de ' + ano;
 
   return `<section class="card">
@@ -123,7 +122,7 @@ function htmlCalendarioRotina(hoje) {
         <div class="cal-numeros">
           <div><b>${media}%</b><span>média do mês</span></div>
           <div><b>${completos}</b><span>${completos === 1 ? 'dia completo' : 'dias completos'}</span></div>
-          <div><b>${melhor && melhor[1] > 0 ? DIAS_SEMANA[melhor[0]] : '—'}</b><span>seu melhor dia</span></div>
+          <div data-dica="${melhor ? `${melhor.nome}: em média ${melhor.pct}% do previsto feito (hábitos e tarefas)` : 'Ainda sem dados neste mês'}"><b>${melhor ? DIAS_SEMANA[NOMES_DIA_LONGO.indexOf(melhor.nome)] : '—'}</b><span>seu melhor dia</span></div>
         </div>
       </div>
     </div>

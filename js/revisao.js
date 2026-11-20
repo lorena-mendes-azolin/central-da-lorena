@@ -37,7 +37,10 @@ PAGINAS.revisao = {
 
     const estudo = {};
     dias.forEach((d) => Object.entries(estado.diario[d]?.estudo || {}).forEach(([ref, min]) => { estudo[ref] = (estudo[ref] || 0) + min; }));
-    const totalEstudo = Object.values(estudo).reduce((a, b) => a + b, 0);
+    const totalEstudo = dias.reduce((s, d) => s + minutosEstudoDia(d), 0);
+    const semMateria = totalEstudo - Object.values(estudo).reduce((a, b) => a + b, 0);
+    if (semMateria > 0) estudo[''] = semMateria;
+    const melhorDia = melhorDiaSemana(dias);
 
     const regs = dias.map((d) => estado.diario[d] || {});
     const mediaAgua = regs.reduce((s, r) => s + (r.agua || 0), 0) / Math.max(1, diasPassados.length);
@@ -45,12 +48,6 @@ PAGINAS.revisao = {
     const mediaSono = sonos.length ? sonos.reduce((a, b) => a + b, 0) / sonos.length : 0;
     const coisasBoas = dias.flatMap((d) => (lerDiario(d).bom || []).filter(Boolean).map((b) => ({ d, b })));
     const focos = regs.reduce((s, r) => s + (r.pomodoros || 0), 0);
-
-    const gastos = lancamentosEntre(ini, fim).filter((l) => l.tipo !== 'entrada');
-    const totalGasto = gastos.reduce((s, l) => s + l.valor, 0);
-    const porCat = {};
-    gastos.forEach((l) => { porCat[l.cat] = (porCat[l.cat] || 0) + l.valor; });
-    const topCat = Object.entries(porCat).sort((a, b) => b[1] - a[1])[0];
 
     const atual = ini === segundaDaSemana(hoje);
 
@@ -68,7 +65,7 @@ PAGINAS.revisao = {
       <div class="card stat"><span class="selo c-verde">${ic('check')}</span><div><b>${feitas.length + feitasMat.length}</b><span>tarefas concluídas</span></div></div>
       <div class="card stat"><span class="selo c-violeta">${ic('repeat')}</span><div><b>${pctRotina}%</b><span>da rotina cumprida</span></div></div>
       <div class="card stat"><span class="selo c-rosa">${ic('timer')}</span><div><b>${textoMinutos(totalEstudo)}</b><span>de estudo · ${focos} ${focos === 1 ? 'ciclo' : 'ciclos'} de foco</span></div></div>
-      <div class="card stat"><span class="selo c-amarelo">${ic('wallet')}</span><div><b>${dinheiro(totalGasto)}</b><span>gastos${topCat ? ` · mais em ${esc(catGasto(topCat[0]).nome)}` : ''}</span></div></div>
+      <div class="card stat"><span class="selo c-amarelo">${ic('flag')}</span><div><b>${melhorDia ? melhorDia.nome : '—'}</b><span>${melhorDia ? `melhor dia · ${melhorDia.pct}% do previsto feito` : 'melhor dia (ainda sem dados)'}</span></div></div>
     </div>
 
     <div class="grade g2">
@@ -105,7 +102,7 @@ PAGINAS.revisao = {
           ${dias.map((d) => { const hm = estado.diario[d]?.humor; return `<div>${hm ? `<svg class="ic" style="color:var(--amarelo)"><use href="#i-${hm}"/></svg>` : '<span class="ponto"></span>'}${DIAS_SEMANA[paraData(d).getDay()]}</div>`; }).join('')}
         </div>
         ${totalEstudo ? `<h3 class="sub-titulo">Estudo por matéria</h3>
-          ${Object.entries(estudo).sort((a, b) => b[1] - a[1]).map(([ref, min]) => `<div class="item"><span class="txt">${esc(nomeMateria(ref) || 'Matéria apagada')}</span><b>${textoMinutos(min)}</b></div>`).join('')}` : ''}
+          ${Object.entries(estudo).sort((a, b) => b[1] - a[1]).map(([ref, min]) => `<div class="item"><span class="txt">${esc(ref ? nomeMateria(ref) || 'Matéria apagada' : 'Sem matéria')}</span><b>${textoMinutos(min)}</b></div>`).join('')}` : ''}
         ${coisasBoas.length ? `<h3 class="sub-titulo">Coisas boas da semana</h3>
           ${coisasBoas.map((c) => `<p class="coisa-boa">${ic('sparkle', 'p')} ${esc(c.b)} <small>${DIAS_SEMANA[paraData(c.d).getDay()]}</small></p>`).join('')}` : ''}
       </section>

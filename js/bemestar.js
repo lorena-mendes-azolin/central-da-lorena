@@ -1,4 +1,5 @@
-const bemTela = { dia: null, mes: hojeISO().slice(0, 7), busca: '', sono: null };
+// verDiario começa falso: a lista "Seus dias" abre sempre embaçada, como saldo de banco
+const bemTela = { dia: null, mes: hojeISO().slice(0, 7), busca: '', sono: null, verDiario: false };
 const diaCurto = (iso) => `${iso.slice(8)}/${iso.slice(5, 7)}`;
 const diaSemanaCurto = (iso) => DIAS_SEMANA[paraData(iso).getDay()].toLowerCase();
 
@@ -94,13 +95,14 @@ PAGINAS.bemestar = {
             <button class="acao-item" data-acao="bem-mes" data-d="-1" aria-label="Mês anterior">${ic('left', 'p')}</button>
             <span>${nomeMesLista}</span>
             <button class="acao-item" data-acao="bem-mes" data-d="1" aria-label="Próximo mês" ${bemTela.mes >= hoje.slice(0, 7) ? 'disabled' : ''}>${ic('right', 'p')}</button>
+            <button class="acao-item olho-diario" data-acao="bem-olho" aria-pressed="${bemTela.verDiario}" title="${bemTela.verDiario ? 'Esconder o texto' : 'Mostrar o texto'}" aria-label="${bemTela.verDiario ? 'Esconder o texto do diário' : 'Mostrar o texto do diário'}">${ic(bemTela.verDiario ? 'eye' : 'eyeoff', 'p')}</button>
           </span></h2>
         <div class="busca-diario">
           ${ic('note', 'p')}
           <input type="search" id="busca-diario" placeholder="Buscar no diário" value="${esc(bemTela.busca)}" data-digitar="bem-busca" aria-label="Buscar no diário">
           <small id="conta-diario">${anteriores.length} ${anteriores.length === 1 ? 'dia' : 'dias'}</small>
         </div>
-        <div class="diarios">
+        <div class="diarios ${bemTela.verDiario ? '' : 'embacado'}">
           ${anteriores.map(([d, r]) => `<button class="diario-item ${d === dia ? 'ativo' : ''}" data-acao="bem-ir" data-dia="${d}" data-busca="${esc(((r.bom || []).join(' ') + ' ' + (r.texto || '')).toLowerCase())}">
             <b>${d === hoje ? 'Hoje · ' : ''}${paraData(d).toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '')}
               ${estado.diario[d]?.humor ? `<svg class="ic" style="color:var(--amarelo)"><use href="#i-${estado.diario[d].humor}"/></svg>` : ''}</b>
@@ -230,6 +232,7 @@ function filtrarDiario() {
   const vazio = $('#busca-vazia');
   if (vazio) vazio.hidden = !(termo && n === 0);
 }
+ACOES['bem-olho'] = () => { bemTela.verDiario = !bemTela.verDiario; desenhar(); };
 DIGITAR['bem-busca'] = (el) => { bemTela.busca = el.value; filtrarDiario(); };
 
 FORMS['agua-config'] = (d) => {

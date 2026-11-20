@@ -60,6 +60,25 @@ const listaColecoes = () => ({
 });
 const listaCompras = () => ({ id: 'compras', tipo: 'compras', nome: 'Compras', icone: 'cart', cor: '#ffb38a', desc: 'Para agora e a longo prazo', itens: [] });
 
+// Conta nova começa só com esta lista de exemplo (dá para usar, renomear ou excluir)
+const listaExemplo = () => ({
+  id: 'exemplo', tipo: 'simples', nome: 'Minha lista', icone: 'list', cor: '#9d86ff', desc: 'Lista de exemplo: use, renomeie ou exclua', visao: 'lista', notas: [],
+  itens: [it('Marque um item como feito'), it('Crie novas listas no + do menu (tem modelos prontos)'), it('Não vai usar esta lista? Exclua pelo lápis do menu')],
+});
+
+// Modelos prontos que aparecem em "Nova lista". Cada um cria uma cópia nova, com id próprio.
+const semId = ({ id, ...resto }) => resto;
+const MODELOS_LISTA = {
+  estudos: { nome: 'Estudos', desc: 'Cursos com tarefas, provas e caderno de aulas.', icone: 'book', cor: '#6aaeff',
+    criar: () => ({ tipo: 'cursos', nome: 'Estudos', icone: 'book', cor: '#6aaeff', desc: '', rotulo: 'Curso', materias: [] }) },
+  metas: { nome: 'Metas', desc: 'Metas com descrição, prazo e etapas.', icone: 'target', cor: '#5fd6a4',
+    criar: () => ({ tipo: 'metas', nome: 'Metas', icone: 'target', cor: '#5fd6a4', desc: '', metas: [] }) },
+  colecoes: { nome: 'Lista de listas', desc: 'Lugares, filmes, séries, livros e receitas.', icone: 'star', cor: '#f7c56b',
+    criar: () => semId(listaColecoes()) },
+  compras: { nome: 'Compras', desc: 'Para agora e a longo prazo, com valores.', icone: 'cart', cor: '#ffb38a',
+    criar: () => semId(listaCompras()) },
+};
+
 const TIPOS_LISTA = {
   simples: { nome: 'Lista simples', desc: 'Itens com status, data e etiqueta, em lista, quadro ou caderno.', icone: 'list' },
   cursos: { nome: 'Matérias ou cursos', desc: 'Cada matéria tem as suas tarefas, provas e caderno de aulas.', icone: 'cap' },
@@ -90,12 +109,7 @@ const tarefa = (titulo, data, extra = {}) => ({
 function dadosIniciais() {
   return {
     tarefas: [],
-    listas: [
-      { id: 'estudos', tipo: 'cursos', nome: 'Estudos', icone: 'book', cor: '#6aaeff', desc: '', rotulo: 'Curso', materias: [] },
-      { id: 'metas', tipo: 'metas', nome: 'Metas', icone: 'target', cor: '#5fd6a4', desc: '', metas: [] },
-      listaColecoes(),
-      listaCompras(),
-    ],
+    listas: [listaExemplo()],
     habitos: [
       { id: 'h1', nome: 'Olhar a agenda do dia', grupo: 'Geral', dias: [] },
       { id: 'h2', nome: 'Beber água', grupo: 'Geral', dias: [] },

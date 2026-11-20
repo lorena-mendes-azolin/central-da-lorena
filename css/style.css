@@ -1547,3 +1547,45 @@ div.campo > .form-linha, div.campo > .lista-cidades { font-size: 15px; color: va
 .item.lanc .txt.clicavel:hover { color: var(--destaque-2); }
 .janela form:not(.escopo-todos) .campo-todos { display: none; }
 .janela .linha-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+
+/* Diário: lista "Seus dias" embaçada até tocar no olhinho */
+.olho-diario { margin-left: 4px; }
+.olho-diario[aria-pressed="true"] { color: var(--destaque-2); }
+.diarios.embacado .diario-item span, .diarios.embacado .diario-item small { filter: blur(5px); user-select: none; -webkit-user-select: none; transition: filter .2s; }
+
+/* Menu lateral: lápis para excluir listas */
+.nav-botoes { display: flex; align-items: center; gap: 2px; }
+.nav-add.on { background: var(--ativo); color: #fff; }
+.nav-del { margin-left: auto; border: 0; background: none; color: #ff8a9b; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; cursor: pointer; flex: 0 0 auto; }
+.nav-del:hover { background: rgba(255, 122, 143, .15); }
+.nav-vazio { color: var(--fraco); font-size: 12.5px; margin: 4px 12px; white-space: normal; }
+body.menu-mini .lateral:not(:hover) .nav-del, body.menu-mini .lateral:not(:hover) .nav-vazio { opacity: 0; pointer-events: none; }
+@media (max-width: 860px) { body.menu-mini .lateral .nav-del, body.menu-mini .lateral .nav-vazio { opacity: 1 !important; pointer-events: auto !important; } }
+
+/* Nova lista: modelos prontos */
+.modelos-lista { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.modelo-lista { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--linha); background: none; color: var(--texto); font: inherit; cursor: pointer; }
+.modelo-lista:hover { border-color: var(--destaque); background: var(--destaque-bg); }
+.modelo-lista .selo { grid-row: span 2; }
+.modelo-lista b { font-size: 14px; }
+.modelo-lista small { color: var(--suave); font-size: 12px; }
+@media (max-width: 520px) { .modelos-lista { grid-template-columns: minmax(0, 1fr); } }
+
+/* Matéria: nome que quebra linha em vez de ficar cortado */
+textarea.titulo-quebra { display: block; resize: none; overflow: hidden; field-sizing: content; min-height: 1.3em; line-height: 1.25; color: inherit; font-family: inherit; overflow-wrap: anywhere; }
+
+/* Matéria no celular */
+@media (max-width: 640px) {
+  .materia-cab .segmento { width: 100%; }
+  .materia-cab .segmento button { flex: 1 0 auto; justify-content: center; }
+  .abas-materia { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; overflow: visible; }
+  .abas-materia button { flex-direction: column; justify-content: center; gap: 3px; white-space: normal; text-align: center; line-height: 1.2; padding: 7px 4px; font-size: 12px; }
+  .barra-materia .espaco { display: none; }
+  .barra-materia > .btn-mini { flex: 1 1 0; justify-content: center; }
+  .item-tm { flex-wrap: wrap; row-gap: 2px; align-items: center; }
+  .item-tm .txt { flex: 1 1 calc(100% - 40px); min-width: 0; }
+  .item-tm .txt .inline-t { padding-left: 4px; padding-right: 4px; }
+  .item-tm .tag { margin-left: 32px; }
+  .item-tm .acao-item.apagar { margin-left: auto; }
+}
+.nav-add[hidden] { display: none; }

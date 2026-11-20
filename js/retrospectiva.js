@@ -58,10 +58,12 @@ function dadosRetro() {
   r.pomodoros = dias.reduce((s, d) => s + (estado.diario[d]?.pomodoros || 0), 0);
   const estudo = {};
   dias.forEach((d) => Object.entries(estado.diario[d]?.estudo || {}).forEach(([ref, min]) => { estudo[ref] = (estudo[ref] || 0) + min; }));
-  r.estudoMin = Object.values(estudo).reduce((a, b) => a + b, 0);
-  r.estudoTop = Object.entries(estudo).map(([ref, min]) => [nomeMateria(ref) || 'Outros', min]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  r.estudoMin = dias.reduce((s, d) => s + minutosEstudoDia(d), 0);
+  const semMateria = r.estudoMin - Object.values(estudo).reduce((a, b) => a + b, 0);
+  if (semMateria > 0) estudo[''] = semMateria;
+  r.estudoTop = Object.entries(estudo).map(([ref, min]) => [ref ? nomeMateria(ref) || 'Outros' : 'Sem matéria', min]).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
-  r.diario = diariosComConteudo().filter(([d]) => no(d)).length;
+  r.melhorDia = melhorDiaSemana(dias);
 
   const colecoes = {};
   estado.listas.filter((l) => l.tipo === 'colecoes').forEach((l) => l.categorias.forEach((c) => {
@@ -95,15 +97,6 @@ function dadosRetro() {
     r.passeios = at.filter((a) => a.tipo === 'passeio').length;
     r.brincadeiras = at.filter((a) => a.tipo === 'brincadeira').length;
   }
-  if (temModulo('financas')) {
-    const ls = lancamentosEntre(ini, fim);
-    const saidas = ls.filter((l) => l.tipo !== 'entrada');
-    r.gastos = saidas.reduce((s, l) => s + l.valor, 0);
-    r.entradas = ls.filter((l) => l.tipo === 'entrada').reduce((s, l) => s + l.valor, 0);
-    const porCat = {};
-    saidas.forEach((l) => { porCat[l.cat] = (porCat[l.cat] || 0) + l.valor; });
-    r.catTop = Object.entries(porCat).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([id, v]) => [catGasto(id).nome, v, catGasto(id).cor]);
-  }
   return r;
 }
 
@@ -126,7 +119,7 @@ PAGINAS.retrospectiva = {
       r.estudoMin && ['book', 'c-azul', textoMinutos(r.estudoMin), 'de estudo'],
       r.treinoMin && ['gym', 'c-vermelho', textoMinutos(r.treinoMin), 'de treino'],
       r.km && ['flame', 'c-amarelo', `${fmtNum(r.km)} km`, 'corridos'],
-      r.diario && ['note', 'c-rosa', r.diario, r.diario === 1 ? 'dia no diário' : 'dias no diário'],
+      r.melhorDia && ['flag', 'c-rosa', r.melhorDia.nome, `seu melhor dia · ${r.melhorDia.pct}% cumprido`],
       r.jejunsOk && ['timer', 'c-verde', r.jejunsOk, r.jejunsOk === 1 ? 'jejum completo' : 'jejuns completos'],
       r.pomodoros && ['timer', 'c-rosa', r.pomodoros, r.pomodoros === 1 ? 'ciclo de foco' : 'ciclos de foco'],
     ].filter(Boolean);
@@ -146,7 +139,6 @@ PAGINAS.retrospectiva = {
       r.jejuns ? card('timer', 'c-verde', 'Jejum', `<p class="retro-num">${r.jejunsOk}/${r.jejuns}</p><p class="dica">ciclos completos · média de ${fmtHoras(r.jejumMedia)}</p>`) : '',
       (r.passeios || r.brincadeiras) ? card('paw', 'c-amarelo', 'Pets', `<div class="retro-duplo"><div><p class="retro-num">${r.passeios}</p><p class="dica">passeios</p></div><div><p class="retro-num">${r.brincadeiras}</p><p class="dica">brincadeiras</p></div></div>`) : '',
       (Object.keys(r.colecoes).length || r.etapas) ? card('star', 'c-amarelo', 'Conquistas', `${Object.keys(r.colecoes).length ? linhas(Object.entries(r.colecoes), (v) => `${v} ${v === 1 ? 'item' : 'itens'}`) : ''}${r.etapas ? `<p class="dica">${r.etapas} ${r.etapas === 1 ? 'etapa de meta concluída' : 'etapas de metas concluídas'}</p>` : ''}`) : '',
-      (r.gastos || r.entradas) ? card('money', 'c-verde', 'Dinheiro', `<div class="retro-duplo"><div><p class="retro-num">${dinheiro(r.gastos)}</p><p class="dica">gastos</p></div><div><p class="retro-num">${dinheiro(r.entradas)}</p><p class="dica">entradas</p></div></div>${r.catTop.length ? `<p class="retro-sub">Onde mais gastou</p>${linhas(r.catTop, (v) => dinheiro(v))}` : ''}`) : '',
     ].filter(Boolean);
     const hoje = hojeISO();
     const anoAtual = Number(hoje.slice(0, 4));
@@ -183,7 +175,7 @@ ACOES['retro-copiar'] = async () => {
   const linhas = [`Minha retrospectiva · ${p.nome}`,
     r.tarefas && `✅ ${r.tarefas} tarefas concluídas`, r.rotinaPct && `🔁 ${r.rotinaPct}% da rotina cumprida`,
     r.estudoMin && `📚 ${textoMinutos(r.estudoMin)} de estudo`, r.treinos && `💪 ${r.treinos} treinos`, r.km && `🏃 ${fmtNum(r.km)} km corridos`,
-    r.jejunsOk && `⏱️ ${r.jejunsOk} jejuns completos`, r.diario && `📝 ${r.diario} dias no diário`,
+    r.jejunsOk && `⏱️ ${r.jejunsOk} jejuns completos`, r.melhorDia && `🏆 Melhor dia: ${r.melhorDia.nome} (${r.melhorDia.pct}% cumprido)`,
     ...(r.apps || []).map(([n, v, u]) => `📱 ${v} ${u} no ${n}`)].filter(Boolean);
   try { await navigator.clipboard.writeText(linhas.join('\n')); avisar('Resumo copiado. É só colar onde quiser.'); }
   catch { avisar('Não consegui copiar automaticamente.'); }

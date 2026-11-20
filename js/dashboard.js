@@ -361,7 +361,7 @@ function textoCrono(ms) {
   const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sg = t % 60;
   return h ? `${h}:${String(m).padStart(2, '0')}:${String(sg).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(sg).padStart(2, '0')}`;
 }
-const minutosHoje = () => Object.values(registroDoDia().estudo || {}).reduce((a, b) => a + b, 0) + (registroDoDia().sessoes || []).filter((x) => !x.ref).reduce((a, x) => a + x.min, 0);
+const minutosHoje = () => minutosEstudoDia(hojeISO());
 
 function atualizarCronometro() {
   const el = $('#crono-tempo');
@@ -456,6 +456,10 @@ function passoPomodoro() {
       if (ref && acharRef(ref)) {
         reg.estudo = reg.estudo || {};
         reg.estudo[ref] = (reg.estudo[ref] || 0) + Math.round(pomo.total / 60);
+      } else {
+        // Sem matéria escolhida: guarda como sessão para entrar nas horas de estudo do dia
+        reg.sessoes = reg.sessoes || [];
+        reg.sessoes.push({ id: novoId(), ref: '', assunto: 'Ciclo de foco', min: Math.round(pomo.total / 60), fim: new Date().toTimeString().slice(0, 5) });
       }
       salvar();
       marcarVinculo(estado.config.focoHabito);

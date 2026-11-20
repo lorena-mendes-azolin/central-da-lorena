@@ -199,7 +199,7 @@ function htmlCartaoMateria(l, m) {
 function htmlTarefaMateria(l, m, t, mostrarMateria = false) {
   const atrasada = !t.feito && t.data && t.data < hojeISO();
   const ref = `${l.id}/${m.id}/tarefa/${t.id}`;
-  return `<div class="item ${t.feito ? 'feito' : ''} ${atrasada ? 'atrasado' : ''}">
+  return `<div class="item item-tm ${t.feito ? 'feito' : ''} ${atrasada ? 'atrasado' : ''}">
     <button class="check ${t.feito ? 'on' : ''}" data-acao="tm-check" data-ref="${ref}" aria-label="Concluir">${t.feito ? ic('check') : ''}</button>
     <span class="txt">${mostrarMateria ? esc(t.titulo) : `<input class="inline inline-t" value="${esc(t.titulo)}" data-digitar="campo" data-ref="${ref}" data-campo="titulo" aria-label="Tarefa">`}
       <span class="sub">${mostrarMateria ? `<a href="#lista-${l.id}--${m.id}">${esc(m.nome)}</a> · ` : ''}${t.data ? `${dataCurta(t.data)} · ${quandoFalta(t.data).toLowerCase()}` : 'sem data'}${atrasada ? ' · atrasada' : ''}</span></span>
@@ -235,7 +235,7 @@ function htmlMateria(l, m) {
   <div class="linha-vinculo">${htmlVinculo('ref:' + ref, `Ao concluir tarefa ou escrever no caderno ${l.rotulo === 'Matéria' ? 'desta matéria' : 'deste curso'}, marcar`, l.habito)}</div>
   <div class="materia-cab">
     <div class="textos">
-      <input class="titulo-edit" value="${esc(m.nome)}" data-digitar="campo" data-ref="${ref}" data-campo="nome" aria-label="Nome" maxlength="80">
+      <textarea class="titulo-edit titulo-quebra" rows="1" data-digitar="campo" data-ref="${ref}" data-campo="nome" aria-label="Nome" maxlength="80">${esc(m.nome)}</textarea>
       <input class="desc-edit" value="${esc(m.tag)}" placeholder="Etiqueta" data-digitar="campo" data-ref="${ref}" data-campo="tag" aria-label="Etiqueta" maxlength="30">
     </div>
     <div class="segmento">
@@ -243,8 +243,8 @@ function htmlMateria(l, m) {
     </div>
   </div>
 
-  <div class="barra-lista">
-    <div class="segmento">
+  <div class="barra-lista barra-materia">
+    <div class="segmento abas-materia">
       <button class="${aba === 'tarefas' ? 'ativo' : ''}" data-acao="materia-aba" data-a="tarefas">${ic('check', 'p')} Tarefas e provas</button>
       <button class="${aba === 'caderno' ? 'ativo' : ''}" data-acao="materia-aba" data-a="caderno">${ic('notebook', 'p')} Caderno de aulas</button>
       <button class="${aba === 'notas' ? 'ativo' : ''}" data-acao="materia-aba" data-a="notas">${ic('star', 'p')} Notas e estudo</button>

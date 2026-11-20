@@ -1,5 +1,41 @@
 const graficoTela = { dias: 7 };
 
+const NOMES_DIA_LONGO = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+// Minutos estudados no dia: soma todas as matérias/cursos e também o estudo lançado sem matéria
+function minutosEstudoDia(iso) {
+  const r = estado.diario[iso] || {};
+  return Object.values(r.estudo || {}).reduce((a, b) => a + b, 0)
+    + (r.sessoes || []).filter((x) => !x.ref).reduce((a, x) => a + (x.min || 0), 0);
+}
+
+// Quanto do que estava previsto para o dia foi feito: hábitos do dia + tarefas marcadas para o dia (agenda e matérias)
+function efetividadeDia(iso) {
+  const habitos = habitosDoDia(iso);
+  const tarefas = [
+    ...estado.tarefas.filter((t) => t.data === iso),
+    ...estado.listas.filter((l) => l.tipo === 'cursos').flatMap((l) => l.materias.flatMap((m) => m.tarefas)).filter((t) => t.data === iso),
+  ];
+  return { feitos: feitosNoDia(iso, habitos) + tarefas.filter((t) => t.feito).length, total: habitos.length + tarefas.length };
+}
+
+// Melhor dia da semana pela PORCENTAGEM cumprida (não pela quantidade): cada dia vira um %,
+// e quando o mesmo dia da semana aparece mais de uma vez no período, tira a média deles.
+function melhorDiaSemana(dias) {
+  const hoje = hojeISO();
+  const porDia = {};
+  dias.filter((d) => d <= hoje).forEach((d) => {
+    const e = efetividadeDia(d);
+    if (!e.total) return;
+    const w = paraData(d).getDay();
+    (porDia[w] = porDia[w] || []).push(e.feitos / e.total);
+  });
+  const melhor = Object.entries(porDia)
+    .map(([w, v]) => ({ w: Number(w), pct: v.reduce((a, b) => a + b, 0) / v.length }))
+    .sort((a, b) => b.pct - a.pct)[0];
+  return melhor && melhor.pct > 0 ? { nome: NOMES_DIA_LONGO[melhor.w], pct: Math.round(melhor.pct * 100) } : null;
+}
+
 const NOTA_HUMOR = { face1: 5, face2: 4, face3: 3, face4: 2, face5: 1 };
 
 function diasDoPeriodo() {
@@ -44,7 +80,7 @@ PAGINAS.graficos = {
     const pctRotina = possiveis ? Math.round((dias.reduce((s, d) => s + habitosFeitos(d), 0) / possiveis) * 100) : 0;
     const concluidas = dias.reduce((s, d) => s + tarefasConcluidas(d), 0);
     const mediaAgua = dias.reduce((s, d) => s + (estado.diario[d]?.agua || 0), 0) / n;
-    const focos = dias.reduce((s, d) => s + (estado.diario[d]?.pomodoros || 0), 0);
+    const estudoTotal = dias.reduce((s, d) => s + minutosEstudoDia(d), 0);
 
     const contagem = {};
     dias.forEach((d) => { const h = estado.diario[d]?.humor; if (h) contagem[h] = (contagem[h] || 0) + 1; });
@@ -113,8 +149,8 @@ PAGINAS.graficos = {
       </section>
 
       <section class="card">
-        <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('timer')}</span> Foco <small>${focos} ${focos === 1 ? 'ciclo' : 'ciclos'}</small></h2>
-        ${colunas(dias, (d) => estado.diario[d]?.pomodoros || 0, (d, v) => `${dataCurta(d)} · ${v} ${v === 1 ? 'ciclo' : 'ciclos'} de foco`)}
+        <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('book')}</span> Horas de estudo <small>${textoMinutos(estudoTotal)} no período</small></h2>
+        ${colunas(dias, minutosEstudoDia, (d, v) => `${dataCurta(d)} · ${v ? `${textoMinutos(v)} de estudo` : 'sem estudo'}`)}
       </section>
       ${htmlGraficosModulos(dias)}
     </div>`;

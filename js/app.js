@@ -28,6 +28,7 @@ function desenhar() {
   fecharMenuSelect();
   melhorarSelects();
   melhorarDatas();
+  $$('#conteudo .titulo-quebra').forEach(ajustarAlturaTitulo);
   if (typeof redesenharCompra === 'function') redesenharCompra();
   if (typeof redesenharColecao === 'function') redesenharColecao();
 }
@@ -79,8 +80,17 @@ function desenharMenu() {
     const c = contarLista(l);
     const pend = l.tipo === 'cursos' || l.tipo === 'metas' ? 0 : c.total - c.feitos;
     return `<a href="#lista-${l.id}" data-pagina="lista-${l.id}" title="${esc(l.nome)}" ${ordem('|listas', l.id)} data-pegar>
-      <span class="selo mini" style="background:${l.cor}26;color:${l.cor}">${ic(l.icone)}</span><span>${esc(l.nome)}</span><em>${pend || ''}</em></a>`;
-  }).join('');
+      <span class="selo mini" style="background:${l.cor}26;color:${l.cor}">${ic(l.icone)}</span><span>${esc(l.nome)}</span>${menuTela.editar
+        ? `<button class="nav-del" data-acao="lista-excluir-menu" data-id="${l.id}" title="Excluir lista" aria-label="Excluir ${esc(l.nome)}">${ic('trash', 'p')}</button>`
+        : `<em>${pend || ''}</em>`}</a>`;
+  }).join('') || '<p class="nav-vazio">Nenhuma lista. Toque no + para criar.</p>';
+  const btnEditar = $('#btn-editar-listas');
+  if (btnEditar) {
+    btnEditar.hidden = !estado.listas.length;
+    btnEditar.classList.toggle('on', menuTela.editar);
+    btnEditar.title = menuTela.editar ? 'Concluir' : 'Excluir listas';
+    btnEditar.innerHTML = `<svg class="ic"><use href="#i-${menuTela.editar ? 'check' : 'edit'}"/></svg>`;
+  }
   $$('.lateral a[data-pagina]').forEach((a) => a.classList.toggle('ativo', a.dataset.pagina === atual));
 
   const hoje = hojeISO();
@@ -127,7 +137,7 @@ document.addEventListener('click', (e) => {
     e.preventDefault();
     ACOES[el.dataset.acao](el, e);
   }
-  if (e.target.closest('.lateral a[data-pagina]')) fecharMenu();
+  if (e.target.closest('.lateral a[data-pagina]') && !e.target.closest('.nav-del')) fecharMenu();
 
   $('#dica-grafico').hidden = true;
 });
@@ -137,7 +147,15 @@ document.addEventListener('change', (e) => {
   if (el && MUDAR[el.dataset.mudar]) MUDAR[el.dataset.mudar](el, e);
 });
 
+// Título que quebra linha (nome da matéria): cresce conforme o texto, para não ficar cortado no celular
+function ajustarAlturaTitulo(el) {
+  if (CSS.supports && CSS.supports('field-sizing', 'content')) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
 document.addEventListener('input', (e) => {
+  if (e.target.matches('.titulo-quebra')) ajustarAlturaTitulo(e.target);
   const el = e.target.closest('[data-digitar]');
   if (el && DIGITAR[el.dataset.digitar]) DIGITAR[el.dataset.digitar](el, e);
 });
@@ -156,7 +174,7 @@ document.addEventListener('submit', (e) => {
 
 document.addEventListener('keydown', (e) => {
 
-  if (e.key === 'Enter' && e.target.matches('.titulo-edit, .desc-edit, td .inline, .item-lista .inline')) e.target.blur();
+  if (e.key === 'Enter' && e.target.matches('.titulo-edit, .desc-edit, td .inline, .item-lista .inline')) { if (e.target.tagName === 'TEXTAREA') e.preventDefault(); e.target.blur(); }
   if (e.key === 'Escape') { $('#escolha-icone').hidden = true; $('#painel-avisos').hidden = true; fecharMenu(); }
 });
 

@@ -214,6 +214,11 @@ ACOES['lista-nova'] = () => {
         <input type="radio" name="tipo" value="${id}" ${k === 0 ? 'checked' : ''}>
         <span>${ic(t.icone)}<b>${t.nome}</b><small>${t.desc}</small></span></label>`).join('')}
     </div>
+    <div class="campo" style="margin-top:14px">Ou confira os modelos prontos</div>
+    <div class="modelos-lista">
+      ${Object.entries(MODELOS_LISTA).map(([id, m]) => `<button type="button" class="modelo-lista" data-acao="lista-modelo" data-m="${id}">
+        <span class="selo mini" style="background:${m.cor}26;color:${m.cor}">${ic(m.icone)}</span><b>${m.nome}</b><small>${m.desc}</small></button>`).join('')}
+    </div>
     <div class="rodape-janela">
       <button type="button" class="btn sec" data-acao="fechar-janela">Cancelar</button>
       <button type="submit" class="btn">Criar lista</button>
@@ -240,15 +245,36 @@ FORMS['lista-criar'] = (d) => {
   location.hash = 'lista-' + id;
 };
 
-ACOES['lista-excluir'] = (el) => {
-  const i = estado.listas.findIndex((l) => l.id === el.dataset.id);
+ACOES['lista-modelo'] = (el) => {
+  const id = novoId();
+  estado.listas.push({ ...MODELOS_LISTA[el.dataset.m].criar(), id });
+  fecharJanela();
+  salvar();
+  location.hash = 'lista-' + id;
+};
+
+function excluirLista(id) {
+  const i = estado.listas.findIndex((l) => l.id === id);
   if (i < 0) return;
   const [removida] = estado.listas.splice(i, 1);
+  const estavaNela = location.hash === '#lista-' + id || location.hash.startsWith('#lista-' + id + '--');
+  if (!estado.listas.length) menuTela.editar = false;
   salvar();
-  location.hash = 'dashboard';
+  if (estavaNela) location.hash = 'dashboard'; else desenhar();
   avisar(`Lista "${removida.nome}" excluída`, () => {
-    estado.listas.splice(i, 0, removida); salvar(); location.hash = 'lista-' + removida.id; desenhar();
+    estado.listas.splice(i, 0, removida); salvar(); desenhar();
   });
+}
+ACOES['lista-excluir'] = (el) => excluirLista(el.dataset.id);
+
+// Excluir pelo menu lateral: o lápis liga o modo de edição, e a lixeira pede um segundo toque para confirmar
+const menuTela = { editar: false };
+ACOES['menu-editar-listas'] = () => { menuTela.editar = !menuTela.editar; desenharMenu(); };
+ACOES['lista-excluir-menu'] = (el) => {
+  const l = acharLista(el.dataset.id);
+  if (!l) return;
+  if (!confirmarDuasVezes('lista-del-' + l.id, `Toque de novo na lixeira para excluir "${l.nome}".`)) return;
+  excluirLista(l.id);
 };
 
 ACOES['lista-visao'] = (el) => { acharLista(el.dataset.id).visao = el.dataset.v; salvar(); desenhar(); };
