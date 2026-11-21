@@ -922,7 +922,10 @@ body[data-tema] { background: var(--fundo); }
 .anexos-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
 .form-link input { flex: 1 1 auto; min-width: 0; padding: 8px 12px; }
 .form-link .btn-mini, .anexos-add > .btn-mini { flex: 0 0 auto; padding: 8px 14px; }
-.lista-compras { max-height: 460px; overflow-y: auto; padding-right: 4px; }
+.lista-compras { max-height: 340px; overflow-y: auto; padding-right: 4px; overscroll-behavior: contain; }
+.ordenar-compras { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--suave); }
+.ordenar-compras .sel-btn { width: auto; min-width: 150px; padding: 6px 12px; font-size: 13px; }
+@media (max-width: 640px) { .lista-compras { max-height: 420px; } .ordenar-compras { margin-left: auto; } }
 .alca { display: inline-grid; place-items: center; width: 22px; height: 28px; flex: 0 0 22px; color: var(--fraco); cursor: grab; touch-action: none; border-radius: 6px; opacity: .55; transition: opacity .15s; }
 .alca:hover { opacity: 1; color: var(--suave); background: var(--hover); }
 .alca .ic { width: 15px; height: 15px; fill: currentColor; stroke: none; }

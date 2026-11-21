@@ -6,6 +6,39 @@ const GRUPOS_COMPRA = {
   longo: { nome: 'A longo prazo', desc: 'Coisas maiores, para ir juntando', icone: 'wallet', cor: 'c-amarelo' },
 };
 
+const ORDENS_COMPRA = {
+  manual: 'Minha ordem',
+  recentes: 'Mais recentes',
+  antigos: 'Mais antigos',
+  maior: 'Maior valor',
+  menor: 'Menor valor',
+  az: 'A → Z',
+  za: 'Z → A',
+  mes: 'Mês de compra',
+};
+// Data de inclusão: usa "criado" (itens novos) ou tira do começo do id (feito com Date.now)
+function criadoCompra(i) {
+  if (i.criado) return i.criado;
+  const t = parseInt(String(i.id || '').slice(0, 8), 36);
+  return t > 1.4e12 && t < 4e12 ? t : 0;
+}
+function ordenarItensCompra(itens, modo) {
+  const nome = (i) => String(i.titulo || '');
+  const regras = {
+    recentes: (a, b) => criadoCompra(b) - criadoCompra(a),
+    antigos: (a, b) => criadoCompra(a) - criadoCompra(b),
+    maior: (a, b) => valorNumero(b.valor) - valorNumero(a.valor),
+    // sem valor vai para o fim
+    menor: (a, b) => (valorNumero(a.valor) || Infinity) - (valorNumero(b.valor) || Infinity),
+    az: (a, b) => nome(a).localeCompare(nome(b), 'pt-BR', { sensitivity: 'base' }),
+    za: (a, b) => nome(b).localeCompare(nome(a), 'pt-BR', { sensitivity: 'base' }),
+    mes: (a, b) => (a.mes || '9999').localeCompare(b.mes || '9999'),
+  };
+  const regra = regras[modo];
+  // comprados sempre no fim; dentro de cada parte, a regra escolhida
+  return [...itens].sort((a, b) => (Number(a.comprado) - Number(b.comprado)) || (regra ? regra(a, b) : 0));
+}
+
 function valorNumero(v) {
   const n = parseFloat(String(v || '').replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3})/g, '').replace(',', '.'));
   return Number.isFinite(n) ? n : 0;
@@ -25,6 +58,8 @@ function htmlCompras(l) {
   const cats = catsCompra(l);
   if (comprasTela.cat !== 'todas' && !cats.includes(comprasTela.cat)) comprasTela.cat = 'todas';
   const filtro = comprasTela.cat;
+  const modo = ORDENS_COMPRA[l.ordenarCompras] ? l.ordenarCompras : 'manual';
+  const manual = modo === 'manual';
   return `
   ${htmlCabLista(l)}
   <div class="carrossel">
@@ -43,12 +78,16 @@ function htmlCompras(l) {
     <span class="dica" style="margin:0">${l.itens.length - comprados} para comprar · ${comprados} já ${comprados === 1 ? 'comprado' : 'comprados'}</span>
     <span class="espaco"></span>
     ${comprados ? `<button class="btn-mini" data-acao="compras-mostrar">${comprasTela.mostrarComprados ? 'Esconder' : 'Mostrar'} comprados</button>` : ''}
+    <label class="ordenar-compras"><span>Ordenar</span>
+      <select data-mudar="compras-ordenar" data-lista="${l.id}" aria-label="Ordenar itens">
+        ${Object.entries(ORDENS_COMPRA).map(([v, t]) => `<option value="${v}" ${v === modo ? 'selected' : ''}>${t}</option>`).join('')}
+      </select>
+    </label>
   </div>
   <div class="grade g2">
     ${Object.entries(GRUPOS_COMPRA).map(([id, g]) => {
       const todos = l.itens.filter((i) => i.prazo === id && (filtro === 'todas' || i.cat === filtro));
-      const itens = todos.filter((i) => comprasTela.mostrarComprados || !i.comprado)
-        .sort((a, b) => Number(a.comprado) - Number(b.comprado));
+      const itens = ordenarItensCompra(todos.filter((i) => comprasTela.mostrarComprados || !i.comprado), modo);
       const total = todos.filter((i) => !i.comprado).reduce((s, i) => s + valorNumero(i.valor), 0);
       return `<section class="card">
         <h2 class="card-titulo"><span class="selo mini ${g.cor}">${ic(g.icone)}</span> ${g.nome} <small>${total ? 'total ' + dinheiro(total) : g.desc}</small></h2>
@@ -62,9 +101,9 @@ function htmlCompras(l) {
           const ref = `${l.id}/${i.id}`;
           const foto = fotoCompra(i);
           const link = linkCompra(i);
-          return `<div class="item-colecao item-compra ${i.comprado ? 'feito' : ''}" ${ordem(l.id + '|itens', i.id)}>
+          return `<div class="item-colecao item-compra ${i.comprado ? 'feito' : ''}" ${manual ? ordem(l.id + '|itens', i.id) : ''}>
             <div class="ic-linha">
-              ${alca()}
+              ${manual ? alca() : ''}
               <button class="check ${i.comprado ? 'on' : ''}" data-acao="compra-check" data-ref="${ref}" aria-label="Comprado">${i.comprado ? ic('check') : ''}</button>
               <button class="miniatura-compra ${foto ? '' : 'vazia'}" data-acao="compra-ver" data-lista="${l.id}" data-id="${i.id}" aria-label="Ver detalhes">${foto ? `<img src="${esc(foto)}" alt="" loading="lazy">` : ic(link ? 'link' : 'cart', 'p')}</button>
               <input class="inline inline-t" value="${esc(i.titulo)}" data-digitar="campo" data-ref="${ref}" data-campo="titulo" aria-label="Item">
@@ -90,7 +129,7 @@ const linkCompra = (i) => i.link || (i.anexos || []).find((a) => a.tipo === 'lin
 FORMS['compra-nova'] = (d, form) => {
   const l = acharLista(form.dataset.lista);
   const link = ehLink(d.titulo) ? corrigirLink(d.titulo) : '';
-  const item = { id: novoId(), titulo: link ? BUSCANDO : d.titulo, prazo: form.dataset.prazo, valor: d.valor || '', comprado: false, notas: '', anexos: [], cat: comprasTela.cat === 'todas' ? '' : comprasTela.cat, link, foto: '' };
+  const item = { id: novoId(), titulo: link ? BUSCANDO : d.titulo, prazo: form.dataset.prazo, valor: d.valor || '', comprado: false, criado: Date.now(), notas: '', anexos: [], cat: comprasTela.cat === 'todas' ? '' : comprasTela.cat, link, foto: '' };
   l.itens.unshift(item);
   salvar(); desenhar();
   $('#compra-' + form.dataset.prazo)?.focus();
@@ -241,7 +280,14 @@ ACOES['compra-check'] = (el) => {
   if (i.comprado) { tocarSom(true); marcarVinculo(listaDoRef(el.dataset.ref)?.habito); }
 };
 
-ACOES['compras-mostrar'] = () => { comprasTela.mostrarComprados = !comprasTela.mostrarComprados; desenhar(); };
+MUDAR['compras-ordenar'] = (el) => {
+  const l = acharLista(el.dataset.lista);
+  if (!l) return;
+  l.ordenarCompras = el.value;
+  salvar(); desenhar();
+};
+
+ACOES['compras-mostrar'] =() => { comprasTela.mostrarComprados = !comprasTela.mostrarComprados; desenhar(); };
 
 
 ACOES['compra-del'] = (el) => removerComDesfazer(acharLista(el.dataset.lista).itens, el.dataset.id, 'Item');
