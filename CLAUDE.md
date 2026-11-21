@@ -67,6 +67,13 @@ com explicações simples e diretas.
   (tabela `ia_chaves`, RLS por dono) ou a do site (segredo `GEMINI_API_KEY`) com limite diário em `simulado_uso`
   (`SIMULADO_LIMITE`, padrão 5). Modelo em `GEMINI_MODELO` (padrão `gemini-flash-latest`). `verify_jwt` false.
   SQL em `supabase/simulado.sql`. Tela em `js/simulado.js` (aba Simulados dos Flashcards; dados em `estado.flashcards.simulados`).
+- `precos`: robô de preços das Compras. pg_cron de hora em hora (`precos-compras`, corpo `{"modo":"agendado"}`) confere
+  os itens com link não comprados que passaram de 20h desde a última conferência (máx. 40 por vez); o botão
+  "Conferir preços agora" chama com o token do usuário (só os itens dele, intervalo mínimo 10 min). **Não grava em
+  `central_partes`**: grava em `compras_precos` (RLS só leitura pelo dono) e o site (`lerPrecosCompras` em
+  `js/compras.js`) aplica nos itens: `valor`, `valorAntes`/`valorRobo`/`precoMudouEm` (mostra "era R$ X"),
+  `esgotado`, `precoSituacao` (ok/esgotado/falhou), `precoConferido`. Lojas que bloqueiam robô ficam "falhou".
+  SQL em `supabase/precos.sql`. `verify_jwt` false.
 
 ## Como testar
 

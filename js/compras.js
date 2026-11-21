@@ -39,6 +39,71 @@ function ordenarItensCompra(itens, modo) {
   return [...itens].sort((a, b) => (Number(a.comprado) - Number(b.comprado)) || (regra ? regra(a, b) : 0));
 }
 
+// ---------- Robô de preços (função "precos" no Supabase + tabela compras_precos) ----------
+const precosTela = { lidoEm: 0, conferindo: false };
+const precoBR = (n) => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const dataHoraCurta = (iso) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+// Lê o que o robô encontrou e aplica nos itens (só resultados mais novos que o último aplicado)
+async function lerPrecosCompras() {
+  if (!usuario || typeof sb === 'undefined') return;
+  precosTela.lidoEm = Date.now();
+  const { data, error } = await sb.from('compras_precos').select('lista_id, item_id, link, preco, situacao, verificado_em').eq('user_id', usuario.id);
+  if (error || !data) return;
+  let mudou = false;
+  for (const r of data) {
+    const i = acharLista(r.lista_id)?.itens?.find((x) => x.id === r.item_id);
+    if (!i || i.comprado || linkCompra(i) !== r.link) continue;
+    if (i.precoConferido && new Date(i.precoConferido) >= new Date(r.verificado_em)) continue;
+    i.precoConferido = r.verificado_em;
+    i.precoSituacao = r.situacao;
+    i.esgotado = r.situacao === 'esgotado';
+    if (r.preco !== null && r.situacao !== 'falhou') {
+      const novo = Number(r.preco);
+      const atual = valorNumero(i.valor);
+      if (Math.abs(novo - atual) >= 0.01) {
+        if (atual) { i.valorAntes = i.valor; i.precoMudouEm = r.verificado_em; }
+        i.valor = precoBR(novo);
+        i.valorRobo = i.valor;
+      }
+    }
+    mudou = true;
+  }
+  if (mudou) { salvar(); desenhar(); redesenharCompra(); }
+}
+
+ACOES['compras-conferir'] = async () => {
+  if (!usuario) { avisar('Para conferir os preços, entre com a sua conta (precisa da nuvem).'); return; }
+  if (precosTela.conferindo) return;
+  precosTela.conferindo = true; desenhar();
+  avisar('Conferindo os preços nas lojas… pode levar até 1 minuto.');
+  let r = null;
+  try {
+    const { data, error } = await sb.functions.invoke('precos', { body: {} });
+    if (error) throw error;
+    r = data;
+  } catch { r = { erro: 'sem conexão' }; }
+  precosTela.conferindo = false;
+  await lerPrecosCompras();
+  desenhar();
+  if (r?.erro) { avisar('Não consegui conferir agora. Tente de novo daqui a pouco.'); return; }
+  if (!r.conferidos) { avisar('Os preços já foram conferidos há poucos minutos.'); return; }
+  const partes = [`${r.ok} atualizado${r.ok === 1 ? '' : 's'}`];
+  if (r.esgotados) partes.push(`${r.esgotados} esgotado${r.esgotados === 1 ? '' : 's'}`);
+  if (r.falharam) partes.push(`${r.falharam} sem resposta da loja`);
+  avisar('Preços conferidos: ' + partes.join(' · ') + '.');
+};
+
+// Pedacinho "era R$ X" com setinha
+function htmlPrecoAntes(i) {
+  if (!i.valorAntes || i.valor !== i.valorRobo) return ''; // se você editou o valor à mão, some
+  const antes = valorNumero(i.valorAntes);
+  const agora = valorNumero(i.valor);
+  if (!antes || !agora || Math.abs(antes - agora) < 0.01) return '';
+  const baixou = agora < antes;
+  return `<span class="preco-antes ${baixou ? 'baixou' : 'subiu'}" title="${baixou ? 'Baixou' : 'Subiu'} ${dinheiro(Math.abs(antes - agora))}${i.precoMudouEm ? ' em ' + dataHoraCurta(i.precoMudouEm) : ''}">${baixou ? '↓' : '↑'} <s>${dinheiro(antes)}</s></span>`;
+}
+
 function valorNumero(v) {
   const n = parseFloat(String(v || '').replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3})/g, '').replace(',', '.'));
   return Number.isFinite(n) ? n : 0;
@@ -60,6 +125,8 @@ function htmlCompras(l) {
   const filtro = comprasTela.cat;
   const modo = ORDENS_COMPRA[l.ordenarCompras] ? l.ordenarCompras : 'manual';
   const manual = modo === 'manual';
+  if (usuario && Date.now() - precosTela.lidoEm > 5 * 60_000) { precosTela.lidoEm = Date.now(); setTimeout(lerPrecosCompras, 800); }
+  const temLink = l.itens.some((i) => !i.comprado && linkCompra(i));
   return `
   ${htmlCabLista(l)}
   <div class="carrossel">
@@ -78,6 +145,7 @@ function htmlCompras(l) {
     <span class="dica" style="margin:0">${l.itens.length - comprados} para comprar · ${comprados} já ${comprados === 1 ? 'comprado' : 'comprados'}</span>
     <span class="espaco"></span>
     ${comprados ? `<button class="btn-mini" data-acao="compras-mostrar">${comprasTela.mostrarComprados ? 'Esconder' : 'Mostrar'} comprados</button>` : ''}
+    ${temLink ? `<button class="btn-mini" data-acao="compras-conferir" ${precosTela.conferindo ? 'disabled' : ''} title="O site confere sozinho uma vez por dia">${precosTela.conferindo ? '<span class="girando mini"></span> Conferindo…' : ic('reset', 'p') + ' Conferir preços agora'}</button>` : ''}
     <label class="ordenar-compras"><span>Ordenar</span>
       <select data-mudar="compras-ordenar" data-lista="${l.id}" aria-label="Ordenar itens">
         ${Object.entries(ORDENS_COMPRA).map(([v, t]) => `<option value="${v}" ${v === modo ? 'selected' : ''}>${t}</option>`).join('')}
@@ -105,11 +173,12 @@ function htmlCompras(l) {
             <div class="ic-linha">
               ${manual ? alca() : ''}
               <button class="check ${i.comprado ? 'on' : ''}" data-acao="compra-check" data-ref="${ref}" aria-label="Comprado">${i.comprado ? ic('check') : ''}</button>
-              <button class="miniatura-compra ${foto ? '' : 'vazia'}" data-acao="compra-ver" data-lista="${l.id}" data-id="${i.id}" aria-label="Ver detalhes">${foto ? `<img src="${esc(foto)}" alt="" loading="lazy">` : ic(link ? 'link' : 'cart', 'p')}</button>
+              <button class="miniatura-compra ${foto ? '' : 'vazia'} ${i.esgotado && !i.comprado ? 'esgotado' : ''}" data-acao="compra-ver" data-lista="${l.id}" data-id="${i.id}" aria-label="Ver detalhes${i.esgotado ? ' (esgotado)' : ''}" ${i.esgotado ? 'title="Produto esgotado"' : ''}>${foto ? `<img src="${esc(foto)}" alt="" loading="lazy">` : ic(link ? 'link' : 'cart', 'p')}</button>
               <input class="inline inline-t" value="${esc(i.titulo)}" data-digitar="campo" data-ref="${ref}" data-campo="titulo" aria-label="Item">
               ${i.cat && filtro === 'todas' ? `<span class="tag">${esc(i.cat)}</span>` : ''}
               ${i.mes ? `<span class="tag" title="Quando comprar">${ic('calendar', 'p')} ${mesCurto(i.mes)}</span>` : ''}
               ${link ? `<a class="acao-item" href="${esc(link)}" target="_blank" rel="noopener" title="Abrir na loja">${ic('link', 'p')}</a>` : ''}
+              ${i.comprado ? '' : htmlPrecoAntes(i)}
               <input class="inline valor-edit" value="${esc(i.valor)}" placeholder="R$" data-mudar="campo" data-ref="${ref}" data-campo="valor" data-redesenhar="1" aria-label="Valor">
               <button class="btn-mini ${i.notas || link || foto || i.mes ? 'tem' : ''}" data-acao="compra-ver" data-lista="${l.id}" data-id="${i.id}">Ver detalhes</button>
               <button class="acao-item apagar" data-acao="compra-del" data-lista="${l.id}" data-id="${i.id}" title="Apagar">${ic('trash', 'p')}</button>
@@ -195,9 +264,11 @@ function htmlDetalheCompra() {
     </div>
     ${fotos.length > 1 ? `<div class="dc-galeria">${fotos.map((f) => `<button class="${f === foto ? 'on' : ''}" data-acao="compra-foto-principal" data-ref="${ref}" data-src="${esc(f)}"><img src="${esc(f)}" alt=""></button>`).join('')}</div>` : ''}
     <div class="dc-corpo">
+      ${i.esgotado && !i.comprado ? `<div class="dc-esgotado"><span class="ponto-esgotado"></span><div><b>Produto esgotado</b><small>A loja mostrou sem estoque${i.precoConferido ? ' em ' + dataHoraCurta(i.precoConferido) : ''}. A foto fica guardada.</small></div></div>` : ''}
       ${i.loja || link ? `<span class="dc-loja">${ic('cart', 'p')} ${esc(i.loja || dominio(link))}</span>` : ''}
       <textarea class="dc-titulo" rows="2" data-digitar="campo" data-ref="${ref}" data-campo="titulo" aria-label="Nome do produto">${esc(i.titulo)}</textarea>
       <div class="dc-preco"><span>R$</span><input type="text" inputmode="decimal" value="${esc(String(i.valor || '').replace(/^R\$\s*/, ''))}" placeholder="0,00" data-mudar="campo" data-ref="${ref}" data-campo="valor" data-redesenhar="1" aria-label="Valor"></div>
+      ${link && i.precoConferido ? `<p class="dc-conferido">${i.precoSituacao === 'falhou' ? `${ic('alert', 'p')} Essa loja não deixou o robô ler o preço (última tentativa ${dataHoraCurta(i.precoConferido)}). O valor acima é o último conhecido.` : `${ic('check', 'p')} Preço conferido na loja em ${dataHoraCurta(i.precoConferido)}${htmlPrecoAntes(i) ? ' · antes era ' + dinheiro(valorNumero(i.valorAntes)) : ''}`}</p>` : ''}
       <div class="dc-link">
         <input type="url" value="${esc(link)}" placeholder="Cole o link do produto" data-mudar="compra-link" data-ref="${ref}" aria-label="Link do produto">
         ${link ? `<button class="btn-mini" data-acao="compra-previa" data-lista="${l.id}" data-id="${i.id}" ${buscando ? 'disabled' : ''}>${ic('reset', 'p')} Atualizar foto e preço</button>` : ''}

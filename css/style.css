@@ -1380,6 +1380,22 @@ div.campo > .form-linha, div.campo > .lista-cidades { font-size: 15px; color: va
 .miniatura-compra { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 10px; border: 1px solid var(--linha); background: var(--card-2); overflow: hidden; padding: 0; display: grid; place-items: center; color: var(--fraco); cursor: pointer; }
 .miniatura-compra img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .miniatura-compra:hover { border-color: var(--destaque); }
+/* Robô de preços: esgotado e preço antigo */
+.miniatura-compra { position: relative; overflow: visible; }
+.miniatura-compra img { border-radius: 9px; }
+.miniatura-compra.esgotado img { filter: grayscale(.7); opacity: .7; }
+.miniatura-compra.esgotado::after { content: ''; position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; border-radius: 50%; background: var(--vermelho); border: 2px solid var(--card); }
+.preco-antes { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; white-space: nowrap; flex: 0 0 auto; }
+.preco-antes s { color: var(--fraco); font-weight: 500; }
+.preco-antes.baixou { color: var(--verde); }
+.preco-antes.subiu { color: var(--vermelho); }
+.ponto-esgotado { width: 12px; height: 12px; flex: 0 0 12px; border-radius: 50%; background: var(--vermelho); margin-top: 4px; }
+.dc-esgotado { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; background: rgba(255, 122, 143, .12); color: var(--vermelho); margin-bottom: 10px; }
+.dc-esgotado b { display: block; }
+.dc-esgotado small { display: block; color: var(--suave); font-size: 12px; margin-top: 2px; }
+.dc-conferido { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--suave); margin: 4px 0 8px; }
+.dc-conferido .ic { flex: 0 0 auto; }
+.btn-mini .girando.mini { width: 13px; height: 13px; border-width: 2px; display: inline-block; vertical-align: -2px; }
 .janela-compra { width: min(560px, calc(100vw - 20px)); max-height: calc(100vh - 24px); padding: 0; overflow-y: auto; overscroll-behavior: contain; }
 .detalhe-compra { position: relative; }
 .fechar-dc { position: absolute; top: 12px; right: 12px; z-index: 2; background: rgba(15, 14, 30, .65); color: #fff; backdrop-filter: blur(6px); }
