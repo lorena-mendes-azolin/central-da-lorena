@@ -94,6 +94,35 @@ function situacaoConta(conta, ym = hojeISO().slice(0, 7)) {
   return { txt: `Vence dia ${Number(venc.slice(8))}`, classe: '', venc };
 }
 
+// Gasto que repete "Todo mês" também é conta fixa: aparece junto com as contas cadastradas
+const contasQueRepetem = (ym) => (fin().recorrentes || [])
+  .filter((r) => r.tipo !== 'entrada' && r.freq === 'mensal')
+  .flatMap((r) => ocorrenciasNoMes(r, ym));
+
+function htmlContaRepete(o, compacto = false) {
+  const paga = estaPago(o);
+  const dia = Number(o.data.slice(8));
+  const s = paga ? { txt: 'Paga', classe: 'ok' } : situacaoLanc(o);
+  const nome = o.desc || nomeCat(catGasto(o.cat));
+  return `<div class="item conta ${paga ? 'feito' : ''}">
+    <button class="check ${paga ? 'on' : ''}" data-acao="lanc-pagar" data-id="${o.id}" title="${paga ? 'Desmarcar' : 'Marcar como paga'}">${paga ? ic('check') : ''}</button>
+    <span class="txt">${esc(nome)}
+      <span class="sub">dia ${dia} · ${esc(nomeCat(catGasto(o.cat)))} · ${ic('repeat', 'p')} todo mês</span></span>
+    <span class="situacao ${s.classe}">${s.txt === 'Pendente' ? `Vence dia ${dia}` : s.txt}</span>
+    <b>${dinheiro(o.valor)}</b>
+    ${compacto ? '' : `<button class="acao-item" data-acao="regra-editar" data-id="${o.regra}" title="Editar todas">${ic('edit', 'p')}</button>
+    <button class="acao-item apagar" data-acao="regra-del" data-id="${o.regra}" title="Parar de repetir">${ic('trash', 'p')}</button>`}
+  </div>`;
+}
+
+// Contas cadastradas + gastos "Todo mês", em ordem de vencimento
+function listaContasDoMes(ym, compacto = false) {
+  return [
+    ...fin().contas.map((c) => ({ dia: Math.min(c.dia, ultimoDiaMes(ym)), html: htmlConta(c, ym, compacto) })),
+    ...contasQueRepetem(ym).map((o) => ({ dia: Number(o.data.slice(8)), html: htmlContaRepete(o, compacto) })),
+  ].sort((a, b) => a.dia - b.dia).map((x) => x.html).join('');
+}
+
 PAGINAS.financas = {
   titulo: 'Finanças',
   desenhar() {
@@ -115,6 +144,7 @@ PAGINAS.financas = {
     const contasPendentes = fin().contas.filter((c) => !c.pagas?.[ym]);
     const aPagar = soma(gastosPendentes) + contasPendentes.reduce((s, c) => s + c.valor, 0);
     const qtdAPagar = gastosPendentes.length + contasPendentes.length;
+    const qtdContasPendentes = contasPendentes.length + contasQueRepetem(ym).filter((o) => !estaPago(o)).length;
     const saldo = recebido - pago;
     const previsto = pago + aPagar;
     const sobraPrevista = recebido + aReceber - previsto;
@@ -129,7 +159,7 @@ PAGINAS.financas = {
       <div><h1>Finanças</h1><p>Para onde o dinheiro está indo e as contas que vencem no mês.</p></div>
       <div class="segmento">
         <button class="${finTela.aba === 'mes' ? 'ativo' : ''}" data-acao="fin-aba" data-a="mes">${ic('wallet', 'p')} Gastos do mês</button>
-        <button class="${finTela.aba === 'contas' ? 'ativo' : ''}" data-acao="fin-aba" data-a="contas">${ic('calendar', 'p')} Contas fixas${contasPendentes.length ? ` <b class="bolinha">${contasPendentes.length}</b>` : ''}</button>
+        <button class="${finTela.aba === 'contas' ? 'ativo' : ''}" data-acao="fin-aba" data-a="contas">${ic('calendar', 'p')} Contas fixas${qtdContasPendentes ? ` <b class="bolinha">${qtdContasPendentes}</b>` : ''}</button>
       </div>
     </div>
 
@@ -174,6 +204,7 @@ PAGINAS.financas = {
         ${finTela.repetir === 'parcelas' ? '<p class="dica" style="margin:6px 0 0">Coloque o valor de cada parcela. A primeira cai na data escolhida e as outras no mesmo dia dos meses seguintes.</p>' : ''}
         ${finTela.repetir === 'varios' ? '<p class="dica" style="margin:6px 0 0">Ex.: salário dia 5 e dia 20. Separe os dias por vírgula.</p>' : ''}
         ${finTela.repetir === 'promo' ? '<p class="dica" style="margin:6px 0 0">Coloque o valor da promoção, por quantos meses ela vale (contando a partir da data escolhida) e quanto passa a custar depois. O valor troca sozinho e você recebe um aviso no último mês da promoção.</p>' : ''}
+        ${finTela.tipo !== 'entrada' && (finTela.repetir === 'mensal' || finTela.repetir === 'promo') ? '<p class="dica" style="margin:6px 0 0">Gasto que repete todo mês entra sozinho em Contas fixas.</p>' : ''}
         ${finTela.repetir ? '<p class="dica" style="margin:6px 0 0">A situação vale só para a primeira vez. As próximas entram como pendentes: é só marcar o quadradinho quando pagar.</p>' : ''}
 
         <h3 class="sub-titulo">Lançamentos do mês</h3>
@@ -218,7 +249,7 @@ PAGINAS.financas = {
 
         <section class="card">
           <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('calendar')}</span> Contas de ${nomeMes(ym).split(' ')[0].toLowerCase()} <a href="#" data-acao="fin-aba" data-a="contas">Ver todas</a></h2>
-          <div class="fin-rolavel">${fin().contas.map((c) => htmlConta(c, ym, true)).join('') || '<p class="vazio">Cadastre aluguel, internet, celular… em Contas fixas.</p>'}</div>
+          <div class="fin-rolavel">${listaContasDoMes(ym, true) || '<p class="vazio">Cadastre aluguel, internet, celular… em Contas fixas.</p>'}</div>
         </section>
 
         <section class="card">
@@ -250,8 +281,8 @@ function htmlConta(c, ym, compacto = false) {
 }
 
 function htmlContas(ym) {
-  const contas = [...fin().contas].sort((a, b) => a.dia - b.dia);
-  const total = contas.reduce((s, c) => s + c.valor, 0);
+  const total = fin().contas.reduce((s, c) => s + c.valor, 0) + contasQueRepetem(ym).reduce((s, o) => s + o.valor, 0);
+  const lista = listaContasDoMes(ym);
   return `<section class="card">
     <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('calendar')}</span> Contas fixas <small>total por mês: ${dinheiro(total)}</small></h2>
     <form class="form-gasto" data-form="conta-nova" style="margin-bottom:14px">
@@ -261,14 +292,14 @@ function htmlContas(ym) {
       <select name="cat" aria-label="Categoria">${fin().categorias.map((c) => `<option value="${c.id}" ${c.id === 'casa' ? 'selected' : ''}>${esc(nomeCat(c))}</option>`).join('')}</select>
       <button class="btn" type="submit">${ic('plus', 'p')} Adicionar conta</button>
     </form>
-    <div class="fin-rolavel" style="max-height:440px">${contas.map((c) => htmlConta(c, ym)).join('') || '<p class="vazio">Nenhuma conta fixa ainda.</p>'}</div>
+    <div class="fin-rolavel" style="max-height:440px">${lista || '<p class="vazio">Nenhuma conta fixa ainda.</p>'}</div>
     <div class="form-linha" style="margin-top:14px;justify-content:flex-start">
       <label class="rotulo-select">Avisar
         <select data-mudar="cfg-contas">
           ${[[0, 'só no dia'], [1, '1 dia antes'], [2, '2 dias antes'], [3, '3 dias antes'], [5, '5 dias antes']].map(([v, n]) => `<option value="${v}" ${Number(estado.config.avisoContas) === v ? 'selected' : ''}>${n}</option>`).join('')}
         </select></label>
     </div>
-    <p class="dica">Ao marcar uma conta como paga, ela entra sozinha nos gastos do mês.</p>
+    <p class="dica">Ao marcar uma conta como paga, ela entra sozinha nos gastos do mês. Gastos lançados como "Todo mês" também aparecem aqui sozinhos (${ic('repeat', 'p')}).</p>
   </section>`;
 }
 

@@ -302,11 +302,17 @@ label.campo { display: grid; gap: 5px; font-size: 13px; color: var(--suave); fon
 .janela .rodape-janela { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; flex-wrap: wrap; }
 .janela .rodape-janela .perigo { margin-right: auto; }
 .tipo-escolha { display: flex; gap: 8px; }
-.tipo-escolha label { flex: 1; }
+.tipo-escolha label { flex: 1; min-width: 0; }
 .tipo-escolha input { position: absolute; opacity: 0; }
 .tipo-escolha span { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px; border-radius: 10px; border: 1px solid var(--linha); cursor: pointer; font-weight: 700; color: var(--suave); }
 .tipo-escolha input:checked + span { background: var(--destaque-bg); border-color: var(--destaque); color: var(--texto); }
 .tipo-escolha input:focus-visible + span { outline: 2px solid var(--destaque-2); }
+.tipo-escolha span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Celular: ícone em cima do texto, para "Compromisso" e "Aniversário" caberem */
+@media (max-width: 480px) {
+  .tipo-escolha { gap: 6px; }
+  .tipo-escolha span { flex-direction: column; gap: 3px; padding: 8px 4px; font-size: 13px; }
+}
 
 .rolagem { overflow-x: auto; }
 .habitos { width: 100%; border-collapse: collapse; }
