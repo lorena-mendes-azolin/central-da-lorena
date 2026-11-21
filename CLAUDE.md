@@ -91,6 +91,8 @@ com explicações simples e diretas.
   `i.linksExtras = [{ id, url, nome, valor }]`. Com preço em algum extra, a linha mostra "a partir de" (menor preço);
   `valorCompra(i)` é o valor usado em totais, ordenação e "falta R$". Na linha, com 2+ links o ícone mostra o número e abre um menu.
 - Bolinha em "Ver detalhes" só com aviso (`avisoCompra`): vermelha esgotado, verde baixou, amarela subiu.
+- Metas: valores com classe `valor-privado` ficam embaçados dentro de `.valores-ocultos` até o olhinho
+  (`metasTela.verValores`, só na sessão, como o Diário). Cor por meta em `m.cor` (seção Configurações da meta).
 - Restaurar backup pede confirmação com resumo (`confirmarRestaurar` em historico.js).
 - Cópias antigas do banco ficam no esquema fechado `arquivo` (fora da API); ver `supabase/arrumacao.sql`.
 

@@ -1870,3 +1870,24 @@ textarea.titulo-quebra { display: block; resize: none; overflow: hidden; field-s
 textarea.etapa-texto { flex: 1 1 auto; min-width: 0; font: inherit; font-weight: 700; line-height: 1.35; padding-top: 3px; padding-bottom: 3px; }
 .item:has(> textarea.etapa-texto) { align-items: flex-start; }
 .item:has(> textarea.etapa-texto) > .check, .item:has(> textarea.etapa-texto) > .alca, .item:has(> textarea.etapa-texto) > .acao-item { margin-top: 2px; }
+/* Metas: valores embaçados até tocar no olhinho */
+.valores-ocultos .valor-privado { filter: blur(6px); user-select: none; -webkit-user-select: none; transition: filter .2s; }
+.valores-ocultos input.valor-privado:focus { filter: none; }
+.olho-metas[aria-pressed="true"] { color: var(--destaque-2); }
+.card-titulo .espaco-auto { flex: 1; }
+.card-titulo .espaco-auto + .olho-metas { margin: -6px 0; }
+/* Metas: cor e cabeçalho */
+.cartao-meta.tem-cor { border-top: 3px solid var(--cor-meta); }
+.cartao-meta.tem-cor .prog i, .pagina-meta.tem-cor .prog i { background: var(--cor-meta); }
+.cartao-meta.tem-cor .cm-topo b::before, .pagina-meta.tem-cor .titulo-edit { }
+.pagina-meta.tem-cor .materia-cab { border-left: 4px solid var(--cor-meta); padding-left: 14px; }
+.pagina-meta .meta-info { width: 100%; }
+.pagina-meta .meta-info .excluir-meta { margin-left: auto; }
+.cores-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.cor-meta { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; background: var(--c); cursor: pointer; padding: 0; display: grid; place-items: center; box-shadow: inset 0 0 0 2px var(--card); transition: transform .12s; }
+.cor-meta:hover { transform: scale(1.1); }
+.cor-meta.on { border-color: var(--texto); }
+.cor-meta.sem { background: var(--card-2); color: var(--suave); box-shadow: none; border-color: var(--linha); }
+.cor-meta.sem.on { border-color: var(--texto); color: var(--texto); }
+.cartao-meta .cm-extra { display: flex; align-items: center; gap: 6px; }
+.cartao-meta .cm-extra .olho-metas { margin-left: auto; width: 28px; height: 28px; flex: 0 0 28px; }

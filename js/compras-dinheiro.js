@@ -299,15 +299,15 @@ function htmlItensDaMeta(m, refMeta) {
       return `<div class="item ${i.comprado ? 'feito' : ''}">
         <button class="miniatura-compra ${foto ? '' : 'vazia'}" data-acao="compra-ver" data-lista="${l.id}" data-id="${i.id}" aria-label="Ver detalhes">${foto ? `<img src="${esc(foto)}" alt="" loading="lazy">` : ic('cart', 'p')}</button>
         <span class="txt">${esc(i.titulo)}${i.comprado ? '<span class="sub">comprado</span>' : ''}</span>
-        <b>${valorCompra(i) ? (faixaCompra(i) ? 'a partir de ' : '') + dinheiro(valorCompra(i)) : '—'}</b>
+        <b class="valor-privado">${valorCompra(i) ? (faixaCompra(i) ? 'a partir de ' : '') + dinheiro(valorCompra(i)) : '—'}</b>
         <button class="acao-item apagar" data-acao="meta-item-tirar" data-ref="${l.id}/${i.id}" title="Tirar da meta">${ic('x', 'p')}</button>
       </div>`;
     }).join('')}
     </div>
     <div class="dc-rodape" style="margin-top:10px">
-      <span>Falta comprar: <b>${dinheiro(soma)}</b></span>
+      <span>Falta comprar: <b class="valor-privado">${dinheiro(soma)}</b></span>
       <span class="espaco"></span>
-      ${soma && Math.abs(soma - alvo) >= 0.01 ? `<button class="btn-mini" data-acao="meta-usar-total" data-ref="${refMeta}" data-v="${soma.toFixed(2)}">Usar ${dinheiro(soma)} como valor da meta</button>` : ''}
+      ${soma && Math.abs(soma - alvo) >= 0.01 ? `<button class="btn-mini" data-acao="meta-usar-total" data-ref="${refMeta}" data-v="${soma.toFixed(2)}">Usar <span class="valor-privado">${dinheiro(soma)}</span> como valor da meta</button>` : ''}
     </div>
   </section>`;
 }

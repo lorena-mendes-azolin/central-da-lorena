@@ -8,20 +8,33 @@ function progressoMeta(m) {
   return 0;
 }
 
+// Valores das metas ficam embaçados até tocar no olhinho (vale só enquanto a página está aberta, como no Diário)
+const metasTela = { verValores: false };
+const CORES_META = ['#9d86ff', '#f59ad8', '#6aaeff', '#5fd6a4', '#f7c56b', '#ff8f8f', '#62c9f5', '#ffb38a'];
+const estiloCorMeta = (m) => (m.cor ? `style="--cor-meta:${esc(m.cor)}"` : '');
+function botaoOlhoMetas(texto = false) {
+  const ver = metasTela.verValores;
+  return `<button class="${texto ? 'btn-mini' : 'acao-item'} olho-metas" data-acao="metas-olho" aria-pressed="${ver}" title="${ver ? 'Esconder valores' : 'Mostrar valores'}">${ic(ver ? 'eye' : 'eyeoff', 'p')}${texto ? (ver ? ' Esconder valores' : ' Mostrar valores') : ''}</button>`;
+}
+ACOES['metas-olho'] = () => { metasTela.verValores = !metasTela.verValores; desenhar(); };
+
 function htmlMetas(l) {
+  const temValor = l.metas.some((m) => alvoMeta(m) || guardadoMeta(m));
   return `
   ${htmlCabLista(l)}
+  <div class="${metasTela.verValores ? '' : 'valores-ocultos'}">
+  ${temValor ? `<div class="barra-lista"><span class="espaco"></span>${botaoOlhoMetas(true)}</div>` : ''}
   <div class="grade-cards">
     ${l.metas.map((m) => {
       const pct = progressoMeta(m);
       const capa = (m.anexos || []).find((a) => a.tipo === 'imagem') || null;
-      return `<a class="card cartao-materia" href="#lista-${l.id}--${m.id}" ${ordem(l.id + '|metas', m.id, true)} data-pegar>
+      return `<a class="card cartao-materia cartao-meta ${m.cor ? 'tem-cor' : ''}" ${estiloCorMeta(m)} href="#lista-${l.id}--${m.id}" ${ordem(l.id + '|metas', m.id, true)} data-pegar>
         ${capa ? `<img class="capa" src="${capa.url}" alt="">` : ''}
         <div class="cm-topo"><b>${esc(m.titulo)}</b>${pct === 100 ? '<span class="status-materia st-m-concluida">Conquistada</span>' : ''}</div>
         <div class="cm-prog"><span>${pct}%</span><span class="prog"><i style="width:${pct}%"></i></span></div>
         <div class="cm-prox">${m.prazo ? `${ic('calendar', 'p')} até ${textoPrazo(m)} · ${quandoFalta(m.prazo).toLowerCase()}` : `<span style="color:var(--fraco)">Sem prazo</span>`}
           · ${m.etapas.length} ${m.etapas.length === 1 ? 'etapa' : 'etapas'}</div>
-        ${alvoMeta(m) ? `<div class="cm-extra"><span>${ic('money', 'p')} ${dinheiro(guardadoMeta(m))} de ${dinheiro(alvoMeta(m))}</span></div>` : ''}
+        ${alvoMeta(m) ? `<div class="cm-extra"><span>${ic('money', 'p')} <span class="valor-privado">${dinheiro(guardadoMeta(m))} de ${dinheiro(alvoMeta(m))}</span></span>${botaoOlhoMetas()}</div>` : ''}
       </a>`;
     }).join('')}
     <form class="card cartao-novo" data-form="meta-nova" data-lista="${l.id}">
@@ -29,6 +42,7 @@ function htmlMetas(l) {
       <input type="text" name="titulo" placeholder="Nome da meta (opcional)" maxlength="80" aria-label="Meta">
       <button class="btn" type="submit">Criar meta</button>
     </form>
+  </div>
   </div>
   ${!l.metas.length ? '<p class="dica">Crie uma meta e clique nela para descrever como você quer que seja, colocar imagens, prazo e as etapas para chegar lá.</p>' : ''}`;
 }
@@ -42,7 +56,7 @@ function paginaMeta(l, idMeta) {
 function htmlMeta(l, m) {
   const ref = `${l.id}/${m.id}`;
   const pct = progressoMeta(m);
-  return `
+  return `<div class="pagina-meta ${m.cor ? 'tem-cor' : ''} ${metasTela.verValores ? '' : 'valores-ocultos'}" ${estiloCorMeta(m)}>
   ${htmlVoltar(l)}
   <div class="linha-vinculo">${htmlVinculo('ref:' + ref, 'Ao avançar nesta meta, marcar', l.habito)}</div>
   <div class="materia-cab">
@@ -51,9 +65,9 @@ function htmlMeta(l, m) {
       <div class="meta-info">
         <label>Prazo <input type="date" value="${m.prazo}" data-mudar="campo" data-ref="${ref}" data-campo="prazo" data-redesenhar="1" data-mes-ok="1" data-campo-mes="prazoMes" data-so-mes="${m.prazoMes ? 1 : 0}"></label>
         ${m.prazo ? `<span>${m.prazoMes ? 'até o fim do mês · ' : ''}${quandoFalta(m.prazo)}</span>` : ''}
+        <button class="btn-mini excluir-meta" data-acao="meta-del" data-lista="${l.id}" data-id="${m.id}">${ic('trash', 'p')} Excluir meta</button>
       </div>
     </div>
-    <button class="btn-mini" data-acao="meta-del" data-lista="${l.id}" data-id="${m.id}">${ic('trash', 'p')} Excluir meta</button>
   </div>
 
   <div class="progresso-lista"><span>Progresso</span><div class="prog"><i style="width:${pct}%"></i></div><span>${pct}%</span></div>
@@ -80,24 +94,41 @@ function htmlMeta(l, m) {
       </div>`).join('') || '<p class="vazio">Divida a meta em passos menores.</p>'}
       </div>
       <form class="form-linha" data-form="etapa-nova" data-ref="${ref}" style="margin-top:10px">
-        <input type="text" name="titulo" id="etapa-titulo" placeholder="Nova etapa" maxlength="100" data-precisa>
+        <input type="text" name="titulo" id="etapa-titulo" placeholder="Nova etapa" maxlength="200" data-precisa>
         <button class="btn" type="submit">${ic('plus', 'p')}</button>
       </form>
     </section>
+    <section class="card">
+      <h2 class="card-titulo"><span class="selo mini c-rosa">${ic('palette')}</span> Configurações</h2>
+      <div class="campo"><span>Cor da meta</span>
+        <div class="cores-meta">
+          <button class="cor-meta sem ${m.cor ? '' : 'on'}" data-acao="meta-cor" data-ref="${ref}" data-v="" title="Sem cor" aria-label="Sem cor" aria-pressed="${!m.cor}">${ic('x', 'p')}</button>
+          ${CORES_META.map((c) => `<button class="cor-meta ${m.cor === c ? 'on' : ''}" style="--c:${c}" data-acao="meta-cor" data-ref="${ref}" data-v="${c}" title="Usar esta cor" aria-label="Cor ${c}" aria-pressed="${m.cor === c}"></button>`).join('')}
+        </div>
+      </div>
+      <p class="dica" style="margin:8px 0 0">A cor aparece no cartão da meta e na barra de progresso.</p>
+    </section>
     </div>
+  </div>
   </div>`;
 }
+ACOES['meta-cor'] = (el) => {
+  const m = acharRef(el.dataset.ref);
+  if (!m) return;
+  m.cor = el.dataset.v;
+  salvar(); desenhar();
+};
 
 function htmlDinheiroMeta(m, ref) {
   const alvo = alvoMeta(m);
   const guardado = guardadoMeta(m);
   const pct = alvo ? Math.min(100, (guardado / alvo) * 100) : 0;
   return `<section class="card">
-    <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('money')}</span> Dinheiro guardado</h2>
+    <h2 class="card-titulo"><span class="selo mini c-amarelo">${ic('money')}</span> Dinheiro guardado <span class="espaco-auto"></span>${alvo || guardado ? botaoOlhoMetas() : ''}</h2>
     <label class="campo">Quanto precisa juntar (opcional)
-      <input type="text" inputmode="decimal" value="${esc(m.valorAlvo || '')}" placeholder="R$" data-mudar="campo" data-ref="${ref}" data-campo="valorAlvo" data-redesenhar="1"></label>
+      <input type="text" class="valor-privado" inputmode="decimal" value="${esc(m.valorAlvo || '')}" placeholder="R$" data-mudar="campo" data-ref="${ref}" data-campo="valorAlvo" data-redesenhar="1"></label>
     ${alvo ? `<div class="dinheiro-meta">
-      <b>${dinheiro(guardado)}</b><span>de ${dinheiro(alvo)} · faltam ${dinheiro(Math.max(0, alvo - guardado))}</span>
+      <b class="valor-privado">${dinheiro(guardado)}</b><span class="valor-privado">de ${dinheiro(alvo)} · faltam ${dinheiro(Math.max(0, alvo - guardado))}</span>
       <div class="prog"><i style="width:${pct}%;background:var(--amarelo)"></i></div>
     </div>
     <form class="form-linha" data-form="meta-deposito" data-ref="${ref}" style="margin-top:10px">
@@ -107,7 +138,7 @@ function htmlDinheiroMeta(m, ref) {
     </form>
     ${(m.depositos || []).length ? `<details class="historico"><summary>Histórico (${m.depositos.length})</summary>
       ${[...m.depositos].reverse().map((d) => `<div class="item"><span class="txt">${dataCurta(d.data)}</span>
-        <b class="${d.valor >= 0 ? 'valor-entrada' : ''}">${d.valor >= 0 ? '+' : '−'} ${dinheiro(Math.abs(d.valor))}</b>
+        <b class="valor-privado ${d.valor >= 0 ? 'valor-entrada' : ''}">${d.valor >= 0 ? '+' : '−'} ${dinheiro(Math.abs(d.valor))}</b>
         <button class="acao-item apagar" data-acao="deposito-del" data-ref="${ref}" data-id="${d.id}" title="Apagar">${ic('trash', 'p')}</button></div>`).join('')}
     </details>` : ''}` : '<p class="dica">Coloque o valor para acompanhar quanto já juntou, como "Comprar minha casa – R$ X de R$ Y".</p>'}
   </section>`;
