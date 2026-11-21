@@ -300,6 +300,7 @@ function htmlDetalheCompra() {
       <label class="btn-mini dc-trocar">${ic('image', 'p')} ${foto ? 'Trocar foto' : 'Colocar foto'}<input type="file" accept="image/*" data-mudar="compra-foto" data-ref="${ref}" hidden></label>
     </div>
     ${fotos.length > 1 ? `<div class="dc-galeria">${fotos.map((f) => `<button class="${f === foto ? 'on' : ''}" data-acao="compra-foto-principal" data-ref="${ref}" data-src="${esc(f)}"><img src="${esc(f)}" alt=""></button>`).join('')}</div>` : ''}
+    ${htmlBotoesImagem(ref, i.titulo)}
     <div class="dc-corpo">
       ${i.esgotado && !i.comprado ? `<div class="dc-esgotado"><span class="ponto-esgotado"></span><div><b>Produto esgotado</b><small>A loja mostrou sem estoque${i.precoConferido ? ' em ' + dataHoraCurta(i.precoConferido) : ''}. A foto fica guardada.</small></div></div>` : ''}
       ${i.loja || link ? `<span class="dc-loja">${ic('cart', 'p')} ${esc(i.loja || dominio(link))}</span>` : ''}

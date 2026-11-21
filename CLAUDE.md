@@ -77,6 +77,11 @@ com explicações simples e diretas.
   Também grava `compras_precos_historico` (um ponto por item por dia) → gráfico em "Ver detalhes".
   Amazon e Mercado Livre bloqueiam leitura automática às vezes ("falhou"): é da loja, não do código.
 
+- `buscar-imagens`: só `{acao:'salvar', url}` — baixa a imagem cujo ENDEREÇO a pessoa colou (proteção SSRF) e guarda no
+  bucket `imagens`. Confere o usuário pelo token; `verify_jwt` false. (A busca de imagens dentro do site foi retirada:
+  Google fechou a API para contas novas e a Brave pede cartão.) Tela em `js/imagens-busca.js`: botões Google / Pinterest /
+  Colar imagem nos detalhes (Compras e Lista das listas) e Ctrl+V com os detalhes abertos.
+
 ## Compras + dinheiro (js/compras-dinheiro.js)
 
 - Marcar item como comprado abre o questionário "Comprou?" (se o módulo Finanças estiver ligado): forma de pagamento
@@ -93,6 +98,9 @@ com explicações simples e diretas.
 - Bolinha em "Ver detalhes" só com aviso (`avisoCompra`): vermelha esgotado, verde baixou, amarela subiu.
 - Metas: valores com classe `valor-privado` ficam embaçados dentro de `.valores-ocultos` até o olhinho
   (`metasTela.verValores`, só na sessão, como o Diário). Cor por meta em `m.cor` (seção Configurações da meta).
+- Lista das listas (colecoes.js): cada categoria tem situações próprias em `c.estados` (2 a 6; a última = concluído).
+  Categorias antigas só têm `c.falta`/`c.feito` (`estadosCat()` cobre os dois). No item: `i.estado` (índice) e `i.feito`
+  (= última situação), sempre juntos via `definirEstado()`.
 - Restaurar backup pede confirmação com resumo (`confirmarRestaurar` em historico.js).
 - Cópias antigas do banco ficam no esquema fechado `arquivo` (fora da API); ver `supabase/arrumacao.sql`.
 
