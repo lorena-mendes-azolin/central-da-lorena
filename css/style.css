@@ -1866,3 +1866,7 @@ textarea.titulo-quebra { display: block; resize: none; overflow: hidden; field-s
 .dc-link-extra > input[type=url] { grid-area: url; width: 100%; font-size: 13px; color: var(--suave); }
 .dc-link-extra > button { grid-area: x; }
 @media (max-width: 520px) { .dc-link-extra { grid-template-columns: 30px 1fr 84px 30px; } .dc-link-extra input.preco-extra { order: 0; } }
+/* Etapas das metas: texto quebra linha em vez de cortar */
+textarea.etapa-texto { flex: 1 1 auto; min-width: 0; font: inherit; font-weight: 700; line-height: 1.35; padding-top: 3px; padding-bottom: 3px; }
+.item:has(> textarea.etapa-texto) { align-items: flex-start; }
+.item:has(> textarea.etapa-texto) > .check, .item:has(> textarea.etapa-texto) > .alca, .item:has(> textarea.etapa-texto) > .acao-item { margin-top: 2px; }

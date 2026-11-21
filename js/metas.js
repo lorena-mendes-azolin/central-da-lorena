@@ -75,7 +75,7 @@ function htmlMeta(l, m) {
       ${m.etapas.map((e) => `<div class="item ${e.feito ? 'feito' : ''}" ${ordem(ref + '|etapas', e.id)}>
         ${alca()}
         <button class="check ${e.feito ? 'on' : ''}" data-acao="etapa-check" data-ref="${ref}/etapa/${e.id}" aria-label="Concluir">${e.feito ? ic('check') : ''}</button>
-        <input class="inline inline-t txt" value="${esc(e.titulo)}" data-digitar="campo" data-ref="${ref}/etapa/${e.id}" data-campo="titulo" aria-label="Etapa">
+        <textarea class="inline inline-t txt titulo-quebra etapa-texto" rows="1" maxlength="200" data-digitar="campo" data-ref="${ref}/etapa/${e.id}" data-campo="titulo" aria-label="Etapa">${esc(e.titulo)}</textarea>
         <button class="acao-item apagar" data-acao="etapa-del" data-ref="${ref}" data-id="${e.id}" title="Apagar etapa">${ic('trash', 'p')}</button>
       </div>`).join('') || '<p class="vazio">Divida a meta em passos menores.</p>'}
       </div>
@@ -169,3 +169,8 @@ ACOES['etapa-check'] = (el) => {
 };
 
 ACOES['etapa-del'] = (el) => removerComDesfazer(acharRef(el.dataset.ref).etapas, el.dataset.id, 'Etapa');
+
+// Texto da etapa quebra linha (para caber inteiro); Enter só confirma, não pula linha
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.matches?.('textarea.etapa-texto')) { e.preventDefault(); e.target.blur(); }
+});
