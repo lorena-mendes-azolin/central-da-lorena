@@ -90,7 +90,45 @@ document.addEventListener('click', (e) => {
   if (img && !e.target.closest('[data-acao]')) ACOES['ver-imagem'](img);
 });
 
+// Link sozinho na linha vira card (classe "link-card"); no meio do texto fica como etiqueta (só CSS).
+const BLOCOS_EDITOR = /^(DIV|P|LI|H1|H2|H3|H4|BLOCKQUOTE|UL|OL|BR|IMG)$/;
+function linkSozinho(a) {
+  const pai = a.parentElement;
+  if (!pai) return false;
+  if (pai.classList.contains('editor') || !BLOCOS_EDITOR.test(pai.tagName)) {
+    // link solto: olha os vizinhos até a quebra de linha
+    if (!pai.classList.contains('editor')) return false;
+    const vazio = (n, lado) => {
+      for (let x = n[lado]; x; x = x[lado]) {
+        if (x.nodeType === 1 && BLOCOS_EDITOR.test(x.tagName)) return true;
+        if ((x.textContent || '').trim()) return false;
+      }
+      return true;
+    };
+    return vazio(a, 'previousSibling') && vazio(a, 'nextSibling');
+  }
+  return (pai.textContent || '').trim() === (a.textContent || '').trim() && !pai.querySelector('img');
+}
+function marcarLinksEditor(raiz) {
+  raiz.querySelectorAll('a[href]').forEach((a) => {
+    a.classList.toggle('link-card', linkSozinho(a));
+    if (!a.classList.length) a.removeAttribute('class');
+    a.target = '_blank'; a.rel = 'noopener';
+  });
+}
+function prepararHtmlEditor(html) {
+  if (!html || !html.includes('<a')) return html || '';
+  const t = document.createElement('template');
+  t.innerHTML = html;
+  const caixa = document.createElement('div');
+  caixa.className = 'editor';
+  caixa.append(t.content);
+  marcarLinksEditor(caixa);
+  return caixa.innerHTML;
+}
+
 function htmlEditor(ref, campo, html, vazio = 'Comece a escrever…') {
+  html = prepararHtmlEditor(html);
   return `<div class="com-editor">
     <div class="ferramentas" role="toolbar" aria-label="Formatação">
       <button data-cmd="bold" title="Negrito (Ctrl+B)">${ic('bold', 'p')}</button>
@@ -117,6 +155,7 @@ function htmlEditor(ref, campo, html, vazio = 'Comece a escrever…') {
 DIGITAR.editor = (el) => {
   const obj = acharRef(el.dataset.ref);
   if (!obj) return;
+  if (el.querySelector('a[href]')) marcarLinksEditor(el);
   obj[el.dataset.campo] = el.innerHTML;
   if ('editado' in obj) {
     obj.editado = new Date().toISOString();
@@ -191,7 +230,7 @@ document.addEventListener('change', async (e) => {
 
 document.addEventListener('click', (e) => {
   const a = e.target.closest('.editor a');
-  if (a && (e.ctrlKey || e.metaKey)) { e.preventDefault(); window.open(a.href, '_blank'); }
+  if (a && (e.ctrlKey || e.metaKey || a.classList.contains('link-card'))) { e.preventDefault(); window.open(a.href, '_blank', 'noopener'); }
 
   const li = e.target.closest('.editor ul.checklist li');
   if (li && e.clientX - li.getBoundingClientRect().left <= 22) {

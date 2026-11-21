@@ -37,7 +37,7 @@ function ocorrenciasNoMes(r, ym) {
   }
   return datas.filter((d) => d >= r.inicio && !(r.pulados || []).includes(d)).map((d) => ({
     id: `${r.id}|${d}`, regra: r.id, desc: r.freq === 'parcelas' ? `${r.desc} (${k + 1}/${r.parcelas})` : r.desc,
-    valor: valorRegraNoMes(r, ym), tipo: r.tipo, cat: r.cat, data: d, pago: (r.pagos || []).includes(d),
+    valor: valorRegraNoMes(r, ym), tipo: r.tipo, cat: r.cat, data: d, pagamento: r.pagamento, pago: (r.pagos || []).includes(d),
     promo: emPromo(r, ym), promoAcaba: emPromo(r, ym) && ym === fimPromo(r),
   }));
 }
@@ -218,7 +218,7 @@ PAGINAS.financas = {
               return `<div class="item lanc ${ok ? '' : 'pendente'}">
                 <button class="check ${ok ? 'on' : ''}" data-acao="lanc-pagar" data-id="${l.id}" title="${ok ? `Marcar como não ${quem}` : `Marcar como ${quem}`}">${ok ? ic('check') : ''}</button>
                 <span class="barra-cor" style="background:${l.tipo === 'entrada' ? 'var(--verde)' : c.cor}"></span>
-                <span class="txt clicavel" data-acao="lanc-editar" data-id="${l.id}" title="Editar">${esc(l.desc || nomeCat(c))}<span class="sub">${l.tipo === 'entrada' ? 'entrada' : esc(nomeCat(c))}${l.conta ? ' · conta fixa' : ''}${l.regra ? ` · ${ic('repeat', 'p')} ${regraDe(l)?.freq === 'parcelas' ? 'parcela' : 'repete'}` : ''}${l.promo && !l.promoAcaba ? ' · promoção' : ''}${l.promoAcaba ? ` <span class="situacao atencao" data-dica="Mês que vem passa a ${dinheiro(regraDe(l)?.valor || 0)}">Última da promoção</span>` : ''}${sit ? ` <span class="situacao ${sit.classe}">${sit.txt}</span>` : ''}</span></span>
+                <span class="txt clicavel" data-acao="lanc-editar" data-id="${l.id}" title="Editar">${esc(l.desc || nomeCat(c))}<span class="sub">${l.tipo === 'entrada' ? 'entrada' : esc(nomeCat(c))}${l.pagamento && typeof FORMAS_PAGAMENTO !== 'undefined' && FORMAS_PAGAMENTO[l.pagamento] ? ' · ' + FORMAS_PAGAMENTO[l.pagamento] : ''}${l.conta ? ' · conta fixa' : ''}${l.regra ? ` · ${ic('repeat', 'p')} ${regraDe(l)?.freq === 'parcelas' ? 'parcela' : 'repete'}` : ''}${l.promo && !l.promoAcaba ? ' · promoção' : ''}${l.promoAcaba ? ` <span class="situacao atencao" data-dica="Mês que vem passa a ${dinheiro(regraDe(l)?.valor || 0)}">Última da promoção</span>` : ''}${sit ? ` <span class="situacao ${sit.classe}">${sit.txt}</span>` : ''}</span></span>
                 <b class="${l.tipo === 'entrada' ? 'valor-entrada' : ''}">${l.tipo === 'entrada' ? '+' : '−'} ${dinheiro(l.valor)}</b>
                 <button class="acao-item" data-acao="lanc-editar" data-id="${l.id}" title="Editar">${ic('edit', 'p')}</button>
                 <button class="acao-item apagar" data-acao="gasto-del" data-id="${l.id}" title="${l.regra ? 'Tirar só deste mês' : 'Apagar'}">${ic('trash', 'p')}</button>

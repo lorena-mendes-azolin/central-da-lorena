@@ -12,7 +12,7 @@ create table if not exists public.compras_precos (
 );
 alter table public.compras_precos enable row level security;
 drop policy if exists "ver os meus precos" on public.compras_precos;
-create policy "ver os meus precos" on public.compras_precos for select using (auth.uid() = user_id);
+create policy "ver os meus precos" on public.compras_precos for select using ((select auth.uid()) = user_id);
 
 -- Roda de hora em hora; a função só confere links que passaram de 20h desde a última vez
 -- (na prática, cada item é conferido uma vez por dia).
@@ -31,3 +31,18 @@ select cron.schedule(
   );
   $$
 );
+
+-- Histórico de preços: um ponto por item por dia (o robô grava; o site mostra o gráfico em "Ver detalhes")
+create table if not exists public.compras_precos_historico (
+  user_id       uuid not null references auth.users (id) on delete cascade,
+  lista_id      text not null,
+  item_id       text not null,
+  dia           date not null,
+  preco         numeric(12,2),
+  situacao      text not null check (situacao in ('ok','esgotado')),
+  verificado_em timestamptz not null default now(),
+  primary key (user_id, lista_id, item_id, dia)
+);
+alter table public.compras_precos_historico enable row level security;
+drop policy if exists "ver o meu historico de precos" on public.compras_precos_historico;
+create policy "ver o meu historico de precos" on public.compras_precos_historico for select using ((select auth.uid()) = user_id);

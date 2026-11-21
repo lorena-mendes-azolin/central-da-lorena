@@ -77,11 +77,43 @@ async function restaurarArquivo(arquivo) {
   try { bruto = JSON.parse(await arquivo.text()); } catch { avisar('Esse arquivo não parece um backup da Central.'); return; }
   const dados = bruto.app === 'central-da-lorena' ? bruto.dados : bruto;
   if (!dados || !Array.isArray(dados.tarefas) || !Array.isArray(dados.listas)) { avisar('Esse arquivo não parece um backup da Central.'); return; }
+  if (!(await confirmarRestaurar(bruto, dados))) return;
   const anterior = estado;
   estado = completar(dados);
   try { await gravarDiario(bruto.diario || [], false); } catch { avisar('Restaurei os dados, mas o diário não foi enviado para a nuvem.'); }
   salvar(); aplicarMenu(); aplicarTema(); desenhar();
   avisar('Backup restaurado.', () => { estado = anterior; salvar(); aplicarMenu(); aplicarTema(); desenhar(); });
+}
+
+// Antes de restaurar: mostra de quando é o backup e o que tem nele, e pede confirmação
+function confirmarRestaurar(bruto, dados) {
+  return new Promise((ok) => {
+    const quando = bruto.criadoEm ? new Date(bruto.criadoEm) : null;
+    const contar = (tipo) => dados.listas.filter((l) => l.tipo === tipo).reduce((s, l) => s + (l.itens?.length || l.metas?.length || l.materias?.length || 0), 0);
+    const linhas = [
+      ['Tarefas', dados.tarefas.length],
+      ['Listas', dados.listas.length],
+      ['Itens de compras', contar('compras')],
+      ['Metas', contar('metas')],
+      ['Lançamentos em Finanças', (dados.financas?.lancamentos?.length || 0) + (dados.financas?.recorrentes?.length || 0)],
+      ['Dias do diário', (bruto.diario || []).length],
+    ].filter(([, n]) => n);
+    const j = document.createElement('dialog');
+    j.className = 'janela';
+    j.innerHTML = `<form method="dialog">
+      <h2>Restaurar este backup?</h2>
+      <p style="margin:0">Backup ${quando && !isNaN(quando) ? `de <b>${quando.toLocaleDateString('pt-BR')} às ${quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</b>` : 'sem data'}:</p>
+      <ul class="resumo-backup">${linhas.map(([t, n]) => `<li>${t}: <b>${n}</b></li>`).join('')}</ul>
+      <p class="dica" style="margin:0"><b>Tudo o que está no site agora será trocado pelo conteúdo do arquivo</b>, em todos os aparelhos. Se mudar de ideia logo depois, use "Desfazer" no aviso que aparece embaixo, ou volte um dia em "Histórico na nuvem".</p>
+      <div class="rodape-janela">
+        <button class="btn sec" value="nao">Cancelar</button>
+        <button class="btn" value="sim">${ic('upload', 'p')} Restaurar</button>
+      </div>
+    </form>`;
+    j.addEventListener('close', () => { ok(j.returnValue === 'sim'); j.remove(); });
+    document.body.appendChild(j);
+    j.showModal();
+  });
 }
 
 const historicoDisponivel = () => NUVEM_ATIVA && !!usuario;

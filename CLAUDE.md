@@ -74,6 +74,25 @@ com explicações simples e diretas.
   `js/compras.js`) aplica nos itens: `valor`, `valorAntes`/`valorRobo`/`precoMudouEm` (mostra "era R$ X"),
   `esgotado`, `precoSituacao` (ok/esgotado/falhou), `precoConferido`. Lojas que bloqueiam robô ficam "falhou".
   SQL em `supabase/precos.sql`. `verify_jwt` false.
+  Também grava `compras_precos_historico` (um ponto por item por dia) → gráfico em "Ver detalhes".
+  Amazon e Mercado Livre bloqueiam leitura automática às vezes ("falhou"): é da loja, não do código.
+
+## Compras + dinheiro (js/compras-dinheiro.js)
+
+- Marcar item como comprado abre o questionário "Comprou?" (se o módulo Finanças estiver ligado): forma de pagamento
+  (Pix/Débito/Dinheiro/Crédito à vista ou parcelado/Boleto), situação, categoria e "Marcar como comprado" opcional;
+  "Só marcar, sem lançar" pula. Cria `lancamentos` (avulso) ou `recorrentes` com `freq: 'parcelas'`, ambos com
+  `pagamento` e `compra: 'lista/item'`; no item fica `i.lancado = { tipo: 'lanc'|'regra', id, ... }`.
+- Juntar dinheiro: `i.guardado` (sem meta) ou `i.meta = 'listaMetas/idMeta'` (vários itens podem ir na mesma meta);
+  a página da meta mostra "Itens de Compras" (`htmlItensDaMeta`, chamado em metas.js).
+- Linha do item: estrela de prioridade (`i.prioridade`, sobe para o topo em qualquer ordenação), nome em até 2 linhas,
+  link da loja no fim da linha. Apagar: lixeira no título do card → modo seleção (vários de uma vez, `removerVariosComDesfazer`).
+- Vários links por item: `i.link` é o principal (foto, prévia e robô de preço usam só ele); os outros ficam em
+  `i.linksExtras = [{ id, url, nome, valor }]`. Com preço em algum extra, a linha mostra "a partir de" (menor preço);
+  `valorCompra(i)` é o valor usado em totais, ordenação e "falta R$". Na linha, com 2+ links o ícone mostra o número e abre um menu.
+- Bolinha em "Ver detalhes" só com aviso (`avisoCompra`): vermelha esgotado, verde baixou, amarela subiu.
+- Restaurar backup pede confirmação com resumo (`confirmarRestaurar` em historico.js).
+- Cópias antigas do banco ficam no esquema fechado `arquivo` (fora da API); ver `supabase/arrumacao.sql`.
 
 ## Como testar
 

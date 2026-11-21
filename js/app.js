@@ -78,7 +78,7 @@ function desenharMenu() {
   const atual = pag.nomeMenu || pag.nome;
   $('#nav-listas').innerHTML = estado.listas.map((l) => {
     const c = contarLista(l);
-    const pend = l.tipo === 'cursos' || l.tipo === 'metas' ? 0 : c.total - c.feitos;
+    const pend = ['cursos', 'metas', 'compras'].includes(l.tipo) ? 0 : c.total - c.feitos;
     return `<a href="#lista-${l.id}" data-pagina="lista-${l.id}" title="${esc(l.nome)}" ${ordem('|listas', l.id)} data-pegar>
       <span class="selo mini" style="background:${l.cor}26;color:${l.cor}">${ic(l.icone)}</span><span>${esc(l.nome)}</span>${menuTela.editar
         ? `<button class="nav-del" data-acao="lista-excluir-menu" data-id="${l.id}" title="Excluir lista" aria-label="Excluir ${esc(l.nome)}">${ic('trash', 'p')}</button>`

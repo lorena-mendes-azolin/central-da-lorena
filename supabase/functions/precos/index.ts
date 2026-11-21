@@ -191,6 +191,11 @@ async function rodar(alvos: Alvo[]) {
   if (resultados.length) {
     const { error } = await sb.from('compras_precos').upsert(resultados, { onConflict: 'user_id,lista_id,item_id' });
     if (error) throw error;
+    // Histórico: um ponto por dia (horário de Brasília); se conferir duas vezes no dia, fica o último
+    const dia = new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10);
+    const hist = resultados.filter((r) => r.situacao !== 'falhou')
+      .map((r) => ({ user_id: r.user_id, lista_id: r.lista_id, item_id: r.item_id, dia, preco: r.preco, situacao: r.situacao, verificado_em: r.verificado_em }));
+    if (hist.length) await sb.from('compras_precos_historico').upsert(hist, { onConflict: 'user_id,lista_id,item_id,dia' });
   }
   return resultados;
 }

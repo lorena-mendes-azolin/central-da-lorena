@@ -68,6 +68,7 @@ function htmlMeta(l, m) {
 
     <div style="display:grid;gap:16px;align-content:start">
     ${htmlDinheiroMeta(m, ref)}
+    ${typeof htmlItensDaMeta === 'function' ? htmlItensDaMeta(m, ref) : ''}
     <section class="card">
       <h2 class="card-titulo"><span class="selo mini c-verde">${ic('check')}</span> Etapas <small>${m.etapas.filter((e) => e.feito).length}/${m.etapas.length}</small></h2>
       <div class="lista-rolavel" style="max-height:320px">
