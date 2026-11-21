@@ -165,6 +165,7 @@ PAGINAS.dashboard = {
           </div>
         </form>` : ''}
       </section>`,
+      estudos: htmlProximosPassosDash(hoje),
       listas: `<section class="card">
       <h2 class="card-titulo"><span class="selo mini c-violeta">${ic('list')}</span> Minhas listas
         <a href="#" data-acao="lista-nova">${ic('plus', 'p')} Nova lista</a></h2>
@@ -224,6 +225,7 @@ const BLOCOS_DASH = {
   agua: { nome: 'Água', tam: 'um' },
   humor: { nome: 'Como você está?', tam: 'um' },
   foco: { nome: 'Foco', tam: 'um' },
+  estudos: { nome: 'Estudos: próximo passo', tam: 'meio' },
   treino: { nome: 'Treino de hoje', tam: 'um', modulo: 'treino' },
   jejum: { nome: 'Jejum', tam: 'um', modulo: 'jejum' },
   pets: { nome: 'Pets', tam: 'um', modulo: 'pets' },
@@ -254,7 +256,7 @@ function blocosDash() {
   Object.keys(BLOCOS_DASH).forEach((id) => {
     if (salvos.some((b) => b.id === id)) return;
     const pos = salvos.findIndex((b) => b.id === 'listas');
-    if (BLOCOS_DASH[id].modulo && pos >= 0) salvos.splice(pos, 0, { id, visivel: true }); else salvos.push({ id, visivel: true });
+    if (pos >= 0) salvos.splice(pos, 0, { id, visivel: true }); else salvos.push({ id, visivel: true });
   });
   estado.config.dashboard = salvos;
   return salvos;
@@ -507,3 +509,26 @@ ACOES['pomo-modo'] = (el) => {
 };
 
 ACOES['retro-abrir'] = (el) => { estado.config.retroVista = el.dataset.m; retroTela.tipo = 'mes'; retroTela.mes = el.dataset.m; salvar(); location.hash = 'retrospectiva'; };
+
+// Bloco "Estudos: próximo passo": cada curso/matéria em andamento com o que fazer a seguir.
+// Quem tem prazo mais perto aparece primeiro; o próximo passo pode ser editado ali mesmo.
+function htmlProximosPassosDash(hoje) {
+  const itens = estado.listas.filter((l) => l.tipo === 'cursos').flatMap((l) => (l.materias || [])
+    .filter((m) => m.status === 'cursando')
+    .map((m) => {
+      const prazo = m.tarefas.filter((t) => !t.feito && t.data).sort((a, b) => a.data.localeCompare(b.data))[0];
+      return { l, m, prazo };
+    }))
+    .sort((a, b) => (a.prazo?.data || '9999').localeCompare(b.prazo?.data || '9999'));
+  return `<section class="card coluna">
+    <h2 class="card-titulo"><span class="selo mini c-azul">${ic('flag')}</span> Estudos: próximo passo</h2>
+    ${itens.length ? `<div class="lista-rolavel">${itens.map(({ l, m, prazo }) => {
+      const atrasado = prazo && prazo.data < hoje;
+      return `<div class="passo-dash">
+        <a class="passo-nome" href="#lista-${l.id}--${m.id}">${esc(m.nome)} <small>${esc(l.nome)}</small></a>
+        <input class="inline" type="text" value="${esc(m.passo || '')}" placeholder="Escreva o próximo passo…" maxlength="120" data-digitar="campo" data-ref="${l.id}/${m.id}" data-campo="passo" aria-label="Próximo passo de ${esc(m.nome)}">
+        ${prazo ? `<span class="passo-prazo ${atrasado ? 'atrasado' : ''}">${ic('clock', 'p')} ${esc(prazo.titulo)} · ${atrasado ? 'atrasado' : quandoFalta(prazo.data).toLowerCase()}</span>` : ''}
+      </div>`;
+    }).join('')}</div>` : '<p class="vazio">Nenhum curso ou matéria em andamento. Abra Estudos ou Faculdade e marque como Em andamento.</p>'}
+  </section>`;
+}

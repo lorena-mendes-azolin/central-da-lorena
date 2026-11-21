@@ -188,6 +188,7 @@ function htmlCartaoMateria(l, m) {
     <div class="cm-topo"><b>${esc(m.nome)}</b><span class="status-materia st-m-${m.status}">${nomeStatus(l, m.status)}</span></div>
     ${m.tag ? `<span class="tag">${esc(m.tag)}</span>` : ''}
     <div class="cm-prog"><span>${feitas}/${total} tarefas</span><span class="prog"><i style="width:${total ? (feitas / total) * 100 : 0}%"></i></span></div>
+    ${m.passo ? `<div class="cm-passo">${ic('flag', 'p')} <span>${esc(m.passo)}</span></div>` : ''}
     <div class="cm-prox">${prox ? `${ic('clock', 'p')} ${esc(prox.titulo)} · ${quandoFalta(prox.data).toLowerCase()}` : `<span style="color:var(--fraco)">Sem tarefas com data</span>`}</div>
     ${notas.media !== null || minutos ? `<div class="cm-extra">
       ${notas.media !== null ? `<span class="nota-chip ${notas.tom}">${ic('star', 'p')} média ${fmtNota(notas.media)}</span>` : ''}
@@ -242,6 +243,11 @@ function htmlMateria(l, m) {
       ${Object.keys(STATUS_MATERIA).map((id) => `<button class="${m.status === id ? 'ativo' : ''}" data-acao="materia-status" data-ref="${ref}" data-s="${id}">${nomeStatus(l, id)}</button>`).join('')}
     </div>
   </div>
+
+  <label class="passo-materia">
+    <span class="rotulo-mini">${ic('flag', 'p')} Próximo passo</span>
+    <input type="text" value="${esc(m.passo || '')}" placeholder="Ex.: Aula 7 do módulo 2, terminar atividade de modelagem…" maxlength="120" data-digitar="campo" data-ref="${ref}" data-campo="passo">
+  </label>
 
   <div class="barra-lista barra-materia">
     <div class="segmento abas-materia">

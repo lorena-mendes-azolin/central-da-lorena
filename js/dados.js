@@ -158,6 +158,7 @@ function completar(dados) {
 // Os ids são fixos para que dois aparelhos migrando ao mesmo tempo não dupliquem nada.
 function migrarMateria(l, m) {
   m.notas = m.notas || [];
+  if (m.passo === undefined) m.passo = ''; // "Próximo passo" do curso/matéria
   const secoes = m.secoes || ((m.descricao || (m.anexos || []).length) ? [{ id: 'sobre', titulo: 'Sobre', html: m.descricao || '', anexos: m.anexos || [] }] : []);
   secoes.forEach((x) => {
     const id = 'sec-' + x.id;

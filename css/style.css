@@ -475,14 +475,15 @@ label.campo { display: grid; gap: 5px; font-size: 13px; color: var(--suave); fon
 .voltar:hover { color: var(--texto); }
 .materia-cab { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
 .materia-cab .textos { flex: 1 1 280px; }
-.lista-cab .btn-mini { align-self: flex-start; }
+.lista-cab .btn-mini { align-self: center; }
 .grade-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin-bottom: 14px; }
 .cartao-materia { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--texto); transition: border-color .15s, transform .15s; overflow: hidden; }
 .cartao-materia:hover { border-color: var(--destaque-2); transform: translateY(-2px); }
 .capa { width: calc(100% + 36px); margin: -18px -18px 4px; height: 120px; object-fit: cover; display: block; }
 .cartao .capa { width: calc(100% + 22px); margin: -8px -8px 8px -12px; height: 90px; border-radius: 10px 10px 0 0; }
-.cm-topo { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; }
-.cm-topo b { font-size: 16px; line-height: 1.3; }
+.cm-topo { display: flex; flex-direction: column-reverse; gap: 6px; align-items: flex-start; }
+.cm-topo b { display: block; font-size: 16px; line-height: 1.3; min-height: 2.6em; }
+.cartao-materia > .tag { align-self: flex-start; }
 .cm-prog { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; font-size: 12.5px; color: var(--suave); font-weight: 600; }
 .cm-prox { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--suave); flex-wrap: wrap; }
 .status-materia { font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; flex: 0 0 auto; }
@@ -1679,3 +1680,17 @@ textarea.titulo-quebra { display: block; resize: none; overflow: hidden; field-s
   .pet-topo .espaco { flex: 1 1 100%; height: 0; }
   .pet-topo .apagar { margin-left: auto; }
 }
+
+/* Próximo passo (cursos/matérias e Dashboard) */
+.passo-materia { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -4px 0 14px; }
+.passo-materia .rotulo-mini { display: inline-flex; align-items: center; gap: 5px; }
+.passo-materia input { flex: 1 1 260px; }
+.cm-passo { display: flex; align-items: flex-start; gap: 6px; font-size: 13px; font-weight: 600; color: var(--texto); }
+.cm-passo .ic { flex: none; margin-top: 2px; color: var(--destaque-2); }
+.passo-dash { display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: 10px; }
+.passo-dash + .passo-dash { border-top: 1px solid var(--linha); border-radius: 0; }
+.passo-nome { font-weight: 700; color: var(--texto); text-decoration: none; }
+.passo-nome small { font-weight: 500; color: var(--suave); margin-left: 4px; }
+.passo-dash .inline { margin-left: -8px; width: calc(100% + 8px); }
+.passo-prazo { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--suave); }
+.passo-prazo.atrasado { color: var(--vermelho); }
