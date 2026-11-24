@@ -1,7 +1,7 @@
 const STATUS_MATERIA = { cursando: 'Em andamento', afazer: 'Não começou', concluida: 'Concluída' };
 const TIPOS_TAREFA = ['Atividade', 'Trabalho', 'Prova', 'Leitura', 'Aula', 'Outro'];
 const COR_TIPO_TAREFA = { Atividade: '#9d86ff', Trabalho: '#6aaeff', Prova: '#f59ad8', Leitura: '#5fd6a4', Aula: '#62c9f5', Outro: '#a5a3c8' };
-const cursosTela = { filtro: {}, aba: 'tarefas', mostrarFeitas: false, criando: false, vista: {}, cadDono: {} };
+const cursosTela = { filtro: {}, categoria: {}, aba: 'tarefas', mostrarFeitas: false, criando: false, vista: {}, cadDono: {} };
 
 function palavras(rotulo) {
   return rotulo === 'Matéria'
@@ -112,14 +112,62 @@ function textoMinutos(min) {
   return h ? `${h}h${m ? String(m).padStart(2, '0') : ''}` : `${m} min`;
 }
 
+// Categorias = a "etiqueta" de cada curso/matéria. Maiúsculas e espaços não importam.
+function chaveCategoria(t) { return String(t || '').trim().toLocaleLowerCase('pt-BR'); }
+function categoriasCursos(l) {
+  const mapa = new Map();
+  l.materias.forEach((m) => { const k = chaveCategoria(m.tag); if (k && !mapa.has(k)) mapa.set(k, String(m.tag).trim()); });
+  return [...mapa].map(([k, nome]) => ({ k, nome, n: l.materias.filter((m) => chaveCategoria(m.tag) === k).length }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+function categoriaEscolhida(l) {
+  const c = cursosTela.categoria[l.id] || '';
+  if (c === '__sem') return l.materias.some((m) => !chaveCategoria(m.tag)) ? c : '';
+  return c && l.materias.some((m) => chaveCategoria(m.tag) === c) ? c : '';
+}
+function filtrarCategoria(l, lista) {
+  const c = categoriaEscolhida(l);
+  if (!c) return lista;
+  return lista.filter((m) => (c === '__sem' ? !chaveCategoria(m.tag) : chaveCategoria(m.tag) === c));
+}
+function htmlChipsCategoria(l) {
+  const cats = categoriasCursos(l);
+  if (!cats.length) return '';
+  const c = categoriaEscolhida(l);
+  const semCat = l.materias.filter((m) => !chaveCategoria(m.tag)).length;
+  const chip = (id, nome, n) => `<button class="chip ${c === id ? 'ativo' : ''}" data-acao="cursos-categoria" data-lista="${l.id}" data-c="${esc(id)}">${esc(nome)} <b>${n}</b></button>`;
+  return `<div class="chips chips-categoria">
+    <span class="chips-rotulo">Categoria</span>
+    ${chip('', 'Todas', l.materias.length)}
+    ${cats.map((x) => chip(x.k, x.nome, x.n)).join('')}
+    ${semCat ? chip('__sem', 'Sem categoria', semCat) : ''}
+  </div>`;
+}
+// Escolher a categoria numa lista (em vez de digitar). "Nova categoria…" troca a lista por um campo de texto.
+function htmlEscolherCategoria(l, atual, extra = '') {
+  const k = chaveCategoria(atual);
+  return `<select class="sel-categoria" data-mudar="curso-cat" aria-label="Categoria" ${extra}>
+    <option value="" ${!k ? 'selected' : ''}>Sem categoria</option>
+    ${categoriasCursos(l).map((x) => `<option value="${esc(x.nome)}" ${x.k === k ? 'selected' : ''}>${esc(x.nome)}</option>`).join('')}
+    <option value="__nova">+ Nova categoria…</option>
+  </select>`;
+}
+function nomeCategoriaExistente(l, texto) {
+  const k = chaveCategoria(texto);
+  return categoriasCursos(l).find((x) => x.k === k)?.nome || String(texto || '').trim();
+}
+
 function nomeStatus(l, s) {
   return s === 'concluida' ? palavras(l.rotulo).concluido : STATUS_MATERIA[s];
 }
 
 function htmlCursos(l) {
   const f = cursosTela.filtro[l.id] || 'todas';
-  const mats = l.materias.filter((m) => f === 'todas' || m.status === f);
-  const proximas = l.materias.flatMap((m) => m.tarefas.filter((t) => !t.feito).map((t) => ({ t, m })))
+  const daCategoria = filtrarCategoria(l, l.materias);
+  const mats = daCategoria.filter((m) => f === 'todas' || m.status === f);
+  const catAtual = categoriaEscolhida(l);
+  const catNome = catAtual && catAtual !== '__sem' ? categoriasCursos(l).find((x) => x.k === catAtual)?.nome || '' : '';
+  const proximas = daCategoria.flatMap((m) => m.tarefas.filter((t) => !t.feito).map((t) => ({ t, m })))
     .sort((a, b) => (a.t.data || '9999').localeCompare(b.t.data || '9999'));
   const rot = l.rotulo || 'Curso';
   const p = palavras(rot);
@@ -144,19 +192,21 @@ function htmlCursos(l) {
     const dono = m || l;
     const ref = m ? `${l.id}/${m.id}` : l.id;
     return `${topo}
+    ${htmlChipsCategoria(l)}
     <div class="chips">
       <button class="chip ${!m ? 'ativo' : ''}" data-acao="cursos-cad-dono" data-lista="${l.id}" data-id="geral">${ic('notebook', 'p')} Anotações gerais <b>${(l.notas || []).length}</b></button>
-      ${l.materias.map((x) => `<button class="chip ${m && m.id === x.id ? 'ativo' : ''}" data-acao="cursos-cad-dono" data-lista="${l.id}" data-id="${x.id}">${esc(x.nome)} <b>${(x.notas || []).length}</b></button>`).join('')}
+      ${filtrarCategoria(l, l.materias).map((x) => `<button class="chip ${m && m.id === x.id ? 'ativo' : ''}" data-acao="cursos-cad-dono" data-lista="${l.id}" data-id="${x.id}">${esc(x.nome)} <b>${(x.notas || []).length}</b></button>`).join('')}
     </div>
     ${!m ? `<p class="dica" style="margin:-4px 0 12px">Aqui ficam as anotações que não são de ${p.um} ${p.nome} específic${p.nome === 'matéria' ? 'a' : 'o'}. ${l.materias.length ? `Para o caderno de ${p.um} ${p.nome}, clique no nome ${p.nome === 'matéria' ? 'dela' : 'dele'} acima.` : `Cada ${p.nome} que você criar ganha um caderno próprio, que aparece aqui ao lado.`}</p>` : ''}
     ${htmlCaderno(dono, ref, m ? `Crie uma página para cada aula de ${esc(m.nome)}.` : 'Comece uma página para as suas anotações.')}`;
   }
 
   return `${topo}
+  ${htmlChipsCategoria(l)}
   <div class="chips">
     ${[['todas', p.todos], ['cursando', 'Em andamento'], ['afazer', 'Não começou'], ['concluida', p.concluidos]].map(([id, nome]) =>
       `<button class="chip ${f === id ? 'ativo' : ''}" data-acao="cursos-filtro" data-lista="${l.id}" data-f="${id}">${nome}
-        <b>${id === 'todas' ? l.materias.length : l.materias.filter((m) => m.status === id).length}</b></button>`).join('')}
+        <b>${id === 'todas' ? daCategoria.length : daCategoria.filter((m) => m.status === id).length}</b></button>`).join('')}
   </div>
 
   <div class="grade-cards">
@@ -164,7 +214,7 @@ function htmlCursos(l) {
     <form class="card cartao-novo" data-form="materia-nova" data-lista="${l.id}">
       <span class="selo c-violeta">${ic('plus')}</span>
       <input type="text" name="nome" placeholder="${p.nova} ${p.nome}" maxlength="80" aria-label="Nome">
-      <input type="text" name="tag" placeholder="Etiqueta (opcional)" maxlength="30" aria-label="Etiqueta">
+      ${htmlEscolherCategoria(l, catNome, `name="tag" data-lista="${l.id}"`)}
       <button class="btn" type="submit">Adicionar</button>
     </form>
   </div>
@@ -186,7 +236,7 @@ function htmlCartaoMateria(l, m) {
   return `<a class="card cartao-materia" href="#lista-${l.id}--${m.id}" ${ordem(l.id + '|materias', m.id, true)} data-pegar>
     ${capa ? `<img class="capa" src="${capa.url}" alt="">` : ''}
     <div class="cm-topo"><b>${esc(m.nome)}</b><span class="status-materia st-m-${m.status}">${nomeStatus(l, m.status)}</span></div>
-    ${m.tag ? `<span class="tag">${esc(m.tag)}</span>` : ''}
+    ${chaveCategoria(m.tag) ? `<span class="tag">${esc(nomeCategoriaExistente(l, m.tag))}</span>` : ''}
     <div class="cm-prog"><span>${feitas}/${total} tarefas</span><span class="prog"><i style="width:${total ? (feitas / total) * 100 : 0}%"></i></span></div>
     ${m.passo ? `<div class="cm-passo">${ic('flag', 'p')} <span>${esc(m.passo)}</span></div>` : ''}
     <div class="cm-prox">${prox ? `${ic('clock', 'p')} ${esc(prox.titulo)} · ${quandoFalta(prox.data).toLowerCase()}` : `<span style="color:var(--fraco)">Sem tarefas com data</span>`}</div>
@@ -237,7 +287,7 @@ function htmlMateria(l, m) {
   <div class="materia-cab">
     <div class="textos">
       <textarea class="titulo-edit titulo-quebra" rows="1" data-digitar="campo" data-ref="${ref}" data-campo="nome" aria-label="Nome" maxlength="80">${esc(m.nome)}</textarea>
-      <input class="desc-edit" value="${esc(m.tag)}" placeholder="Etiqueta" data-digitar="campo" data-ref="${ref}" data-campo="tag" aria-label="Etiqueta" maxlength="30">
+      <div class="linha-categoria"><span class="chips-rotulo">Categoria</span>${htmlEscolherCategoria(l, m.tag, `data-ref="${ref}" data-lista="${l.id}"`)}</div>
     </div>
     <div class="segmento">
       ${Object.keys(STATUS_MATERIA).map((id) => `<button class="${m.status === id ? 'ativo' : ''}" data-acao="materia-status" data-ref="${ref}" data-s="${id}">${nomeStatus(l, id)}</button>`).join('')}
@@ -406,11 +456,42 @@ ACOES['estudar-com-foco'] = (el) => {
 ACOES['cursos-vista'] = (el) => { cursosTela.vista[el.dataset.lista] = el.dataset.v; desenhar(); };
 ACOES['cursos-cad-dono'] = (el) => { cursosTela.cadDono[el.dataset.lista] = el.dataset.id; desenhar(); };
 ACOES['cursos-filtro'] = (el) => { cursosTela.filtro[el.dataset.lista] = el.dataset.f; desenhar(); };
+MUDAR['curso-cat'] = (el) => {
+  if (el.value === '__nova') {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.maxLength = 30;
+    inp.className = 'cat-nova';
+    inp.placeholder = 'Nome da nova categoria';
+    inp.setAttribute('aria-label', 'Nova categoria');
+    inp.autocomplete = 'off';
+    if (el.name) inp.name = el.name;
+    inp.dataset.lista = el.dataset.lista;
+    if (el.dataset.ref) { inp.dataset.mudar = 'curso-cat-nova'; inp.dataset.ref = el.dataset.ref; }
+    el._botao?.remove();
+    el.replaceWith(inp);
+    inp.focus();
+    return;
+  }
+  if (!el.dataset.ref) return; // formulário de novo curso: só guarda a escolha
+  const m = acharRef(el.dataset.ref);
+  if (!m) return;
+  m.tag = el.value;
+  salvar(); desenhar();
+};
+MUDAR['curso-cat-nova'] = (el) => {
+  const m = acharRef(el.dataset.ref);
+  const texto = el.value.trim();
+  if (m && texto) { m.tag = nomeCategoriaExistente(acharLista(el.dataset.lista), texto); salvar(); }
+  desenhar();
+};
+ACOES['cursos-categoria'] = (el) => { cursosTela.categoria[el.dataset.lista] = el.dataset.c; desenhar(); };
 
 FORMS['materia-nova'] = (d, form) => {
   const l = acharLista(form.dataset.lista);
   const p = palavras(l.rotulo);
-  l.materias.push(materia(d.nome || `${p.nova} ${p.nome}`, 'cursando', d.tag || ''));
+  const tag = d.tag === '__nova' ? '' : nomeCategoriaExistente(l, d.tag);
+  l.materias.push(materia(d.nome || `${p.nova} ${p.nome}`, 'cursando', tag));
   salvar(); desenhar();
   avisar(`${p.nome[0].toUpperCase() + p.nome.slice(1)} ${p.adicionado}. Clique ${p.nela} para editar e colocar tarefas.`);
 };

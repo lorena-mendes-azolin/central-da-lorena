@@ -165,6 +165,10 @@ label.campo { display: grid; gap: 5px; font-size: 13px; color: var(--suave); fon
 .chip:hover { background: var(--hover); color: var(--texto); }
 .chip.ativo { background: var(--destaque-bg); border-color: var(--destaque); color: var(--texto); }
 .chip b { color: var(--fraco); margin-left: 3px; }
+.chips-categoria { margin-bottom: 8px; }
+.linha-categoria { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.linha-categoria .sel-btn, .linha-categoria .cat-nova { width: auto; min-width: 180px; max-width: 100%; padding: 6px 12px; font-size: 14px; }
+.chips-rotulo { align-self: center; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--fraco); margin-right: 2px; }
 
 .segmento { display: inline-flex; background: var(--card-2); border: 1px solid var(--linha); border-radius: 11px; padding: 3px; }
 .segmento button { border: 0; background: none; color: var(--suave); padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
@@ -499,12 +503,14 @@ label.campo { display: grid; gap: 5px; font-size: 13px; color: var(--suave); fon
 .capa { width: calc(100% + 36px); margin: -18px -18px 4px; height: 120px; object-fit: cover; display: block; }
 .cartao .capa { width: calc(100% + 22px); margin: -8px -8px 8px -12px; height: 90px; border-radius: 10px 10px 0 0; }
 .cm-topo { display: flex; flex-direction: column-reverse; gap: 6px; align-items: flex-start; }
-.cm-topo b { display: block; font-size: 16px; line-height: 1.3; min-height: 2.6em; }
+.cm-topo b { display: block; font-size: 16px; line-height: 1.3; }
+.cartao-materia > .tag { margin-top: -2px; }
 .cartao-materia > .tag { align-self: flex-start; }
 .cm-prog { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; font-size: 12.5px; color: var(--suave); font-weight: 600; }
 .cm-prox { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--suave); flex-wrap: wrap; }
 .status-materia { font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; flex: 0 0 auto; }
 .st-m-cursando { background: rgba(106, 174, 255, .16); color: #9ac8ff; }
+.st-m-proximo { background: rgba(245, 190, 90, .16); color: #f7cf86; }
 .st-m-afazer { background: rgba(165, 163, 200, .16); color: #c9c7e6; }
 .st-m-concluida { background: rgba(95, 214, 164, .16); color: #8ee6c1; }
 .cartao-novo { display: grid; gap: 8px; align-content: start; border-style: dashed; }

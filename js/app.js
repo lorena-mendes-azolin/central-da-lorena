@@ -174,7 +174,7 @@ document.addEventListener('submit', (e) => {
 
 document.addEventListener('keydown', (e) => {
 
-  if (e.key === 'Enter' && e.target.matches('.titulo-edit, .folha-titulo, .desc-edit, td .inline, .item-lista .inline')) { if (e.target.tagName === 'TEXTAREA') e.preventDefault(); e.target.blur(); }
+  if (e.key === 'Enter' && e.target.matches('.titulo-edit, .folha-titulo, .desc-edit, .materia-cab .cat-nova, td .inline, .item-lista .inline')) { if (e.target.tagName === 'TEXTAREA') e.preventDefault(); e.target.blur(); }
   if (e.key === 'Escape') { $('#escolha-icone').hidden = true; $('#painel-avisos').hidden = true; fecharMenu(); }
 });
 
