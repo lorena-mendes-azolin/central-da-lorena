@@ -1,12 +1,12 @@
-const STATUS_MATERIA = { cursando: 'Em andamento', afazer: 'Não começou', concluida: 'Concluída' };
+const STATUS_MATERIA = { cursando: 'Em andamento', proximo: 'Próximo', afazer: 'Não começou', concluida: 'Concluída' };
 const TIPOS_TAREFA = ['Atividade', 'Trabalho', 'Prova', 'Leitura', 'Aula', 'Outro'];
 const COR_TIPO_TAREFA = { Atividade: '#9d86ff', Trabalho: '#6aaeff', Prova: '#f59ad8', Leitura: '#5fd6a4', Aula: '#62c9f5', Outro: '#a5a3c8' };
 const cursosTela = { filtro: {}, categoria: {}, aba: 'tarefas', mostrarFeitas: false, criando: false, vista: {}, cadDono: {} };
 
 function palavras(rotulo) {
   return rotulo === 'Matéria'
-    ? { nome: 'matéria', plural: 'matérias', um: 'uma', nova: 'Nova', todos: 'Todas', todasMin: 'todas', concluidos: 'Concluídas', concluido: 'Concluída', nela: 'nela', adicionado: 'adicionada' }
-    : { nome: 'curso', plural: 'cursos', um: 'um', nova: 'Novo', todos: 'Todos', todasMin: 'todos', concluidos: 'Concluídos', concluido: 'Concluído', nela: 'nele', adicionado: 'adicionado' };
+    ? { nome: 'matéria', plural: 'matérias', um: 'uma', nova: 'Nova', todos: 'Todas', todasMin: 'todas', concluidos: 'Concluídas', concluido: 'Concluída', proximo: 'Próxima', proximos: 'Próximas', nela: 'nela', adicionado: 'adicionada' }
+    : { nome: 'curso', plural: 'cursos', um: 'um', nova: 'Novo', todos: 'Todos', todasMin: 'todos', concluidos: 'Concluídos', concluido: 'Concluído', proximo: 'Próximo', proximos: 'Próximos', nela: 'nele', adicionado: 'adicionado' };
 }
 
 function regraNotas(l) { return { media: 6, p1: 1, p2: 1, ...(l.regra || {}) }; }
@@ -130,18 +130,19 @@ function filtrarCategoria(l, lista) {
   if (!c) return lista;
   return lista.filter((m) => (c === '__sem' ? !chaveCategoria(m.tag) : chaveCategoria(m.tag) === c));
 }
-function htmlChipsCategoria(l) {
+// Filtro de categoria: um botão-lista no fim da linha de filtros (só aparece se algum curso tem categoria)
+function htmlFiltroCategoria(l) {
   const cats = categoriasCursos(l);
   if (!cats.length) return '';
   const c = categoriaEscolhida(l);
   const semCat = l.materias.filter((m) => !chaveCategoria(m.tag)).length;
-  const chip = (id, nome, n) => `<button class="chip ${c === id ? 'ativo' : ''}" data-acao="cursos-categoria" data-lista="${l.id}" data-c="${esc(id)}">${esc(nome)} <b>${n}</b></button>`;
-  return `<div class="chips chips-categoria">
-    <span class="chips-rotulo">Categoria</span>
-    ${chip('', 'Todas', l.materias.length)}
-    ${cats.map((x) => chip(x.k, x.nome, x.n)).join('')}
-    ${semCat ? chip('__sem', 'Sem categoria', semCat) : ''}
-  </div>`;
+  const op = (id, nome, n) => `<option value="${esc(id)}" ${c === id ? 'selected' : ''}>${esc(nome)} (${n})</option>`;
+  return `<span class="espaco"></span>
+    <select class="filtro-categoria ${c ? 'ativo' : ''}" data-mudar="cursos-categoria" data-lista="${l.id}" aria-label="Filtrar por categoria">
+      <option value="" ${!c ? 'selected' : ''}>Todas as categorias</option>
+      ${cats.map((x) => op(x.k, x.nome, x.n)).join('')}
+      ${semCat ? op('__sem', 'Sem categoria', semCat) : ''}
+    </select>`;
 }
 // Escolher a categoria numa lista (em vez de digitar). "Nova categoria…" troca a lista por um campo de texto.
 function htmlEscolherCategoria(l, atual, extra = '') {
@@ -158,7 +159,9 @@ function nomeCategoriaExistente(l, texto) {
 }
 
 function nomeStatus(l, s) {
-  return s === 'concluida' ? palavras(l.rotulo).concluido : STATUS_MATERIA[s];
+  if (s === 'concluida') return palavras(l.rotulo).concluido;
+  if (s === 'proximo') return palavras(l.rotulo).proximo;
+  return STATUS_MATERIA[s];
 }
 
 function htmlCursos(l) {
@@ -192,21 +195,21 @@ function htmlCursos(l) {
     const dono = m || l;
     const ref = m ? `${l.id}/${m.id}` : l.id;
     return `${topo}
-    ${htmlChipsCategoria(l)}
     <div class="chips">
       <button class="chip ${!m ? 'ativo' : ''}" data-acao="cursos-cad-dono" data-lista="${l.id}" data-id="geral">${ic('notebook', 'p')} Anotações gerais <b>${(l.notas || []).length}</b></button>
       ${filtrarCategoria(l, l.materias).map((x) => `<button class="chip ${m && m.id === x.id ? 'ativo' : ''}" data-acao="cursos-cad-dono" data-lista="${l.id}" data-id="${x.id}">${esc(x.nome)} <b>${(x.notas || []).length}</b></button>`).join('')}
+      ${htmlFiltroCategoria(l)}
     </div>
     ${!m ? `<p class="dica" style="margin:-4px 0 12px">Aqui ficam as anotações que não são de ${p.um} ${p.nome} específic${p.nome === 'matéria' ? 'a' : 'o'}. ${l.materias.length ? `Para o caderno de ${p.um} ${p.nome}, clique no nome ${p.nome === 'matéria' ? 'dela' : 'dele'} acima.` : `Cada ${p.nome} que você criar ganha um caderno próprio, que aparece aqui ao lado.`}</p>` : ''}
     ${htmlCaderno(dono, ref, m ? `Crie uma página para cada aula de ${esc(m.nome)}.` : 'Comece uma página para as suas anotações.')}`;
   }
 
   return `${topo}
-  ${htmlChipsCategoria(l)}
   <div class="chips">
-    ${[['todas', p.todos], ['cursando', 'Em andamento'], ['afazer', 'Não começou'], ['concluida', p.concluidos]].map(([id, nome]) =>
+    ${[['todas', p.todos], ['cursando', 'Em andamento'], ['proximo', p.proximos], ['afazer', 'Não começou'], ['concluida', p.concluidos]].map(([id, nome]) =>
       `<button class="chip ${f === id ? 'ativo' : ''}" data-acao="cursos-filtro" data-lista="${l.id}" data-f="${id}">${nome}
         <b>${id === 'todas' ? daCategoria.length : daCategoria.filter((m) => m.status === id).length}</b></button>`).join('')}
+    ${htmlFiltroCategoria(l)}
   </div>
 
   <div class="grade-cards">
@@ -233,17 +236,25 @@ function htmlCartaoMateria(l, m) {
   const capa = (m.notas || []).flatMap((x) => x.anexos || []).find((a) => a.tipo === 'imagem');
   const notas = calcNotas(l, m);
   const minutos = minutosEstudo(`${l.id}/${m.id}`);
+  const cat = chaveCategoria(m.tag) ? nomeCategoriaExistente(l, m.tag) : '';
+  // Todos os cards têm as mesmas linhas, na mesma ordem (o que falta aparece apagado), para ficarem alinhados
   return `<a class="card cartao-materia" href="#lista-${l.id}--${m.id}" ${ordem(l.id + '|materias', m.id, true)} data-pegar>
     ${capa ? `<img class="capa" src="${capa.url}" alt="">` : ''}
-    <div class="cm-topo"><b>${esc(m.nome)}</b><span class="status-materia st-m-${m.status}">${nomeStatus(l, m.status)}</span></div>
-    ${chaveCategoria(m.tag) ? `<span class="tag">${esc(nomeCategoriaExistente(l, m.tag))}</span>` : ''}
+    <div class="cm-cab">
+      <span class="status-materia st-m-${m.status}">${nomeStatus(l, m.status)}</span>
+      <button type="button" class="cm-cat-btn ${cat ? '' : 'vazia'}" data-acao="cm-cat" data-ref="${l.id}/${m.id}" data-lista="${l.id}" title="Trocar categoria">
+        <span>${cat ? esc(cat) : '+ Categoria'}</span>${ic('down', 'p')}</button>
+    </div>
+    <b class="cm-nome">${esc(m.nome)}</b>
     <div class="cm-prog"><span>${feitas}/${total} tarefas</span><span class="prog"><i style="width:${total ? (feitas / total) * 100 : 0}%"></i></span></div>
-    ${m.passo ? `<div class="cm-passo">${ic('flag', 'p')} <span>${esc(m.passo)}</span></div>` : ''}
-    <div class="cm-prox">${prox ? `${ic('clock', 'p')} ${esc(prox.titulo)} · ${quandoFalta(prox.data).toLowerCase()}` : `<span style="color:var(--fraco)">Sem tarefas com data</span>`}</div>
-    ${notas.media !== null || minutos ? `<div class="cm-extra">
+    <div class="cm-info">
+      <div class="cm-linha ${m.passo ? 'destaque' : 'apagado'}">${ic('flag', 'p')}<span>${m.passo ? esc(m.passo) : 'Sem próximo passo'}</span></div>
+      <div class="cm-linha ${prox ? '' : 'apagado'}">${ic('clock', 'p')}<span>${prox ? `${esc(prox.titulo)} · ${quandoFalta(prox.data).toLowerCase()}` : 'Sem tarefas com data'}</span></div>
+    </div>
+    <div class="cm-rodape">
+      <span class="${minutos ? '' : 'apagado'}">${ic('timer', 'p')} ${minutos ? `${textoMinutos(minutos)} estudadas` : 'Nada estudado'}</span>
       ${notas.media !== null ? `<span class="nota-chip ${notas.tom}">${ic('star', 'p')} média ${fmtNota(notas.media)}</span>` : ''}
-      ${minutos ? `<span>${ic('timer', 'p')} ${textoMinutos(minutos)} estudadas</span>` : ''}
-    </div>` : ''}
+    </div>
   </a>`;
 }
 
@@ -283,21 +294,29 @@ function htmlMateria(l, m) {
 
   return `
   ${htmlVoltar(l)}
-  <div class="linha-vinculo">${htmlVinculo('ref:' + ref, `Ao concluir tarefa ou escrever no caderno ${l.rotulo === 'Matéria' ? 'desta matéria' : 'deste curso'}, marcar`, l.habito)}</div>
   <div class="materia-cab">
     <div class="textos">
       <textarea class="titulo-edit titulo-quebra" rows="1" data-digitar="campo" data-ref="${ref}" data-campo="nome" aria-label="Nome" maxlength="80">${esc(m.nome)}</textarea>
-      <div class="linha-categoria"><span class="chips-rotulo">Categoria</span>${htmlEscolherCategoria(l, m.tag, `data-ref="${ref}" data-lista="${l.id}"`)}</div>
     </div>
     <div class="segmento">
       ${Object.keys(STATUS_MATERIA).map((id) => `<button class="${m.status === id ? 'ativo' : ''}" data-acao="materia-status" data-ref="${ref}" data-s="${id}">${nomeStatus(l, id)}</button>`).join('')}
     </div>
   </div>
 
-  <label class="passo-materia">
-    <span class="rotulo-mini">${ic('flag', 'p')} Próximo passo</span>
-    <input type="text" value="${esc(m.passo || '')}" placeholder="Ex.: Aula 7 do módulo 2, terminar atividade de modelagem…" maxlength="120" data-digitar="campo" data-ref="${ref}" data-campo="passo">
-  </label>
+  <div class="campos-materia">
+    <label class="campo-linha" title="Categoria">
+      ${ic('layers', 'p')}<span class="so-leitor">Categoria</span>
+      ${htmlEscolherCategoria(l, m.tag, `data-ref="${ref}" data-lista="${l.id}"`)}
+    </label>
+    <div class="campo-linha" title="Ao concluir tarefa ou escrever no caderno ${l.rotulo === 'Matéria' ? 'desta matéria' : 'deste curso'}, o hábito escolhido é marcado">
+      ${ic('repeat', 'p')}
+      ${htmlVinculo('ref:' + ref, 'Marcar hábito', l.habito)}
+    </div>
+    <label class="campo-linha campo-passo" title="Próximo passo">
+      ${ic('flag', 'p')}<span class="so-leitor">Próximo passo</span>
+      <input type="text" value="${esc(m.passo || '')}" placeholder="Próximo passo (ex.: Aula 7 do módulo 2)" maxlength="120" data-digitar="campo" data-ref="${ref}" data-campo="passo">
+    </label>
+  </div>
 
   <div class="barra-lista barra-materia">
     <div class="segmento abas-materia">
@@ -485,7 +504,36 @@ MUDAR['curso-cat-nova'] = (el) => {
   if (m && texto) { m.tag = nomeCategoriaExistente(acharLista(el.dataset.lista), texto); salvar(); }
   desenhar();
 };
-ACOES['cursos-categoria'] = (el) => { cursosTela.categoria[el.dataset.lista] = el.dataset.c; desenhar(); };
+// Setinha no canto do card: escolher a categoria sem abrir o curso
+ACOES['cm-cat'] = (el) => {
+  $$('select.cm-cat-sel').forEach((s) => s.remove());
+  const l = acharLista(el.dataset.lista);
+  const m = acharRef(el.dataset.ref);
+  if (!l || !m) return;
+  const box = document.createElement('div');
+  box.innerHTML = htmlEscolherCategoria(l, m.tag, `data-ref="${el.dataset.ref}" data-lista="${l.id}"`);
+  const sel = box.firstElementChild;
+  sel.classList.add('cm-cat-sel', 'sel-oculto');
+  sel.dataset.mudar = 'cm-cat-escolha';
+  sel.dataset.pronto = '1';
+  document.body.appendChild(sel);
+  abrirMenuSelect(sel, el);
+};
+MUDAR['cm-cat-escolha'] = (el) => {
+  const l = acharLista(el.dataset.lista);
+  const m = acharRef(el.dataset.ref);
+  let valor = el.value;
+  el.remove();
+  if (!l || !m) return;
+  if (valor === '__nova') {
+    const texto = window.prompt('Nome da nova categoria:');
+    if (!texto || !texto.trim()) return;
+    valor = nomeCategoriaExistente(l, texto.slice(0, 30));
+  }
+  m.tag = valor;
+  salvar(); desenhar();
+};
+MUDAR['cursos-categoria'] = (el) => { cursosTela.categoria[el.dataset.lista] = el.value; desenhar(); };
 
 FORMS['materia-nova'] = (d, form) => {
   const l = acharLista(form.dataset.lista);

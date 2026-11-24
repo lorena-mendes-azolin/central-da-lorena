@@ -41,7 +41,7 @@ function htmlCabLista(l, extra = '') {
       <input class="desc-edit" value="${esc(l.desc)}" placeholder="Adicionar uma descrição" data-digitar="lista-desc" data-id="${l.id}" aria-label="Descrição" maxlength="120">
     </div>
     ${extra}
-    ${htmlVinculo('ref:' + l.id, { cursos: `Ao concluir tarefa ou escrever no caderno, marcar`, metas: 'Ao avançar numa meta, marcar', colecoes: 'Ao marcar um item como feito, marcar', compras: 'Ao marcar como comprado, marcar' }[l.tipo] || 'Ao concluir um item, marcar')}
+    ${l.tipo === 'cursos' ? '' : htmlVinculo('ref:' + l.id, { cursos: `Ao concluir tarefa ou escrever no caderno, marcar`, metas: 'Ao avançar numa meta, marcar', colecoes: 'Ao marcar um item como feito, marcar', compras: 'Ao marcar como comprado, marcar' }[l.tipo] || 'Ao concluir um item, marcar')}
     <button class="btn-mini" data-acao="lista-excluir" data-id="${l.id}" title="Excluir esta lista">${ic('trash', 'p')} Excluir lista</button>
   </div>`;
 }

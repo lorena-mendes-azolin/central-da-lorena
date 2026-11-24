@@ -165,10 +165,9 @@ label.campo { display: grid; gap: 5px; font-size: 13px; color: var(--suave); fon
 .chip:hover { background: var(--hover); color: var(--texto); }
 .chip.ativo { background: var(--destaque-bg); border-color: var(--destaque); color: var(--texto); }
 .chip b { color: var(--fraco); margin-left: 3px; }
-.chips-categoria { margin-bottom: 8px; }
-.linha-categoria { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
-.linha-categoria .sel-btn, .linha-categoria .cat-nova { width: auto; min-width: 180px; max-width: 100%; padding: 6px 12px; font-size: 14px; }
-.chips-rotulo { align-self: center; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--fraco); margin-right: 2px; }
+.chips .sel-btn.filtro-categoria { width: auto; min-width: 190px; height: 32px; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--suave); }
+.chips .sel-btn.filtro-categoria.ativo { background: var(--destaque-bg); border-color: var(--destaque); color: var(--texto); }
+@media (max-width: 640px) { .chips .espaco { display: none; } .chips .sel-btn.filtro-categoria { flex: 1 1 100%; } }
 
 .segmento { display: inline-flex; background: var(--card-2); border: 1px solid var(--linha); border-radius: 11px; padding: 3px; }
 .segmento button { border: 0; background: none; color: var(--suave); padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
@@ -498,20 +497,19 @@ label.campo { display: grid; gap: 5px; font-size: 13px; color: var(--suave); fon
 .materia-cab .textos { flex: 1 1 280px; }
 .lista-cab .btn-mini { align-self: center; }
 .grade-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin-bottom: 14px; }
-.cartao-materia { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--texto); transition: border-color .15s, transform .15s; overflow: hidden; }
+.cartao-materia { position: relative; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--texto); transition: border-color .15s, transform .15s; overflow: hidden; }
 .cartao-materia:hover { border-color: var(--destaque-2); transform: translateY(-2px); }
 .capa { width: calc(100% + 36px); margin: -18px -18px 4px; height: 120px; object-fit: cover; display: block; }
 .cartao .capa { width: calc(100% + 22px); margin: -8px -8px 8px -12px; height: 90px; border-radius: 10px 10px 0 0; }
 .cm-topo { display: flex; flex-direction: column-reverse; gap: 6px; align-items: flex-start; }
 .cm-topo b { display: block; font-size: 16px; line-height: 1.3; }
-.cartao-materia > .tag { margin-top: -2px; }
 .cartao-materia > .tag { align-self: flex-start; }
 .cm-prog { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; font-size: 12.5px; color: var(--suave); font-weight: 600; }
 .cm-prox { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--suave); flex-wrap: wrap; }
 .status-materia { font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; flex: 0 0 auto; }
 .st-m-cursando { background: rgba(106, 174, 255, .16); color: #9ac8ff; }
 .st-m-proximo { background: rgba(245, 190, 90, .16); color: #f7cf86; }
-.st-m-afazer { background: rgba(165, 163, 200, .16); color: #c9c7e6; }
+.st-m-afazer { background: rgba(255, 107, 129, .16); color: #ff9aa9; }
 .st-m-concluida { background: rgba(95, 214, 164, .16); color: #8ee6c1; }
 .cartao-novo { display: grid; gap: 8px; align-content: start; border-style: dashed; }
 .cartao-novo .btn { justify-self: start; }
@@ -1619,8 +1617,8 @@ textarea.titulo-quebra { display: block; resize: none; overflow: hidden; field-s
 
 /* Matéria no celular */
 @media (max-width: 640px) {
-  .materia-cab .segmento { width: 100%; }
-  .materia-cab .segmento button { flex: 1 0 auto; justify-content: center; }
+  .materia-cab .segmento { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+  .materia-cab .segmento button { justify-content: center; }
   .abas-materia { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; overflow: visible; }
   .abas-materia button { flex-direction: column; justify-content: center; gap: 3px; white-space: normal; text-align: center; line-height: 1.2; padding: 7px 4px; font-size: 12px; }
   .barra-materia .espaco { display: none; }
@@ -1727,8 +1725,45 @@ textarea.titulo-quebra { display: block; resize: none; overflow: hidden; field-s
 .passo-materia { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -4px 0 14px; }
 .passo-materia .rotulo-mini { display: inline-flex; align-items: center; gap: 5px; }
 .passo-materia input { flex: 1 1 260px; }
+/* Campos da página do curso/matéria: uma linha compacta (Categoria, Hábito, Próximo passo) */
+.so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.campos-materia { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: -6px 0 16px; }
+.campos-materia .campo-linha { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--fraco); }
+.campos-materia .campo-linha > .ic { flex: none; width: 15px; height: 15px; }
+.campos-materia input, .campos-materia .sel-btn { color: var(--texto); }
+.campos-materia .campo-passo { flex: 1 1 280px; }
+.campos-materia .sel-btn, .campos-materia select, .campos-materia .cat-nova { width: auto; min-width: 150px; max-width: 220px; height: 32px; font-size: 13px; padding: 5px 10px; }
+.campos-materia .campo-passo input[type=text] { flex: 1 1 auto; min-width: 0; width: auto; height: 32px; font-size: 13px; padding: 5px 10px; }
+.campos-materia .vinculo-hab { display: block; }
+.campos-materia .vinculo-hab > .ic, .campos-materia .vinculo-hab > span { display: none; }
+.campos-materia .vinculo-hab .sel-btn, .campos-materia .vinculo-hab select { flex: none; width: auto; min-width: 170px; height: 32px; font-size: 13px; }
+@media (max-width: 640px) {
+  .campos-materia { gap: 8px; }
+  .campos-materia .campo-linha { flex: 1 1 100%; }
+  .campos-materia .sel-btn, .campos-materia .cat-nova, .campos-materia .vinculo-hab { flex: 1 1 auto; max-width: none; }
+  .campos-materia .vinculo-hab .sel-btn { width: 100%; }
+}
 .cm-passo { display: flex; align-items: flex-start; gap: 6px; font-size: 13px; font-weight: 600; color: var(--texto); }
 .cm-passo .ic { flex: none; margin-top: 2px; color: var(--destaque-2); }
+/* Card de curso/matéria padronizado: cabeçalho, nome (2 linhas), progresso, 2 linhas de info e rodapé */
+.cartao-materia { gap: 10px; }
+.cm-cab { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.cm-cat-btn { display: inline-flex; align-items: center; gap: 3px; min-width: 0; max-width: 60%; margin-left: auto; padding: 2px 6px 2px 9px; border: 1px solid transparent; border-radius: 999px; background: var(--card-2); color: var(--suave); font-size: 12px; font-weight: 700; cursor: pointer; }
+.cm-cat-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-cat-btn .ic { width: 13px; height: 13px; flex: none; }
+.cm-cat-btn:hover, .cm-cat-btn.aberto { border-color: var(--destaque); color: var(--texto); }
+.cm-cat-btn.vazia { background: none; border: 1px dashed var(--linha); color: var(--fraco); }
+.cm-nome { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; font-size: 16px; line-height: 1.3; min-height: 2.6em; }
+.cm-info { display: grid; gap: 6px; }
+.cm-linha { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 13px; color: var(--suave); }
+.cm-linha span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-linha .ic { flex: none; width: 14px; height: 14px; }
+.cm-linha.destaque { color: var(--texto); font-weight: 600; }
+.cm-linha.destaque .ic { color: var(--destaque-2); }
+.cm-linha.apagado, .cm-rodape .apagado { color: var(--fraco); }
+.cm-rodape { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--linha); font-size: 12.5px; font-weight: 600; color: var(--suave); }
+.cm-rodape > span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.cm-rodape .ic { width: 14px; height: 14px; }
 .passo-dash { display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: 10px; }
 .passo-dash + .passo-dash { border-top: 1px solid var(--linha); border-radius: 0; }
 .passo-nome { font-weight: 700; color: var(--texto); text-decoration: none; }
