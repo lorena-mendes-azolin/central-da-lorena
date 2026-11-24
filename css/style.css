@@ -440,10 +440,11 @@ label.campo { display: grid; gap: 5px; font-size: 13px; color: var(--suave); fon
 .paginas .pg { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 9px; cursor: pointer; border: 0; background: none; color: var(--suave); text-align: left; font-weight: 600; width: 100%; }
 .paginas .pg:hover { background: var(--hover); color: var(--texto); }
 .paginas .pg.ativo { background: var(--ativo); color: var(--texto); }
-.paginas .pg span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.paginas .pg span { flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; line-height: 1.3; }
 .paginas .pg small { color: var(--fraco); font-size: 11px; }
 .folha { background: var(--card); border: 1px solid var(--linha); border-radius: var(--raio); padding: 22px clamp(16px, 3vw, 34px); min-height: 460px; }
 .folha-titulo { width: 100%; background: none; border: 0; outline: none; font-size: 26px; font-weight: 800; padding: 0; margin-bottom: 4px; }
+@media (max-width: 760px) { .folha-titulo { font-size: 22px; } }
 .folha-info { color: var(--fraco); font-size: 12.5px; margin-bottom: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .ferramentas { display: flex; gap: 4px; flex-wrap: wrap; padding: 6px; background: var(--card-2); border-radius: 10px; margin-bottom: 16px; position: sticky; top: 70px; z-index: 2; }
 .ferramentas button { border: 0; background: none; color: var(--suave); width: 34px; height: 32px; border-radius: 8px; cursor: pointer; display: grid; place-items: center; font-weight: 800; }

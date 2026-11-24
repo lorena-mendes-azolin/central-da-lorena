@@ -248,11 +248,11 @@ function htmlCaderno(dono, refBase, textoVazio = 'Crie uma página para cada aul
     <aside class="paginas">
       <button class="btn" data-acao="pagina-nova" data-ref="${refBase}" style="margin-bottom:6px">${ic('plus', 'p')} Nova página</button>
       ${dono.notas.map((n) => `<button class="pg ${aberta && n.id === aberta.id ? 'ativo' : ''}" data-acao="pagina-abrir" data-ref="${refBase}" data-id="${n.id}" ${ordem(refBase + '|notas', n.id)} data-pegar>
-        ${ic('note', 'p')}<span id="pg-${n.id}">${esc(n.titulo || 'Sem título')}</span>${(n.anexos || []).length ? `<small>${ic('link', 'p')}${n.anexos.length}</small>` : ''}<small>${n.criado.slice(8)}/${n.criado.slice(5, 7)}</small></button>`).join('')
+        ${ic('note', 'p')}<span id="pg-${n.id}" title="${esc(n.titulo || '')}">${esc(n.titulo || 'Sem título')}</span>${(n.anexos || []).length ? `<small>${ic('link', 'p')}${n.anexos.length}</small>` : ''}<small>${n.criado.slice(8)}/${n.criado.slice(5, 7)}</small></button>`).join('')
         || '<p class="vazio" style="padding:4px 8px">Nenhuma página ainda.</p>'}
     </aside>
     ${aberta ? `<article class="folha">
-      <input class="folha-titulo" value="${esc(aberta.titulo)}" placeholder="Sem título" data-digitar="pagina-titulo" data-ref="${refBase}/nota/${aberta.id}" aria-label="Título da página" maxlength="80">
+      <textarea class="folha-titulo titulo-quebra" rows="1" placeholder="Sem título" data-digitar="pagina-titulo" data-ref="${refBase}/nota/${aberta.id}" aria-label="Título da página">${esc(aberta.titulo)}</textarea>
       <div class="folha-info">
         <span id="pagina-editada">Editada ${textoEditada(aberta.editado)}</span>
         <button class="btn-mini" data-acao="pagina-del" data-ref="${refBase}" data-id="${aberta.id}" style="margin-left:auto">${ic('trash', 'p')} Excluir página</button>
@@ -295,9 +295,11 @@ ACOES['pagina-del'] = (el) => {
 DIGITAR['pagina-titulo'] = (el) => {
   const n = acharRef(el.dataset.ref);
   if (!n) return;
+  // título pode ser longo e quebra linha sozinho; Enter/colar não criam linha nova
+  if (/[\r\n]/.test(el.value)) el.value = el.value.replace(/\s*[\r\n]+\s*/g, ' ');
   n.titulo = el.value;
   n.editado = new Date().toISOString();
   const item = $('#pg-' + n.id);
-  if (item) item.textContent = el.value || 'Sem título';
+  if (item) { item.textContent = el.value || 'Sem título'; item.title = el.value; }
   salvar();
 };
