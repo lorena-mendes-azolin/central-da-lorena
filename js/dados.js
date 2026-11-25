@@ -131,7 +131,7 @@ function completar(dados) {
   final.listas = (final.listas || []).map(migrarLista);
   final.habitos = (final.habitos || []).map((h) => ({ grupo: 'Geral', dias: [], meta: 0, ...h }));
   final.financas = { ...base.financas, ...(dados.financas || {}) };
-  final.flashcards = { baralhos: [], simulados: [], ...(final.flashcards || {}) };
+  final.flashcards = { baralhos: [], simulados: [], mapas: [], ...(final.flashcards || {}) };
   // "Pago/pendente": lançamentos antigos ficam como pagos; repetições ganham a lista de datas pagas
   (final.financas.lancamentos || []).forEach((l) => { if (l.pago === undefined) l.pago = true; });
   (final.financas.recorrentes || []).forEach((r) => { if (!r.pagos) r.pagos = []; });

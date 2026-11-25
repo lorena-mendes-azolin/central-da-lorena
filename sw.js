@@ -1,9 +1,9 @@
-const CACHE = 'central-v51';
+const CACHE = 'central-v52';
 const ARQUIVOS = [
   './', './index.html', './login.html', './redefinir.html', './css/style.css', './manifest.webmanifest',
   './icons/icone-192.png', './icons/icone-512.png',
   ...['config', 'utils', 'seletor', 'dados', 'nuvem', 'dashboard', 'agenda', 'rotina', 'graficos', 'editor', 'listas', 'cursos',
-    'metas', 'colecoes', 'imagens-busca', 'compras', 'compras-dinheiro', 'diario', 'bemestar', 'flashcards', 'simulado', 'financas', 'revisao', 'lixeira', 'imagens', 'arrastar', 'historico', 'limpeza', 'modulos', 'boasvindas', 'exercicios', 'treino', 'pets', 'apps', 'jejum', 'retrospectiva', 'notificacoes', 'configuracoes', 'app', 'login']
+    'metas', 'colecoes', 'imagens-busca', 'compras', 'compras-dinheiro', 'diario', 'bemestar', 'flashcards', 'simulado', 'mapas', 'financas', 'revisao', 'lixeira', 'imagens', 'arrastar', 'historico', 'limpeza', 'modulos', 'boasvindas', 'exercicios', 'treino', 'pets', 'apps', 'jejum', 'retrospectiva', 'notificacoes', 'configuracoes', 'app', 'login']
     .map((n) => `./js/${n}.js`),
 ];
 

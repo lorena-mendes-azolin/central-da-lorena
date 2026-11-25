@@ -36,6 +36,7 @@ PAGINAS.flashcards = {
   desenhar() {
     const lista = baralhos();
     if (flashTela.aba === 'simulados') return htmlSimulados();
+    if (flashTela.aba === 'mapas') return htmlMapas();
     if (flashTela.estudo) return htmlEstudo();
     const b = lista.find((x) => x.id === flashTela.baralho) || lista[0];
     if (b) flashTela.baralho = b.id;
@@ -75,8 +76,9 @@ PAGINAS.flashcards = {
 
 function htmlAbasFlash() {
   return `<div class="segmento">
-    <button class="${flashTela.aba !== 'simulados' ? 'ativo' : ''}" data-acao="flash-aba" data-a="baralhos">${ic('layers', 'p')} Baralhos</button>
+    <button class="${flashTela.aba !== 'simulados' && flashTela.aba !== 'mapas' ? 'ativo' : ''}" data-acao="flash-aba" data-a="baralhos">${ic('layers', 'p')} Baralhos</button>
     <button class="${flashTela.aba === 'simulados' ? 'ativo' : ''}" data-acao="flash-aba" data-a="simulados">${ic('review', 'p')} Simulados</button>
+    <button class="${flashTela.aba === 'mapas' ? 'ativo' : ''}" data-acao="flash-aba" data-a="mapas">${ic('board', 'p')} Mapas</button>
   </div>`;
 }
 ACOES['flash-aba'] = (el) => { flashTela.aba = el.dataset.a; window.scrollTo(0, 0); desenhar(); };
@@ -253,7 +255,7 @@ ACOES['flash-resposta'] = (el) => {
 };
 
 document.addEventListener('keydown', (e) => {
-  if (!flashTela.estudo || flashTela.aba === 'simulados' || location.hash !== '#flashcards' || e.target.matches('input, textarea')) return;
+  if (!flashTela.estudo || flashTela.aba === 'simulados' || flashTela.aba === 'mapas' || location.hash !== '#flashcards' || e.target.matches('input, textarea')) return;
   if (e.key === ' ' && !flashTela.estudo.virada) { e.preventDefault(); ACOES['flash-virar'](); }
   if (flashTela.estudo.virada && (e.key === '1' || e.key === '2')) ACOES['flash-resposta']({ dataset: { ok: e.key === '2' ? '1' : '0' } });
 });

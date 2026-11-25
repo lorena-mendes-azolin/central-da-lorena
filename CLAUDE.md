@@ -13,6 +13,8 @@ com explicações simples e diretas.
 - Publicado no **GitHub Pages**: https://lorena-mendes-azolin.github.io/central-da-lorena/
 - Fluxo de publicação: editar os arquivos na pasta do PC → **GitHub Desktop (Commit + Push)** → esperar 1–2 min →
   F5 no PC; no celular fechar e abrir o site.
+  Se o site não mudar: conferir no GitHub (API de commits ou raw.githubusercontent) se o commit levou tudo — o GitHub
+  Desktop pode pegar um estado intermediário se os arquivos forem salvos durante o commit.
 - Backend: **Supabase** (projeto `slevkhjdgtbrqjxjllha`). Em `js/config.js` vai **só a chave publicável**.
   Nunca usar Secret/service_role no site.
 - `segredos/` está no `.gitignore` (chave privada VAPID dos avisos). Os segredos das edge functions ficam no painel do Supabase.
@@ -25,7 +27,7 @@ com explicações simples e diretas.
   (`<a class="voltar">`).
 - Listas que podem crescer muito precisam de rolagem (`.lista-rolavel`) no Dashboard.
 - Vínculos com hábitos são sempre opcionais (componente `htmlVinculo(alvo, texto)` em `js/modulos.js`).
-- Layout precisa funcionar no **PC (~1400px) e no celular (~390px)**.
+- Layout precisa funcionar no **PC (~1400px) e no celular (~390px)**. Visual limpo, alinhado, sem sobrecarregar.
 
 ## Arquitetura (js/)
 
@@ -41,9 +43,51 @@ com explicações simples e diretas.
   `completar()` em `dados.js` preenche campos novos e faz **migrações** — toda mudança de formato de dados
   precisa de migração ali, com ids fixos para dois aparelhos migrarem igual.
 - `acharRef('lista/sub/tipo/id')` acha qualquer objeto pelo caminho.
-- `seletor.js` transforma `<select>` em menu bonito (com busca quando há mais de 7 opções).
+- `seletor.js` transforma `<select>` em menu bonito (com busca quando há mais de 7 opções). `abrirMenuSelect(sel, botao)`
+  pode ser usado para abrir um menu a partir de qualquer botão (ex.: setinha de categoria no card).
 - `sw.js` é o service worker: **ao mudar arquivos, aumentar a versão do cache** (`central-vNN`) e, se criar
   arquivo novo, colocar na lista dele e no `index.html`.
+- Títulos longos que quebram linha: `<textarea class="... titulo-quebra" rows="1">` (cresce sozinho; `ajustarAlturaTitulo`
+  em app.js é o reserva para navegador sem `field-sizing`). Enter termina a edição (keydown em app.js). Usado no nome da
+  matéria/curso e no título das páginas do caderno (`.folha-titulo`, sem limite de letras).
+- Cards de curso/meta etc. já podem ser **arrastados** para mudar a ordem (`arrastar.js`: `ordem(grupo, id)` + `data-pegar`;
+  no celular segurar ~0,4 s). A ordem salva é a do array.
+
+## Faculdade / Estudos (js/cursos.js)
+
+- Matérias/cursos ficam em `l.materias` (a ordem do array é a ordem dos cards; filtros não reordenam).
+- Situações (`STATUS_MATERIA`): `cursando` (Em andamento, azul), `proximo` (Próximo/Próxima, amarelo), `afazer`
+  (Não começou, vermelho), `concluida` (verde). Rótulos com gênero em `palavras()` / `nomeStatus()`. Cor em `.st-m-<status>`.
+- O campo `m.tag` aparece na tela como **Categoria** (ex.: Programação). Escolhe-se numa lista (`htmlEscolherCategoria`,
+  `MUDAR['curso-cat']`), com "+ Nova categoria…" que troca a lista por um campo de texto (`MUDAR['curso-cat-nova']`).
+  `nomeCategoriaExistente` reaproveita o nome já usado (maiúsculas/espaços não importam, `chaveCategoria`).
+- Card do curso: setinha no canto superior direito (`.cm-cat-btn`, `ACOES['cm-cat']`) abre o menu de categoria sem entrar
+  no curso; "Nova categoria" ali usa `prompt()`.
+- Página do curso: bloco `.campos-materia` compacto — Categoria + Marcar hábito na mesma linha, Próximo passo embaixo
+  (campos de 34px, letra 13px, rótulos `.rotulo-mini`). No celular, um por linha com rótulo à esquerda.
+- Filtro por categoria (`cursosTela.categoria[l.id]`, só na sessão): um `<select class="filtro-categoria">` no fim da linha
+  de chips de situação (`htmlFiltroCategoria`, `MUDAR['cursos-categoria']`), só aparece quando algum curso tem categoria.
+  Vale na vista de cards, nas "Próximas tarefas" e nos chips da vista Caderno.
+  Com um filtro ativo, o formulário de novo curso já vem com aquela categoria.
+
+## Foco (js/dashboard.js)
+
+- "Estudando" aceita matéria, "Nada específico" ou **tema livre** (opção "✎ Outro tema (digitar)…" troca a lista por um
+  campo; `config.focoMateria = '__tema'` + `config.focoTema`, × volta para a lista). Use `alvoFoco()` / `nomeAlvoFoco()`.
+  Sessões com tema guardam `tema` (com `ref` vazio); Revisão e Retrospectiva agrupam esses minutos pelo nome do tema.
+
+## Mapas mentais (js/mapas.js) — aba "Mapas" dos Flashcards
+
+- Dados em `estado.flashcards.mapas = [{ id, titulo, ref, criado, nos: [{ id, pai, texto, tipo, nota, recolhido }] }]`.
+  As bolhas ficam numa **lista simples com `pai`** (não árvore aninhada) para a mescla da nuvem juntar item por item.
+  A bolha sem `pai` é o centro; `m.titulo` acompanha o texto dela.
+- Tipos (`TIPOS_NO`): topico, resumo, curiosidade, exemplo. Texto longo vai em `nota` (editor do caderno, com
+  `data-digitar="mapa-nota"`); a bolha mostra só o título curto e um pontinho quando tem anotação.
+- Desenho só com HTML/CSS (`.mm-ramo` / `.mm-filhos`, linhas com ::before/::after), ramos para a direita; cor por tema
+  (`CORES_RAMO`, variável `--cor`). No celular (≤760px) o mesmo HTML vira lista em tópicos e o painel fica embaixo.
+- Atalhos com o foco no mapa: Tab (item dentro), Enter (item ao lado), Delete (apagar, com desfazer), F2 (editar), setas.
+  `redesenharMapa()` preserva a rolagem do mapa e devolve o foco à bolha.
+- Próximas fases planejadas: Modo estudo (esconder galhos), "Virar flashcards", gerar mapa de um caderno com IA.
 
 ## Sincronização (nuvem.js) — parte sensível
 
