@@ -131,11 +131,15 @@ PAGINAS.dashboard = {
               : `<b id="crono-tempo">${textoCrono(tempoCrono())}</b><span id="crono-estado">${estadoCrono()}</span>`}</div>
           </div>
           <label class="rotulo-select foco-materia">Estudando
-            <select data-mudar="foco-materia">
+            ${estado.config.focoMateria === '__tema'
+              ? `<input class="foco-tema" type="text" maxlength="60" placeholder="Digite o tema" value="${esc(estado.config.focoTema || '')}" data-digitar="foco-tema" aria-label="Tema do estudo" autocomplete="off">
+                <button type="button" class="foco-tema-sair" data-acao="foco-tema-sair" aria-label="Voltar para a lista" title="Voltar para a lista">${ic('x', 'p')}</button>`
+              : `<select data-mudar="foco-materia">
               <option value="">Nada específico</option>
+              <option value="__tema">✎ Outro tema (digitar)…</option>
               ${todasMaterias().filter((g) => g.materias.length).map((g) => `<optgroup label="${esc(g.lista.nome)}">
                 ${g.materias.map((m) => `<option value="${g.lista.id}/${m.id}" ${estado.config.focoMateria === `${g.lista.id}/${m.id}` ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}</optgroup>`).join('')}
-            </select></label>
+            </select>`}</label>
           ${htmlVinculo('foco', 'Ao terminar um foco, marcar')}
           <div class="foco-linha">${focoTela.tipo === 'pomodoro'
             ? `<div class="segmento">${[['Foco', 25, 'foco'], ['Pausa', 5, 'pausa'], ['Longa', 15, 'longa']].map(([n, m, id]) =>
@@ -153,7 +157,7 @@ PAGINAS.dashboard = {
           : (reg.pomodoros ? `${reg.pomodoros} ${reg.pomodoros === 1 ? 'ciclo' : 'ciclos'} de foco hoje` : 'Nenhum ciclo de foco hoje ainda.')}</p>
         ${focoTela.tipo === 'cronometro' && focoTela.manual ? `<form class="crono-manual" data-form="crono-manual">
           <h3>Lançar horário manualmente</h3>
-          <p class="dica">Fica salvo em <b>${estado.config.focoMateria && acharRef(estado.config.focoMateria) ? esc(nomeMateria(estado.config.focoMateria)) : 'Nada específico'}</b>${crono().assunto ? ` · ${esc(crono().assunto)}` : ''}</p>
+          <p class="dica">Fica salvo em <b>${esc(nomeAlvoFoco() || 'Nada específico')}</b>${crono().assunto ? ` · ${esc(crono().assunto)}` : ''}</p>
           <label class="campo">Dia<input type="date" name="dia" value="${hojeISO()}" max="${hojeISO()}"></label>
           <div class="crono-manual-campos">
             <label class="campo">Das<input type="time" name="ini"></label>
@@ -395,16 +399,16 @@ ACOES['crono-descartar'] = () => {
 ACOES['crono-finalizar'] = () => {
   const c = crono();
   const min = Math.max(1, Math.round(tempoCrono() / 60000));
-  const ref = estado.config.focoMateria && acharRef(estado.config.focoMateria) ? estado.config.focoMateria : '';
+  const { ref, tema } = alvoFoco();
   const reg = registroDoDia();
   if (ref) { reg.estudo = reg.estudo || {}; reg.estudo[ref] = (reg.estudo[ref] || 0) + min; }
   reg.sessoes = reg.sessoes || [];
-  reg.sessoes.push({ id: novoId(), ref, assunto: (c.assunto || '').trim(), min, fim: new Date().toTimeString().slice(0, 5) });
+  reg.sessoes.push({ id: novoId(), ref, ...(tema ? { tema } : {}), assunto: (c.assunto || '').trim(), min, fim: new Date().toTimeString().slice(0, 5) });
   estado.config.cronometro = { acumulado: 0, inicio: 0, assunto: '' };
   document.title = estado.config.nomeEspaco || 'Minha Central';
   salvar(); desenhar();
   tocarSom(true);
-  avisar(`${textoMinutos(min)} de estudo salvos${ref ? ` em ${nomeMateria(ref)}` : ''}.`);
+  avisar(`${textoMinutos(min)} de estudo salvos${nomeAlvoFoco() ? ` em ${nomeAlvoFoco()}` : ''}.`);
   marcarVinculo(estado.config.focoHabito);
 };
 
@@ -416,15 +420,15 @@ FORMS['crono-manual'] = (d) => {
   if (min <= 0) min += 24 * 60;
   if (min < 1 || min > 16 * 60) { avisar('Confira os horários: o tempo ficou estranho.'); return; }
   const dia = d.dia || hojeISO();
-  const ref = estado.config.focoMateria && acharRef(estado.config.focoMateria) ? estado.config.focoMateria : '';
+  const { ref, tema } = alvoFoco();
   const reg = registroDoDia(dia);
   if (ref) { reg.estudo = reg.estudo || {}; reg.estudo[ref] = (reg.estudo[ref] || 0) + min; }
   reg.sessoes = reg.sessoes || [];
-  reg.sessoes.push({ id: novoId(), ref, assunto: (crono().assunto || '').trim(), min, ini: d.ini, fim: d.fim, manual: true });
+  reg.sessoes.push({ id: novoId(), ref, ...(tema ? { tema } : {}), assunto: (crono().assunto || '').trim(), min, ini: d.ini, fim: d.fim, manual: true });
   if (!crono().inicio && !crono().acumulado) crono().assunto = '';
   focoTela.manual = false;
   salvar(); desenhar();
-  avisar(`${textoMinutos(min)} de estudo salvos${ref ? ` em ${nomeMateria(ref)}` : ''}${dia !== hojeISO() ? ` no dia ${paraData(dia).toLocaleDateString('pt-BR')}` : ''}.`);
+  avisar(`${textoMinutos(min)} de estudo salvos${nomeAlvoFoco() ? ` em ${nomeAlvoFoco()}` : ''}${dia !== hojeISO() ? ` no dia ${paraData(dia).toLocaleDateString('pt-BR')}` : ''}.`);
   marcarVinculo(estado.config.focoHabito, dia);
 };
 
@@ -454,14 +458,14 @@ function passoPomodoro() {
     if (pomo.modo === 'foco') {
       const reg = registroDoDia();
       reg.pomodoros++;
-      const ref = estado.config.focoMateria;
-      if (ref && acharRef(ref)) {
+      const { ref, tema } = alvoFoco();
+      if (ref) {
         reg.estudo = reg.estudo || {};
         reg.estudo[ref] = (reg.estudo[ref] || 0) + Math.round(pomo.total / 60);
       } else {
         // Sem matéria escolhida: guarda como sessão para entrar nas horas de estudo do dia
         reg.sessoes = reg.sessoes || [];
-        reg.sessoes.push({ id: novoId(), ref: '', assunto: 'Ciclo de foco', min: Math.round(pomo.total / 60), fim: new Date().toTimeString().slice(0, 5) });
+        reg.sessoes.push({ id: novoId(), ref: '', ...(tema ? { tema } : {}), assunto: 'Ciclo de foco', min: Math.round(pomo.total / 60), fim: new Date().toTimeString().slice(0, 5) });
       }
       salvar();
       marcarVinculo(estado.config.focoHabito);
@@ -498,7 +502,24 @@ ACOES['pomo-reset'] = () => {
   atualizarPomodoro();
 };
 
-MUDAR['foco-materia'] = (el) => { estado.config.focoMateria = el.value; salvar(); };
+MUDAR['foco-materia'] = (el) => {
+  estado.config.focoMateria = el.value;
+  salvar();
+  if (el.value === '__tema') { desenhar(); $('.foco-tema')?.focus(); }
+};
+DIGITAR['foco-tema'] = (el) => { estado.config.focoTema = el.value; salvar(); };
+ACOES['foco-tema-sair'] = () => { estado.config.focoMateria = ''; salvar(); desenhar(); };
+
+// O que o Foco está estudando agora: uma matéria (ref), um tema digitado (aula avulsa) ou nada.
+function alvoFoco() {
+  const sel = estado.config.focoMateria;
+  if (sel === '__tema') return { ref: '', tema: (estado.config.focoTema || '').trim() };
+  return { ref: sel && acharRef(sel) ? sel : '', tema: '' };
+}
+function nomeAlvoFoco() {
+  const { ref, tema } = alvoFoco();
+  return ref ? nomeMateria(ref) : tema;
+}
 
 ACOES['pomo-modo'] = (el) => {
   pomo.rodando = false;

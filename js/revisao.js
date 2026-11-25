@@ -38,6 +38,8 @@ PAGINAS.revisao = {
     const estudo = {};
     dias.forEach((d) => Object.entries(estado.diario[d]?.estudo || {}).forEach(([ref, min]) => { estudo[ref] = (estudo[ref] || 0) + min; }));
     const totalEstudo = dias.reduce((s, d) => s + minutosEstudoDia(d), 0);
+    // Aulas avulsas com tema digitado no Foco aparecem com o nome do tema
+    dias.forEach((d) => (estado.diario[d]?.sessoes || []).forEach((x) => { if (!x.ref && x.tema) estudo['tema:' + x.tema] = (estudo['tema:' + x.tema] || 0) + (x.min || 0); }));
     const semMateria = totalEstudo - Object.values(estudo).reduce((a, b) => a + b, 0);
     if (semMateria > 0) estudo[''] = semMateria;
     const melhorDia = melhorDiaSemana(dias);
@@ -102,7 +104,7 @@ PAGINAS.revisao = {
           ${dias.map((d) => { const hm = estado.diario[d]?.humor; return `<div>${hm ? `<svg class="ic" style="color:var(--amarelo)"><use href="#i-${hm}"/></svg>` : '<span class="ponto"></span>'}${DIAS_SEMANA[paraData(d).getDay()]}</div>`; }).join('')}
         </div>
         ${totalEstudo ? `<h3 class="sub-titulo">Estudo por matéria</h3>
-          ${Object.entries(estudo).sort((a, b) => b[1] - a[1]).map(([ref, min]) => `<div class="item"><span class="txt">${esc(ref ? nomeMateria(ref) || 'Matéria apagada' : 'Sem matéria')}</span><b>${textoMinutos(min)}</b></div>`).join('')}` : ''}
+          ${Object.entries(estudo).sort((a, b) => b[1] - a[1]).map(([ref, min]) => `<div class="item"><span class="txt">${esc(ref.startsWith('tema:') ? ref.slice(5) : ref ? nomeMateria(ref) || 'Matéria apagada' : 'Sem matéria')}</span><b>${textoMinutos(min)}</b></div>`).join('')}` : ''}
         ${coisasBoas.length ? `<h3 class="sub-titulo">Coisas boas da semana</h3>
           ${coisasBoas.map((c) => `<p class="coisa-boa">${ic('sparkle', 'p')} ${esc(c.b)} <small>${DIAS_SEMANA[paraData(c.d).getDay()]}</small></p>`).join('')}` : ''}
       </section>

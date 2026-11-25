@@ -59,9 +59,11 @@ function dadosRetro() {
   const estudo = {};
   dias.forEach((d) => Object.entries(estado.diario[d]?.estudo || {}).forEach(([ref, min]) => { estudo[ref] = (estudo[ref] || 0) + min; }));
   r.estudoMin = dias.reduce((s, d) => s + minutosEstudoDia(d), 0);
+  // Aulas avulsas com tema digitado no Foco aparecem com o nome do tema
+  dias.forEach((d) => (estado.diario[d]?.sessoes || []).forEach((x) => { if (!x.ref && x.tema) estudo['tema:' + x.tema] = (estudo['tema:' + x.tema] || 0) + (x.min || 0); }));
   const semMateria = r.estudoMin - Object.values(estudo).reduce((a, b) => a + b, 0);
   if (semMateria > 0) estudo[''] = semMateria;
-  r.estudoTop = Object.entries(estudo).map(([ref, min]) => [ref ? nomeMateria(ref) || 'Outros' : 'Sem matéria', min]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  r.estudoTop = Object.entries(estudo).map(([ref, min]) => [ref.startsWith('tema:') ? ref.slice(5) : ref ? nomeMateria(ref) || 'Outros' : 'Sem matéria', min]).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
   r.melhorDia = melhorDiaSemana(dias);
 

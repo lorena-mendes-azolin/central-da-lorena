@@ -775,6 +775,10 @@ kbd { font-family: inherit; font-size: 11px; background: rgba(255, 255, 255, .14
 .regra summary { cursor: pointer; color: var(--suave); font-size: 13px; font-weight: 700; margin-bottom: 10px; }
 .foco-materia { justify-content: center; margin-bottom: 4px; }
 .foco-materia .sel-btn { max-width: 180px; }
+.foco-materia { gap: 6px; }
+.foco-materia .foco-tema { width: 160px; height: 32px; padding: 5px 10px; font-size: 13px; }
+.foco-tema-sair { border: 0; background: none; color: var(--suave); cursor: pointer; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; margin-left: -2px; }
+.foco-tema-sair:hover { background: var(--hover); color: var(--texto); }
 
 .barra-mes { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
 .barra-mes h2 { margin: 0; font-size: 19px; min-width: 210px; text-align: center; }

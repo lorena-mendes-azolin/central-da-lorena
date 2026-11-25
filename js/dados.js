@@ -121,7 +121,7 @@ function dadosIniciais() {
     flashcards: { baralhos: [] },
     diario: {},
     avisados: {},
-    config: { nome: '', genero: 'n', nomeEspaco: 'Minha Central', cidade: null, boasVindas: false, metaAgua: 8, resumoVisto: '', menu: 'mini', gruposHabito: ['Geral', 'Limpeza'], tema: 'violeta', aguaIntervalo: 0, aguaInicio: '08:00', aguaFim: '22:00', focoMateria: '', avisoContas: 1, modulos: {}, temColecoes: true },
+    config: { nome: '', genero: 'n', nomeEspaco: 'Minha Central', cidade: null, boasVindas: false, metaAgua: 8, resumoVisto: '', menu: 'mini', gruposHabito: ['Geral', 'Limpeza'], tema: 'violeta', aguaIntervalo: 0, aguaInicio: '08:00', aguaFim: '22:00', focoMateria: '', focoTema: '', avisoContas: 1, modulos: {}, temColecoes: true },
   };
 }
 
