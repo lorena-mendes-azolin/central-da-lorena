@@ -1757,6 +1757,9 @@ textarea.titulo-quebra { display: block; resize: none; overflow: hidden; field-s
 .cm-cat-btn .ic { width: 13px; height: 13px; flex: none; }
 .cm-cat-btn:hover, .cm-cat-btn.aberto { border-color: var(--destaque); color: var(--texto); }
 .cm-cat-btn.vazia { background: none; border: 1px dashed var(--linha); color: var(--fraco); }
+.cm-status-btn { display: inline-flex; align-items: center; gap: 3px; border: 1px solid transparent; cursor: pointer; font-family: inherit; line-height: inherit; }
+.cm-status-btn .ic { width: 12px; height: 12px; flex: none; opacity: .8; }
+.cm-status-btn:hover, .cm-status-btn.aberto { border-color: currentColor; }
 .cm-nome { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; font-size: 16px; line-height: 1.3; min-height: 2.6em; }
 .cm-info { display: grid; gap: 6px; }
 .cm-linha { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 13px; color: var(--suave); }

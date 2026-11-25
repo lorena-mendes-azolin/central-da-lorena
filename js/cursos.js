@@ -241,7 +241,8 @@ function htmlCartaoMateria(l, m) {
   return `<a class="card cartao-materia" href="#lista-${l.id}--${m.id}" ${ordem(l.id + '|materias', m.id, true)} data-pegar>
     ${capa ? `<img class="capa" src="${capa.url}" alt="">` : ''}
     <div class="cm-cab">
-      <span class="status-materia st-m-${m.status}">${nomeStatus(l, m.status)}</span>
+      <button type="button" class="status-materia cm-status-btn st-m-${m.status}" data-acao="cm-status" data-ref="${l.id}/${m.id}" data-lista="${l.id}" title="Trocar situação">
+        <span>${nomeStatus(l, m.status)}</span>${ic('down', 'p')}</button>
       <button type="button" class="cm-cat-btn ${cat ? '' : 'vazia'}" data-acao="cm-cat" data-ref="${l.id}/${m.id}" data-lista="${l.id}" title="Trocar categoria">
         <span>${cat ? esc(cat) : '+ Categoria'}</span>${ic('down', 'p')}</button>
     </div>
@@ -531,6 +532,29 @@ MUDAR['cm-cat-escolha'] = (el) => {
     valor = nomeCategoriaExistente(l, texto.slice(0, 30));
   }
   m.tag = valor;
+  salvar(); desenhar();
+};
+// Situação no canto do card: trocar sem abrir o curso (mesmo menu da categoria)
+ACOES['cm-status'] = (el) => {
+  $$('select.cm-status-sel').forEach((s) => s.remove());
+  const l = acharLista(el.dataset.lista);
+  const m = acharRef(el.dataset.ref);
+  if (!l || !m) return;
+  const sel = document.createElement('select');
+  sel.className = 'cm-status-sel sel-oculto';
+  sel.dataset.ref = el.dataset.ref;
+  sel.dataset.mudar = 'cm-status-escolha';
+  sel.dataset.pronto = '1';
+  sel.innerHTML = Object.keys(STATUS_MATERIA).map((id) => `<option value="${id}" ${m.status === id ? 'selected' : ''}>${esc(nomeStatus(l, id))}</option>`).join('');
+  document.body.appendChild(sel);
+  abrirMenuSelect(sel, el);
+};
+MUDAR['cm-status-escolha'] = (el) => {
+  const m = acharRef(el.dataset.ref);
+  const valor = el.value;
+  el.remove();
+  if (!m || !STATUS_MATERIA[valor] || m.status === valor) return;
+  m.status = valor;
   salvar(); desenhar();
 };
 MUDAR['cursos-categoria'] = (el) => { cursosTela.categoria[el.dataset.lista] = el.value; desenhar(); };

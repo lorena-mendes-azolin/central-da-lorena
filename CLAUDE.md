@@ -63,6 +63,8 @@ com explicações simples e diretas.
   `nomeCategoriaExistente` reaproveita o nome já usado (maiúsculas/espaços não importam, `chaveCategoria`).
 - Card do curso: setinha no canto superior direito (`.cm-cat-btn`, `ACOES['cm-cat']`) abre o menu de categoria sem entrar
   no curso; "Nova categoria" ali usa `prompt()`.
+- Card do curso: a etiqueta de situação no canto esquerdo (`.cm-status-btn`, `ACOES['cm-status']` → `MUDAR['cm-status-escolha']`)
+  também abre um menu para trocar a situação sem entrar no curso.
 - Página do curso: bloco `.campos-materia` compacto — Categoria + Marcar hábito na mesma linha, Próximo passo embaixo
   (campos de 34px, letra 13px, rótulos `.rotulo-mini`). No celular, um por linha com rótulo à esquerda.
 - Filtro por categoria (`cursosTela.categoria[l.id]`, só na sessão): um `<select class="filtro-categoria">` no fim da linha
