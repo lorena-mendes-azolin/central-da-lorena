@@ -466,7 +466,6 @@ function removerVariosComDesfazer(lista, ids, nome = 'Item') {
 ACOES['compras-mostrar'] = () => { comprasTela.mostrarComprados = !comprasTela.mostrarComprados; desenhar(); };
 
 
-ACOES['compra-del'] = (el) => removerComDesfazer(acharLista(el.dataset.lista).itens, el.dataset.id, 'Item');
 
 ACOES['compra-cat'] = (el) => { comprasTela.cat = el.dataset.c; desenhar(); };
 ACOES['compra-cat-criar'] = () => { comprasTela.criandoCat = true; desenhar(); $('#compra-cat-nome')?.focus(); };

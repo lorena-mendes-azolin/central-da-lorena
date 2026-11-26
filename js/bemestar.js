@@ -182,12 +182,6 @@ MUDAR['bem-sono'] = (el) => {
   salvar(); desenhar();
 };
 
-MUDAR['cfg-agua-lembrete'] = (el) => {
-  estado.config[el.dataset.campo] = el.dataset.campo === 'aguaIntervalo' ? Number(el.value) : el.value;
-  salvar();
-  if (el.dataset.campo === 'aguaIntervalo') avisar(Number(el.value) ? 'Lembrete de água ligado.' : 'Lembrete de água desligado.');
-};
-
 function verificarAgua() {
   const c = estado.config;
   const intervalo = Number(c.aguaIntervalo);
@@ -262,7 +256,8 @@ ACOES['diario-salvar'] = async (el) => {
     await enviarDiario(dia);
   } else {
     clearTimeout(timerSalvar);
-    localStorage.setItem(CHAVE, JSON.stringify(estado));
+    timerSalvar = null;
+    gravarLocalSeguro();
     if (typeof salvarNuvem === 'function') salvarNuvem();
   }
   tocarSom(true);

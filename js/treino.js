@@ -197,13 +197,13 @@ function htmlFichaEdit(f) {
       ${f.itens.map((i) => { const e = exercicioPorId(i.ex); if (!e) return ''; return `<div class="linha-ficha" ${ordem(`|treino.fichas.${t_idx(f)}.itens`, i.id)}>
         ${alca()}
         <span class="nome-ex"><button class="link-ex" data-acao="ex-ver" data-id="${e.id}">${esc(e.nome)}</button>${htmlTagEx(e)}</span>
-        <label><span class="rot-mob">Séries</span><input type="number" min="1" max="10" value="${i.series}" data-digitar="item-campo" data-f="${f.id}" data-id="${i.id}" data-c="series"></label>
+        <label><span class="rot-mob">Séries</span><input type="number" min="1" max="10" value="${i.series}" data-digitar="treino-item-campo" data-f="${f.id}" data-id="${i.id}" data-c="series"></label>
         <label><span class="rot-mob">${e.tipo === 'tempo' ? 'Tempo (s)' : 'Repetições'}</span>${e.tipo === 'tempo'
-          ? `<span class="com-unidade"><input type="number" min="5" max="600" step="5" value="${i.seg}" data-digitar="item-campo" data-f="${f.id}" data-id="${i.id}" data-c="seg"><i>s</i></span>`
-          : `<input type="number" min="1" max="100" value="${i.reps}" data-digitar="item-campo" data-f="${f.id}" data-id="${i.id}" data-c="reps">`}</label>
-        <label><span class="rot-mob">Descanso (s)</span><span class="com-unidade"><input type="number" min="0" max="300" step="5" value="${i.descanso}" data-digitar="item-campo" data-f="${f.id}" data-id="${i.id}" data-c="descanso"><i>s</i></span></label>
-        <label><span class="rot-mob">Carga</span><input type="text" maxlength="20" value="${esc(i.carga || '')}" placeholder="—" data-digitar="item-campo" data-f="${f.id}" data-id="${i.id}" data-c="carga"></label>
-        <button class="acao-item apagar" data-acao="item-del" data-f="${f.id}" data-id="${i.id}" title="Tirar da ficha">${ic('x', 'p')}</button>
+          ? `<span class="com-unidade"><input type="number" min="5" max="600" step="5" value="${i.seg}" data-digitar="treino-item-campo" data-f="${f.id}" data-id="${i.id}" data-c="seg"><i>s</i></span>`
+          : `<input type="number" min="1" max="100" value="${i.reps}" data-digitar="treino-item-campo" data-f="${f.id}" data-id="${i.id}" data-c="reps">`}</label>
+        <label><span class="rot-mob">Descanso (s)</span><span class="com-unidade"><input type="number" min="0" max="300" step="5" value="${i.descanso}" data-digitar="treino-item-campo" data-f="${f.id}" data-id="${i.id}" data-c="descanso"><i>s</i></span></label>
+        <label><span class="rot-mob">Carga</span><input type="text" maxlength="20" value="${esc(i.carga || '')}" placeholder="—" data-digitar="treino-item-campo" data-f="${f.id}" data-id="${i.id}" data-c="carga"></label>
+        <button class="acao-item apagar" data-acao="treino-item-del" data-f="${f.id}" data-id="${i.id}" title="Tirar da ficha">${ic('x', 'p')}</button>
       </div>`; }).join('')}
     </div>
     ${aberta ? htmlPicker(f) : `<button class="btn sec add-ex" data-acao="picker-abrir" data-id="${f.id}">${ic('plus', 'p')} Adicionar exercício</button>`}
@@ -417,14 +417,14 @@ ACOES['ficha-del'] = (el) => {
   salvar(); desenhar();
   avisar(`${f.nome} excluída.`, () => { t.fichas.splice(pos, 0, f); salvar(); desenhar(); });
 };
-DIGITAR['item-campo'] = (el) => {
+DIGITAR['treino-item-campo'] = (el) => {
   const f = dadosTreino().fichas.find((x) => x.id === el.dataset.f);
   const i = f?.itens.find((x) => x.id === el.dataset.id);
   if (!i) return;
   i[el.dataset.c] = el.dataset.c === 'carga' ? el.value : Math.max(0, Number(el.value) || 0);
   salvar();
 };
-ACOES['item-del'] = (el) => {
+ACOES['treino-item-del'] = (el) => {
   const f = dadosTreino().fichas.find((x) => x.id === el.dataset.f);
   const pos = f.itens.findIndex((x) => x.id === el.dataset.id);
   const [i] = f.itens.splice(pos, 1);

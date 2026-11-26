@@ -425,7 +425,6 @@ function htmlNotasEstudo(l, m, ref) {
 }
 
 ACOES['calc-modo'] = (el) => { acharRef(el.dataset.ref).calcModo = el.dataset.m; salvar(); desenhar(); };
-ACOES['nota-modo'] = (el) => { acharRef(el.dataset.ref).notaModo = el.dataset.m; salvar(); desenhar(); };
 FORMS['item-nota-novo'] = (d, form) => {
   const m = acharRef(form.dataset.ref);
   m.itensNota = m.itensNota || [];
